@@ -39,6 +39,21 @@ export const nearbySearchSchema = z.object({
 });
 export type NearbySearch = z.infer<typeof nearbySearchSchema>;
 
+/**
+ * Numbered-pagination discovery params (distinct from the keyset feed above,
+ * which still powers infinite-scroll elsewhere — this backs the /centres page
+ * redesign: page numbers, name/address search, price range, price sort).
+ */
+export const centrePaginatedSearchSchema = z.object({
+  q: z.string().trim().max(80).optional(),
+  minPrice: z.coerce.number().nonnegative().max(1_000_000).optional(),
+  maxPrice: z.coerce.number().positive().max(1_000_000).optional(),
+  sort: z.enum(['rating', 'price_asc', 'price_desc']).default('rating'),
+  view: z.enum(['grid', 'list']).default('grid'),
+  page: z.coerce.number().int().min(1).default(1),
+});
+export type CentrePaginatedSearch = z.infer<typeof centrePaginatedSearchSchema>;
+
 /** Owner create/update payload. */
 export const centreUpsertSchema = z.object({
   name: z.string().trim().min(2, 'Name is too short').max(120),

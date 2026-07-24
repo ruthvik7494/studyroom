@@ -101,15 +101,35 @@ export interface AdminCentreListItem {
   owner: { full_name: string | null } | null;
 }
 
-/** Every centre regardless of status — the "All Centres" admin view. */
-export async function getAllCentres(db: DB): Promise<AdminCentreListItem[]> {
-  const { data, error } = await db
+export interface AdminCentreSearch { q?: string; page: number; pageSize: number }
+export interface AdminCentrePage {
+  items: AdminCentreListItem[]; total: number; page: number; pageSize: number; totalPages: number;
+}
+
+/** All centres regardless of status, name-searchable, numbered-paginated — the "All Centres" admin view. */
+export async function getAllCentres(db: DB, params: AdminCentreSearch): Promise<AdminCentrePage> {
+  let query = db
     .from('centres')
-    .select('id, name, slug, area, address, status, created_at, owner:owner_id(full_name)')
-    .order('created_at', { ascending: false })
-    .limit(500);
+    .select('id, name, slug, area, address, status, created_at, owner:owner_id(full_name)', { count: 'exact' })
+    .order('created_at', { ascending: false });
+
+  if (params.q) {
+    // Same PostgREST filter-character sanitisation used by the public search.
+    const safe = params.q.replace(/[,()%*\\]/g, ' ').trim().slice(0, 80);
+    if (safe) query = query.ilike('name', `%${safe}%`);
+  }
+
+  const from = (params.page - 1) * params.pageSize;
+  const to = from + params.pageSize - 1;
+  const { data, error, count } = await query.range(from, to);
   if (error) throw error;
-  return (data ?? []) as unknown as AdminCentreListItem[];
+
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / params.pageSize));
+  return {
+    items: (data ?? []) as unknown as AdminCentreListItem[],
+    total, page: params.page, pageSize: params.pageSize, totalPages,
+  };
 }
 
 export interface AdminCentreEditDetail {

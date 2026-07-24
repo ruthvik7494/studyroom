@@ -13,6 +13,96 @@ function cheapestMonthly(pricingList: Json[]): number | null {
 }
 
 /**
+ * Numbered-pagination search for the /centres page redesign: name/address
+ * search, price range, price sort, page N of M. Deliberately NOT keyset —
+ * numbered pagination needs "jump to page N" and a total count, which a
+ * cursor can't give you. Price is derived from resources.pricing (no plain
+ * price column on centres), so filtering/sorting by it happens in JS after
+ * one full fetch of the matching rows rather than in SQL — fine at a
+ * single-city directory's scale (tens to low hundreds of centres); a catalog
+ * growing into the thousands would want a real price column or DB view
+ * instead of this approach.
+ */
+export interface PaginatedCentreSearch {
+  q?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sort: 'rating' | 'price_asc' | 'price_desc';
+  page: number;
+  pageSize: number;
+}
+export interface PaginatedCentrePage {
+  items: CentreListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function searchCentresPaginated(db: DB, params: PaginatedCentreSearch): Promise<PaginatedCentrePage> {
+  let query = db
+    .from('centres')
+    .select(
+      'id, slug, name, area, address, emoji, cover_url, rating, reviews_count, women_safe_verified, is_verified, space_type, resources(pricing, is_active)',
+    )
+    .eq('is_published', true);
+
+  if (params.q) {
+    // Same sanitisation as listCentres's search — strip PostgREST filter
+    // control characters so the query can't break or widen the `or()` filter.
+    const safe = params.q.replace(/[,()%*\\]/g, ' ').trim().slice(0, 80);
+    if (safe) query = query.or(`name.ilike.%${safe}%,area.ilike.%${safe}%,address.ilike.%${safe}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const rows = data ?? [];
+
+  const ids = rows.map((r) => r.id);
+  const occByCentre = new Map<string, CentreListItem['occupancy']>();
+  if (ids.length) {
+    const { data: occ } = await db.from('centre_live_occupancy').select('*').in('centre_id', ids);
+    (occ ?? []).forEach((o) => {
+      if (!o.centre_id) return;
+      occByCentre.set(o.centre_id, {
+        seatsFree: o.seats_free ?? 0,
+        status: (o.status as 'open' | 'filling' | 'full') ?? 'unknown',
+      });
+    });
+  }
+
+  let items: CentreListItem[] = rows.map((r) => {
+    const active = ((r.resources ?? []) as unknown as Array<{ pricing: Json; is_active: boolean }>).filter((x) => x.is_active);
+    return {
+      id: r.id, slug: r.slug, name: r.name, area: r.area, emoji: r.emoji, cover_url: r.cover_url,
+      rating: r.rating, reviews_count: r.reviews_count,
+      women_safe_verified: r.women_safe_verified, is_verified: r.is_verified, space_type: r.space_type,
+      fromMonthly: cheapestMonthly(active.map((x) => x.pricing)),
+      occupancy: occByCentre.get(r.id) ?? null,
+    };
+  });
+
+  if (params.minPrice !== undefined) items = items.filter((i) => i.fromMonthly !== null && i.fromMonthly >= params.minPrice!);
+  if (params.maxPrice !== undefined) items = items.filter((i) => i.fromMonthly !== null && i.fromMonthly <= params.maxPrice!);
+
+  if (params.sort === 'price_asc') {
+    items = [...items].sort((a, b) => (a.fromMonthly ?? Infinity) - (b.fromMonthly ?? Infinity));
+  } else if (params.sort === 'price_desc') {
+    items = [...items].sort((a, b) => (b.fromMonthly ?? -Infinity) - (a.fromMonthly ?? -Infinity));
+  } else {
+    items = [...items].sort((a, b) => b.rating - a.rating);
+  }
+
+  const total = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / params.pageSize));
+  const page = Math.min(params.page, totalPages);
+  const start = (page - 1) * params.pageSize;
+  const paged = items.slice(start, start + params.pageSize);
+
+  return { items: paged, total, page, pageSize: params.pageSize, totalPages };
+}
+
+/**
  * Discovery feed with KEYSET pagination (not OFFSET) so it stays O(1) at any
  * depth over millions of rows. Ordered by (rating desc, id desc); the cursor is
  * the last row's (rating, id). All filters are index-backed.
