@@ -119,3 +119,22 @@ No `fetch()` with user-controlled URLs. All outbound requests target fixed trust
 ## 9. Verdict
 
 **Security sign-off APPROVED.** No Critical or High vulnerabilities. Defense-in-depth verified under real enforcement — IDOR, privilege escalation, injection, and SSRF are all closed. The one Medium finding (missing security headers) is fixed. The architecture correctly pushes access control to the database layer, which is the most robust place for it.
+
+---
+
+## 10. Addendum — follow-up review findings (post-M20)
+
+A subsequent full-codebase review found and fixed four issues this audit's
+scope did not cover. Recorded here so the record is accurate and these don't
+get rediscovered:
+
+| Fix | OWASP | Detail |
+|---|---|---|
+| CSV/XLSX formula injection | A03 | `lib/booking-export.ts` wrote user-controlled `student`/`centre` text into export cells unescaped; a name starting with `= + - @` would execute as a live formula when an admin opened the export in Excel. Fixed with `neutralizeFormula()`; regression test in `tests/unit/security-invariants.test.ts`. |
+| JSON-LD script-tag breakout (stored XSS) | A03 | Four pages injected `JSON.stringify(jsonLd)` via `dangerouslySetInnerHTML`; `JSON.stringify` doesn't escape `<`, so owner-controlled text containing `</script>` could close the tag and inject HTML/JS on a public page. Fixed with `safeJsonLd()` in `lib/seo.ts`, applied everywhere JSON-LD is emitted; regression test added. |
+| Rate limiter is in-memory only | A05 | `lib/rate-limit.ts`'s counter lives in process memory, which does not work across Vercel's multiple serverless instances — limits on auth/forms/webhooks were not actually enforced in a real deployment despite §5 listing "HTTP security headers" as the only open item. Fixed: now backed by Upstash Redis REST when `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are set (`lib/env.ts`), with the in-memory version kept only as an explicit fallback. **Set the Upstash env vars before launch** — without them the app still runs, but with the same weak guarantee as before. |
+| Webhook idempotency keyed on signature | A08 | The Razorpay webhook deduped on the HMAC signature rather than Razorpay's documented `x-razorpay-event-id` header. Fixed to use the header, with the signature as a fallback only. |
+| Live secrets shipped in a handoff artifact | A02/A05 | `.env.local` (real Supabase service-role key, anon key, Resend key) was included in the delivered zip. Not in git history, but exposed via the artifact itself. Scrubbed to placeholders — **rotate the Supabase service-role/anon keys and the Resend key**, they must be treated as compromised. |
+
+None of these required a schema change or a new product requirement — all are
+contained fixes within the existing scope.

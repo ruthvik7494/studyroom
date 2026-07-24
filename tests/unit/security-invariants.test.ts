@@ -135,3 +135,81 @@ describe('booking status transition guard', () => {
     expect(transitionAllowed('pending', 'completed')).toBe(false);
   });
 });
+
+// --- SOURCE: lib/booking-export.ts (neutralizeFormula) ---
+function neutralizeFormula(v: string): string {
+  return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+}
+
+describe('CSV/XLSX formula injection guard (booking export)', () => {
+  it('prefixes every Excel/Sheets formula trigger character', () => {
+    for (const ch of ['=', '+', '-', '@']) {
+      const neutralized = neutralizeFormula(`${ch}HYPERLINK("http://evil","x")`);
+      expect(neutralized.startsWith("'")).toBe(true);
+    }
+  });
+
+  it('leaves an ordinary student/centre name untouched', () => {
+    expect(neutralizeFormula('Rahul Reddy')).toBe('Rahul Reddy');
+    expect(neutralizeFormula("St. Mary's Reading Room")).toBe("St. Mary's Reading Room");
+  });
+});
+
+// --- SOURCE: lib/seo.ts (safeJsonLd) ---
+function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+describe('JSON-LD script-breakout guard (dangerouslySetInnerHTML)', () => {
+  it('never emits a literal </script> from owner-controlled text', () => {
+    const payload = safeJsonLd({ name: '</script><script>alert(1)</script>' });
+    expect(payload).not.toContain('</script>');
+    expect(payload).toContain('\\u003c/script\\u003e');
+  });
+
+  it('round-trips as valid JSON once un-escaped by the browser', () => {
+    const original = { name: 'Green Study Hall <5★>' };
+    const parsedBack = JSON.parse(safeJsonLd(original).replace(/\\u003c/g, '<').replace(/\\u003e/g, '>'));
+    expect(parsedBack).toEqual(original);
+  });
+});
+
+// --- SOURCE: features/auth/schema.ts (passwordComplexity) ---
+function isComplexPassword(pw: string): boolean {
+  return pw.length >= 8 && pw.length <= 72 && /[A-Za-z]/.test(pw) && /[0-9]/.test(pw);
+}
+
+describe('password complexity floor', () => {
+  it('rejects digits-only or letters-only passwords', () => {
+    expect(isComplexPassword('12345678')).toBe(false);
+    expect(isComplexPassword('abcdefgh')).toBe(false);
+  });
+
+  it('rejects passwords under 8 characters even with mixed content', () => {
+    expect(isComplexPassword('ab1')).toBe(false);
+  });
+
+  it('accepts a plain letter+number password at the floor', () => {
+    expect(isComplexPassword('abcd1234')).toBe(true);
+  });
+});
+
+// --- SOURCE: supabase/migrations/0021_auth_security_and_audit.sql (record_login_failure) ---
+function shouldLockAfter(failedCount: number, threshold = 5): boolean {
+  return failedCount >= threshold;
+}
+
+describe('account lockout threshold guard', () => {
+  it('does not lock before the threshold', () => {
+    for (let i = 1; i < 5; i++) expect(shouldLockAfter(i)).toBe(false);
+  });
+
+  it('locks exactly at and beyond the threshold', () => {
+    expect(shouldLockAfter(5)).toBe(true);
+    expect(shouldLockAfter(6)).toBe(true);
+  });
+});

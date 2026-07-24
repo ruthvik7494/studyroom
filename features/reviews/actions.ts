@@ -52,7 +52,7 @@ export async function submitReview(raw: unknown): Promise<Result<{ id: string }>
  * uniqueness constraint means this is otherwise floodable. */
 export async function reportReview(raw: unknown): Promise<Result<{ ok: true }>> {
   const h = await headers();
-  if (!rateLimit(clientKey(h, 'report'), 10, 60_000).success)
+  if (!(await rateLimit(clientKey(h, 'report'), 10, 60_000)).success)
     return err('RATE_LIMITED', 'Too many reports. Please wait a minute.');
 
   return action(reportSchema, raw, async (input) => {

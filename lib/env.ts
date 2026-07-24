@@ -48,3 +48,16 @@ export const resend = {
   from: optional(process.env.EMAIL_FROM) ?? 'StudyNook <onboarding@resend.dev>',
   get configured() { return Boolean(this.apiKey); },
 } as const;
+
+/**
+ * Optional: backs rate limiting with Upstash Redis REST so limits are shared
+ * across serverless instances instead of living in a single instance's memory
+ * (see lib/rate-limit.ts). Not required to run the app — falls back to the
+ * in-memory limiter (correct for local dev, not for a multi-instance deploy)
+ * when unset.
+ */
+export const upstash = {
+  url: optional(process.env.UPSTASH_REDIS_REST_URL),
+  token: optional(process.env.UPSTASH_REDIS_REST_TOKEN),
+  get configured() { return Boolean(this.url && this.token); },
+} as const;

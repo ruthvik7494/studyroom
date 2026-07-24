@@ -21,7 +21,7 @@ import { enquirySchema } from './schema';
 export async function submitEnquiry(raw: unknown): Promise<Result<{ id: string }>> {
   // Rate limit BEFORE validation work (charter §security: rate-limit forms).
   const h = await headers();
-  const limit = rateLimit(clientKey(h, 'enquiry'), 5, 60_000); // 5/min/IP
+  const limit = await rateLimit(clientKey(h, 'enquiry'), 5, 60_000); // 5/min/IP
   if (!limit.success) return err('RATE_LIMITED', 'Too many enquiries. Please wait a minute and try again.');
 
   return action(enquirySchema, raw, async (input) => {

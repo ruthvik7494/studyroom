@@ -41,6 +41,24 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]): Recor
 export const noindex: Metadata = { robots: { index: false, follow: false } };
 
 /**
+ * SECURITY: safe serializer for JSON-LD injected via dangerouslySetInnerHTML.
+ * `JSON.stringify` does not escape `<`, so owner-controlled strings (centre
+ * name/description, etc.) containing a literal `</script>` would close the
+ * script tag early and let arbitrary HTML/JS run on a public, indexable page.
+ * `U+2028`/`U+2029` are also escaped — valid in JSON strings but invalid in
+ * JS, which can otherwise break inline parsing in some engines.
+ * Always route JSON-LD through this before handing it to
+ * dangerouslySetInnerHTML — never call JSON.stringify directly for that.
+ */
+export function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+/**
  * Organization schema — establishes the brand entity for Google Knowledge Graph.
  * Emitted once, on the homepage.
  */

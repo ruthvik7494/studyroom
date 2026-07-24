@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { organizationJsonLd, websiteJsonLd } from '@/lib/seo';
+import { organizationJsonLd, websiteJsonLd, safeJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'StudyNook — find & book study spaces in Warangal',
@@ -25,7 +25,7 @@ export default async function HomePage() {
       {/* Organization + WebSite/SearchAction — brand entity and SERP search box. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd(), websiteJsonLd()]) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd([organizationJsonLd(), websiteJsonLd()]) }}
       />
       <section className="mx-auto max-w-4xl px-6 py-16 text-center">
         <p className="font-display text-xs font-bold uppercase tracking-wider text-brand-gold">Warangal · Telangana</p>

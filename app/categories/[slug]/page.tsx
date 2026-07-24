@@ -5,7 +5,7 @@ import { getCategoryBySlug, listCentresByCategory } from '@/features/taxonomy/ta
 import { CentreCard } from '@/features/centres/components/centre-card';
 import { CentreEmptyState } from '@/features/centres/components/centre-states';
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { breadcrumbJsonLd } from '@/lib/seo';
+import { breadcrumbJsonLd, safeJsonLd } from '@/lib/seo';
 
 interface PageProps { params: Promise<{ slug: string }> }
 
@@ -38,7 +38,7 @@ export default async function CategoryPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Categories' }, { label: cat.name }]} />
       <header className="mb-5">
         <h1 className="font-display text-2xl font-bold">{cat.name} in Warangal</h1>

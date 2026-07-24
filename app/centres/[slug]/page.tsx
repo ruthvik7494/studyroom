@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { getCentreBySlug, getCentreReviews } from '@/features/centres/services/centres.service';
 import { getSessionUser } from '@/lib/auth/rbac';
-import { centreJsonLd, breadcrumbJsonLd } from '@/lib/seo';
+import { centreJsonLd, breadcrumbJsonLd, safeJsonLd } from '@/lib/seo';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -108,7 +108,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
   return (
     <main className="mx-auto max-w-4xl px-6 py-6">
       {isPublic && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}
 
       <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Study spaces', href: '/centres' }, { label: centre.name }]} />

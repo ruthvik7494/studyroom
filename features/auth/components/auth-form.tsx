@@ -8,15 +8,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { credentialsSchema, signUpSchema, type SignUpInput } from '../schema';
-import { signInWithPassword, signUp, sendMagicLink } from '../actions';
+import { signInWithPassword, signUp, sendMagicLink, resendVerificationEmail } from '../actions';
 
 type Mode = 'signin' | 'signup';
 
-export function AuthForm({ next = '/' }: { next?: string }) {
+export function AuthForm({
+  next = '/',
+  initialError,
+  offerResend = false,
+}: {
+  next?: string;
+  /** Pre-filled error from a callback redirect (e.g. an expired verification link). */
+  initialError?: string;
+  /** Show a "resend verification email" action alongside initialError. */
+  offerResend?: boolean;
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('signin');
   const [notice, setNotice] = useState<string | null>(null);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(initialError ?? null);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   // Superset type: fullName is only required (and only shown) in signup mode.
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } =
@@ -51,6 +62,16 @@ export function AuthForm({ next = '/' }: { next?: string }) {
     if (!parsed.success) { setServerError('Enter your email first.'); return; }
     const res = await sendMagicLink({ email });
     setNotice(res.ok ? 'Magic link sent — check your email.' : 'Could not send the link.');
+  };
+
+  const resend = async () => {
+    const email = getValues('email');
+    const parsed = credentialsSchema.pick({ email: true }).safeParse({ email });
+    if (!parsed.success) { setServerError('Enter your email above, then tap resend.'); return; }
+    setResendState('sending');
+    await resendVerificationEmail({ email });
+    setResendState('sent');
+    setNotice('If that account needs verifying, a new link is on its way.');
   };
 
   return (
@@ -94,6 +115,12 @@ export function AuthForm({ next = '/' }: { next?: string }) {
         </div>
 
         {serverError && <p className="text-sm text-destructive" role="alert">{serverError}</p>}
+        {offerResend && resendState !== 'sent' && (
+          <button type="button" onClick={resend} disabled={resendState === 'sending'}
+            className="text-xs text-muted-foreground hover:underline">
+            {resendState === 'sending' ? 'Sending…' : 'Resend verification email'}
+          </button>
+        )}
         {notice && <p className="text-sm text-brand-green" role="status">{notice}</p>}
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
