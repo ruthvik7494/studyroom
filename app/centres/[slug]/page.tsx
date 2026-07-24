@@ -160,40 +160,53 @@ export default async function CentreDetailPage({ params }: PageProps) {
           </div>
         )}
 
-        <header className="border-b pb-6">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="font-display text-3xl font-bold tracking-tight">{centre.name}</h1>
-            {centre.is_verified && <Badge variant="secondary">✓ Verified</Badge>}
-            {centre.women_safe_verified && <Badge variant="safe">🛡 Women-safe</Badge>}
-          </div>
+        <header className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{centre.name}</h1>
 
-          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><span aria-hidden>📍</span>{centre.area}</span>
-            <span aria-hidden className="text-muted-foreground/40">·</span>
-            <span className="inline-flex items-center gap-1 font-semibold text-foreground">
-              <span aria-hidden className="text-brand-gold2">★</span>{centre.rating.toFixed(1)}
-            </span>
-            <span>({centre.reviews_count} review{centre.reviews_count === 1 ? '' : 's'})</span>
-          </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-gold2/10 px-3 py-1 text-sm font-bold text-brand-gold2">
+                  <span aria-hidden>★</span>{centre.rating.toFixed(1)}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {centre.reviews_count} review{centre.reviews_count === 1 ? '' : 's'}
+                </span>
+                <span aria-hidden className="text-muted-foreground/30">•</span>
+                <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                  <span aria-hidden>📍</span>{centre.area}
+                </span>
+              </div>
 
-          {centre.address && <p className="mt-1.5 text-sm text-foreground/70">{centre.address}</p>}
+              {centre.address && <p className="mt-2 text-sm text-foreground/60">{centre.address}</p>}
 
-          {centre.occupancy && (() => {
-            const status = STATUS_STYLE[centre.occupancy.status] ?? STATUS_STYLE.unknown!;
-            return (
-              <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green">
-                <span aria-hidden className={cn('h-2 w-2 rounded-full', status.dot)} />
-                {centre.occupancy.seatsFree} seats free
-              </p>
-            );
-          })()}
-
-          {isPublic && viewer && (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <SaveButton centreId={centre.id} initialSaved={saved} />
-              <CheckInButton centreId={centre.id} inHere={inHere} busyElsewhere={busyElsewhere} />
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {centre.is_verified && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">✓ Verified</span>
+                )}
+                {centre.women_safe_verified && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-plum/10 px-3 py-1 text-xs font-semibold text-brand-plum">🛡 Women-safe</span>
+                )}
+                {centre.occupancy && (() => {
+                  const status = STATUS_STYLE[centre.occupancy.status] ?? STATUS_STYLE.unknown!;
+                  return (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-green/10 px-3 py-1 text-xs font-semibold text-brand-green">
+                      <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
+                      {centre.occupancy.seatsFree} seats free
+                    </span>
+                  );
+                })()}
+              </div>
             </div>
-          )}
+
+            {/* Save + Check-in — kept, and given more room/prominence on the right */}
+            {isPublic && viewer && (
+              <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-stretch">
+                <SaveButton centreId={centre.id} initialSaved={saved} />
+                <CheckInButton centreId={centre.id} inHere={inHere} busyElsewhere={busyElsewhere} />
+              </div>
+            )}
+          </div>
         </header>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
