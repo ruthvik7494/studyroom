@@ -40,17 +40,28 @@ export const nearbySearchSchema = z.object({
 export type NearbySearch = z.infer<typeof nearbySearchSchema>;
 
 /**
+ * A <form> always submits every field, so a blank number input arrives as the
+ * empty string, not a missing key. z.coerce.number() turns '' into 0 (JS's
+ * `Number('')` is 0, not NaN) — which then failed `maxPrice`'s `.positive()`
+ * check and threw, crashing the whole page any time min/max were left blank
+ * (e.g. searching by name alone). Stripping '' to undefined first makes a
+ * blank field genuinely optional again.
+ */
+const optionalPositiveNumber = (schema: z.ZodNumber) =>
+  z.preprocess((v) => (v === '' || v === undefined ? undefined : v), schema.optional());
+
+/**
  * Numbered-pagination discovery params (distinct from the keyset feed above,
  * which still powers infinite-scroll elsewhere — this backs the /centres page
  * redesign: page numbers, name/address search, price range, price sort).
  */
 export const centrePaginatedSearchSchema = z.object({
   q: z.string().trim().max(80).optional(),
-  minPrice: z.coerce.number().nonnegative().max(1_000_000).optional(),
-  maxPrice: z.coerce.number().positive().max(1_000_000).optional(),
+  minPrice: optionalPositiveNumber(z.coerce.number().nonnegative().max(1_000_000)),
+  maxPrice: optionalPositiveNumber(z.coerce.number().positive().max(1_000_000)),
   sort: z.enum(['rating', 'price_asc', 'price_desc']).default('rating'),
   view: z.enum(['grid', 'list']).default('grid'),
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.preprocess((v) => (v === '' || v === undefined ? 1 : v), z.coerce.number().int().min(1).default(1)),
 });
 export type CentrePaginatedSearch = z.infer<typeof centrePaginatedSearchSchema>;
 
