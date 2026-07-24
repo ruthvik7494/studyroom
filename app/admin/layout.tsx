@@ -9,6 +9,7 @@ export const metadata: Metadata = { title: 'Admin', ...noindex };
 const NAV = [
   { href: '/admin', label: 'Overview' },
   { href: '/admin/centres/new', label: 'Create Centre' },
+  { href: '/admin/centres/all', label: 'All Centres' },
   { href: '/admin/users', label: 'Users' },
   { href: '/admin/bookings', label: 'Bookings' },
   { href: '/admin/centres', label: 'Approvals' },

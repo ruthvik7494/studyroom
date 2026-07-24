@@ -94,3 +94,45 @@ export async function getPendingClaims(db: DB): Promise<PendingClaim[]> {
   if (error) throw error;
   return (data ?? []) as unknown as PendingClaim[];
 }
+
+export interface AdminCentreListItem {
+  id: string; name: string; slug: string; area: string | null; address: string | null;
+  status: Database['public']['Enums']['listing_status']; created_at: string;
+  owner: { full_name: string | null } | null;
+}
+
+/** Every centre regardless of status — the "All Centres" admin view. */
+export async function getAllCentres(db: DB): Promise<AdminCentreListItem[]> {
+  const { data, error } = await db
+    .from('centres')
+    .select('id, name, slug, area, address, status, created_at, owner:owner_id(full_name)')
+    .order('created_at', { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  return (data ?? []) as unknown as AdminCentreListItem[];
+}
+
+export interface AdminCentreEditDetail {
+  id: string; name: string; address: string | null; description: string | null;
+  cover_url: string | null;
+  gallery: { id: string; storage_path: string; is_cover: boolean }[];
+}
+
+/** Single centre for the admin edit page — any status, any owner. */
+export async function getCentreForAdminEdit(db: DB, centreId: string): Promise<AdminCentreEditDetail | null> {
+  const { data: centre, error } = await db
+    .from('centres')
+    .select('id, name, address, description, cover_url')
+    .eq('id', centreId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!centre) return null;
+
+  const { data: images } = await db
+    .from('listing_images')
+    .select('id, storage_path, is_cover')
+    .eq('centre_id', centreId)
+    .order('sort_order', { ascending: true });
+
+  return { ...centre, gallery: images ?? [] };
+}

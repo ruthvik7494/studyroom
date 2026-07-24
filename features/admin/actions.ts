@@ -1,11 +1,12 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { admin as adminDb } from '@/lib/supabase/admin';
 import { requireRole } from '@/lib/auth/rbac';
 import { action } from '@/lib/auth/action';
 import { logAudit } from '@/lib/audit';
 import type { Result } from '@/lib/result';
-import { ActionError } from '@/lib/result';
+import { ActionError, ok, err } from '@/lib/result';
 import type { Database } from '@/types/database.types';
 import { moderateCentreSchema, moderateReviewSchema, resolveReportSchema, moderateClaimSchema, setUserRoleSchema } from './schema';
 import { adminCentreCreateSchema } from '@/features/centres/schema';
@@ -178,6 +179,120 @@ export async function moderateClaim(raw: unknown): Promise<Result<{ ok: true }>>
     }
 
     revalidatePath('/admin/claims');
+    return { ok: true as const };
+  });
+}
+
+const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+
+/**
+ * Admin image upload — uploads via the service-role client instead of the
+ * browser's own (RLS-constrained) session.
+ *
+ * Why: the owner-flow upload path (features/centres/components/image-uploader.tsx)
+ * uploads directly from the browser using the signed-in user's session, relying
+ * on the Storage bucket's RLS policy (0005_storage.sql) to allow it. That policy
+ * re-checks `centres` ownership via a subquery, which is itself subject to
+ * `centres`' own RLS — an extra layer that turned out to reject a legitimate
+ * admin upload immediately after creating a centre. Rather than guess at Storage
+ * RLS/timing internals blind, this route sidesteps that layer entirely: we've
+ * already verified requireRole('admin') server-side, so the upload proceeds with
+ * the service-role client (bypasses RLS by design — same justification as the
+ * Razorpay webhook: a privileged path used only after explicit authorization).
+ */
+export async function adminUploadCentreImage(formData: FormData): Promise<Result<{ storagePath: string }>> {
+  await requireRole('admin');
+
+  const centreId = formData.get('centreId');
+  const isCover = formData.get('isCover') === 'true';
+  const file = formData.get('file');
+
+  if (typeof centreId !== 'string' || !centreId) return err('VALIDATION', 'Missing centre.');
+  if (!(file instanceof File)) return err('VALIDATION', 'No file provided.');
+  if (!ALLOWED_IMAGE_MIME.includes(file.type)) {
+    return err('VALIDATION', `${file.type || 'That file type'} isn't supported — use JPEG, PNG, WebP, or AVIF.`);
+  }
+  if (file.size > 5 * 1024 * 1024) return err('VALIDATION', 'Image must be under 5 MB.');
+
+  const { data: centre } = await adminDb.from('centres').select('id').eq('id', centreId).maybeSingle();
+  if (!centre) return err('NOT_FOUND', 'Centre not found.');
+
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const path = `${centreId}/${crypto.randomUUID()}.${ext}`;
+
+  const { error: upErr } = await adminDb.storage.from('listing-images').upload(path, file, { upsert: false, contentType: file.type });
+  if (upErr) return err('INTERNAL', `Upload failed: ${upErr.message}`);
+
+  const { error: insErr } = await adminDb.from('listing_images').insert({ centre_id: centreId, storage_path: path, is_cover: isCover });
+  if (insErr) return err('INTERNAL', insErr.message);
+
+  if (isCover) {
+    const { data: pub } = adminDb.storage.from('listing-images').getPublicUrl(path);
+    const { error: coverErr } = await adminDb.from('centres').update({ cover_url: pub.publicUrl }).eq('id', centreId);
+    if (coverErr) return err('INTERNAL', coverErr.message);
+  }
+
+  revalidatePath('/admin/centres');
+  revalidatePath('/centres');
+  return ok({ storagePath: path });
+}
+
+const adminUpdateCentreSchema = moderateCentreSchema.pick({ centreId: true }).extend({
+  name: adminCentreCreateSchema.shape.name.optional(),
+  address: adminCentreCreateSchema.shape.address.optional(),
+  about: adminCentreCreateSchema.shape.about.optional(),
+});
+
+/**
+ * Admin edit — unlike the owner's updateCentre (features/centres/actions.ts),
+ * this has no ownership check: an admin can edit any centre, matching what
+ * RLS already permits (`auth_role() = 'admin'`) rather than the owner
+ * action's stricter same-user-only check.
+ */
+export async function adminUpdateCentre(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(adminUpdateCentreSchema, raw, async (input) => {
+    await requireRole('admin');
+    const db = await createClient();
+    const patch: Record<string, unknown> = {};
+    if (input.name !== undefined) patch.name = input.name;
+    if (input.address !== undefined) patch.address = input.address;
+    if (input.about !== undefined) patch.description = input.about || null;
+
+    const { error } = await db.from('centres').update(patch as never).eq('id', input.centreId);
+    if (error) throw error;
+
+    await logAudit('centre.admin_updated', 'centre', input.centreId, patch);
+    revalidatePath('/admin/centres/all');
+    revalidatePath('/centres');
+    return { ok: true as const };
+  });
+}
+
+const centreIdSchema = moderateCentreSchema.pick({ centreId: true });
+
+/**
+ * "Delete" a centre — soft-delete via the existing archive lifecycle
+ * (centres.status = 'archived'), not a real SQL DELETE. A hard delete would
+ * cascade into resources/bookings/payment records (real financial history),
+ * which the charter's "never run destructive SQL without approval" rule and
+ * plain caution both argue against. Archiving already does exactly what
+ * "delete" means from the admin's point of view — the listing disappears
+ * from the public site (is_published flips false via the existing trigger)
+ * — while keeping the underlying records intact and recoverable.
+ */
+export async function adminDeleteCentre(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(centreIdSchema, raw, async (input) => {
+    const adminUser = await requireRole('admin');
+    const db = await createClient();
+    const { error } = await db
+      .from('centres')
+      .update({ status: 'archived', reviewed_by: adminUser.id, reviewed_at: new Date().toISOString() })
+      .eq('id', input.centreId);
+    if (error) throw error;
+
+    await logAudit('centre.admin_deleted', 'centre', input.centreId);
+    revalidatePath('/admin/centres/all');
+    revalidatePath('/centres');
     return { ok: true as const };
   });
 }

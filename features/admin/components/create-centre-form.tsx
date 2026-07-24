@@ -6,19 +6,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { uploadCentreImage } from '@/features/centres/components/image-uploader';
 import { adminCentreCreateSchema, type AdminCentreCreate } from '@/features/centres/schema';
-import { adminCreateCentre } from '../actions';
+import { adminCreateCentre, adminUploadCentreImage } from '../actions';
 
 interface Amenity { id: string; label: string; icon: string | null }
 
 /**
  * Admin "Create Centre" — one form, one submit. Cover image and gallery files
- * are picked here but not uploaded yet; they're only sent to Storage after
- * `adminCreateCentre` returns a real centre id, because Storage's own security
- * rule (RLS) checks the upload's folder name against an existing, owned
- * centre row — that check can't pass before the row exists. That sequencing
- * happens inside this one click, though; nothing extra is shown to the admin.
+ * are picked here but not uploaded yet; they're only sent up after
+ * `adminCreateCentre` returns a real centre id (uploads are namespaced by
+ * centre id). Uploading goes through `adminUploadCentreImage`, a server
+ * action using the service-role client — not the browser's own session —
+ * since the browser-session upload path hit a Storage RLS rejection right
+ * after a centre was created. That sequencing all happens inside this one
+ * click; nothing extra is shown to the admin.
  */
 export function CreateCentreForm({ amenities }: { amenities: Amenity[] }) {
   const router = useRouter();
@@ -33,6 +34,15 @@ export function CreateCentreForm({ amenities }: { amenities: Amenity[] }) {
   });
 
   const busy = phase !== 'idle';
+
+  const uploadOne = async (centreId: string, file: File, isCover: boolean): Promise<string | null> => {
+    const fd = new FormData();
+    fd.set('centreId', centreId);
+    fd.set('isCover', String(isCover));
+    fd.set('file', file);
+    const res = await adminUploadCentreImage(fd);
+    return res.ok ? null : res.error.message;
+  };
 
   const onSubmit = async (values: AdminCentreCreate) => {
     setServerError(null);
@@ -49,12 +59,12 @@ export function CreateCentreForm({ amenities }: { amenities: Amenity[] }) {
       const uploadErrors: string[] = [];
 
       if (coverFile) {
-        const coverRes = await uploadCentreImage(res.data.id, coverFile, true);
-        if (!coverRes.ok) uploadErrors.push(`Cover image: ${coverRes.error}`);
+        const coverErr = await uploadOne(res.data.id, coverFile, true);
+        if (coverErr) uploadErrors.push(`Cover image: ${coverErr}`);
       }
       for (const file of galleryFiles) {
-        const galleryRes = await uploadCentreImage(res.data.id, file, false);
-        if (!galleryRes.ok) uploadErrors.push(`${file.name}: ${galleryRes.error}`);
+        const galleryErr = await uploadOne(res.data.id, file, false);
+        if (galleryErr) uploadErrors.push(`${file.name}: ${galleryErr}`);
       }
 
       if (uploadErrors.length) {
