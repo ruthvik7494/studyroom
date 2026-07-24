@@ -35,7 +35,7 @@ export default async function HomePage() {
         <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
           Compare study halls, reading rooms and coworking spaces near you — with live seat availability, verified reviews and transparent prices.
         </p>
-        <div className="mt-8 flex justify-center gap-3">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/centres" className="rounded-md bg-primary px-6 py-3 font-display font-bold text-primary-foreground">Browse centres</Link>
           <Link href="/login" className="rounded-md border px-6 py-3 font-display font-bold">List your centre</Link>
         </div>
@@ -82,18 +82,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      <footer className="border-t">
-        <div className="mx-auto max-w-6xl px-6 py-8 text-sm text-muted-foreground">
-          <div className="flex flex-wrap gap-4">
-            <Link href="/centres" className="hover:underline">Browse</Link>
-            <Link href="/categories/study-hall" className="hover:underline">Study halls</Link>
-            <Link href="/locations/hanamkonda" className="hover:underline">Hanamkonda</Link>
-            <Link href="/locations/kazipet" className="hover:underline">Kazipet</Link>
-          </div>
-          <p className="mt-4">© {new Date().getFullYear()} StudyNook · Warangal, Telangana</p>
-        </div>
-      </footer>
     </>
   );
 }

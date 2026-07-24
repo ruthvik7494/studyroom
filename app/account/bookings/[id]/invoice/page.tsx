@@ -40,7 +40,7 @@ export default async function InvoicePage({
 
       <article className="rounded-2xl border border-border bg-card p-8 print:border-0 print:p-0">
         {/* Header */}
-        <header className="flex items-start justify-between border-b border-border pb-6">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
           <div>
             <div className="flex items-center gap-2">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">S</span>
@@ -56,13 +56,13 @@ export default async function InvoicePage({
         </header>
 
         {/* Parties */}
-        <section className="grid grid-cols-2 gap-6 py-6 text-sm">
+        <section className="grid grid-cols-1 gap-6 py-6 text-sm sm:grid-cols-2">
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Billed to</p>
             <p className="font-medium">{invoice.customer.name ?? 'Customer'}</p>
             {invoice.customer.email && <p className="text-muted-foreground">{invoice.customer.email}</p>}
           </div>
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Study space</p>
             <p className="font-medium">{invoice.centre.name}</p>
             {invoice.centre.address && <p className="text-muted-foreground">{invoice.centre.address}</p>}

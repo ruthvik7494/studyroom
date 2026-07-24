@@ -70,7 +70,8 @@ export default async function OwnerCalendarPage({
         </div>
       </div>
 
-      <Card className="mt-6 p-3">
+      <Card className="mt-6 overflow-x-auto p-3">
+        <div className="min-w-[560px]">
         <div className="grid grid-cols-7 gap-px text-center text-xs font-semibold text-muted-foreground">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
             <div key={d} className="py-2">{d}</div>
@@ -101,6 +102,7 @@ export default async function OwnerCalendarPage({
               </div>
             );
           })}
+        </div>
         </div>
       </Card>
     </main>

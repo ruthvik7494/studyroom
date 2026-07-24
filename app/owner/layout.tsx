@@ -19,9 +19,9 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   return (
     <div>
       <div className="border-b bg-secondary/30">
-        <nav className="mx-auto flex max-w-3xl gap-1 px-6" aria-label="Owner sections">
+        <nav className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-6" aria-label="Owner sections">
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href as never} className="border-b-2 border-transparent px-3 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground">
+            <Link key={n.href} href={n.href as never} className="shrink-0 border-b-2 border-transparent px-3 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground">
               {n.label}
             </Link>
           ))}

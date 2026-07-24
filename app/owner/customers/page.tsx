@@ -28,11 +28,11 @@ export default async function OwnerCustomersPage() {
         <Card className="p-4"><p className="text-xs text-muted-foreground">Repeat customers</p><p className="font-display text-xl font-bold">{customers.filter((c) => c.bookings > 1).length}</p></Card>
       </div>
 
-      <Card className="mt-6 overflow-hidden">
+      <Card className="mt-6 overflow-x-auto">
         {customers.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted-foreground">No customers yet.</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th scope="col" className="px-4 py-3 font-semibold">Customer</th>

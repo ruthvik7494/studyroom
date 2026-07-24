@@ -102,7 +102,7 @@ export function EditCentreForm({ centre }: { centre: AdminCentreEditDetail }) {
       {centre.gallery.length > 0 && (
         <div>
           <p className="mb-1 text-sm font-medium">Current gallery ({centre.gallery.length})</p>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {centre.gallery.map((img) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img key={img.id} src={galleryUrl(img.storage_path)} alt="" className="h-16 w-full rounded object-cover" />
