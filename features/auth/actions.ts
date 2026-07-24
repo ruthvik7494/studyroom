@@ -38,7 +38,7 @@ export async function signInWithPassword(raw: unknown): Promise<Result<{ ok: tru
       await db.rpc('record_login_failure', { p_email: input.email });
       throw new ActionError('UNAUTHENTICATED', 'Wrong email or password.');
     }
-    await db.rpc('record_login_success', {});
+    await db.rpc('record_login_success');
     return { ok: true as const };
   });
 }
