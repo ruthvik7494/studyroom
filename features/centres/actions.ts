@@ -116,6 +116,29 @@ export async function registerListingImage(raw: unknown): Promise<Result<{ id: s
   });
 }
 
+const coverImageSchema = z.object({ centreId: z.string().uuid(), storagePath: z.string().min(1) });
+
+/**
+ * Set the centre's main/hero image. `centres.cover_url` — not
+ * `listing_images.is_cover` — is what the discovery cards and the detail
+ * page's hero actually render (see centre-card.tsx / centres/[slug]/page.tsx),
+ * so a cover upload has to land here to actually show up anywhere.
+ */
+export async function setCentreCoverImage(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(coverImageSchema, raw, async (input) => {
+    const user = await requireRole('owner'); // admin passes any role check (see requireRole)
+    const db = await createClient();
+    await assertOwnsCentre(db, input.centreId, user.id);
+
+    const { data: pub } = db.storage.from('listing-images').getPublicUrl(input.storagePath);
+    const { error } = await db.from('centres').update({ cover_url: pub.publicUrl }).eq('id', input.centreId);
+    if (error) throw error;
+    revalidatePath('/owner/centres');
+    revalidatePath('/centres');
+    return { ok: true as const };
+  });
+}
+
 /** Shared ownership guard: the caller must own the centre (or be admin via RLS). */
 async function assertOwnsCentre(db: Awaited<ReturnType<typeof createClient>>, centreId: string, userId: string) {
   const { data: owned } = await db.from('centres').select('owner_id').eq('id', centreId).maybeSingle();

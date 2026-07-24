@@ -76,6 +76,26 @@ export const centreAmenitiesSchema = z.object({
 });
 export type CentreAmenities = z.infer<typeof centreAmenitiesSchema>;
 
+/**
+ * Admin "Create Centre" quick-create form (Admin Dashboard milestone).
+ * Deliberately flatter than the owner flow (centreUpsertSchema): no map-picker
+ * lat/lng, no space type — this is a fast data-entry path for staff, not the
+ * owner onboarding wizard. Price becomes the centre's one default resource's
+ * monthly price (see adminCreateCentre); "seats" is that resource's capacity,
+ * defaulted to 10 since the form doesn't ask for it explicitly but booking
+ * capacity can't function with zero seats — admin can adjust the real count
+ * directly in Supabase until a seat-management UI exists.
+ */
+export const adminCentreCreateSchema = z.object({
+  name: z.string().trim().min(2, 'Name is too short').max(120),
+  address: z.string().trim().min(2, 'Address is too short').max(240),
+  price: z.coerce.number().int().positive('Enter a monthly price').max(1_000_000),
+  about: z.string().trim().max(2000).optional().or(z.literal('')),
+  seats: z.coerce.number().int().positive().max(1000).default(10),
+  amenityIds: z.array(z.string().uuid()).max(40).default([]),
+});
+export type AdminCentreCreate = z.infer<typeof adminCentreCreateSchema>;
+
 /** Verification document registration (after upload to Storage). */
 export const centreDocumentSchema = z.object({
   centreId: z.string().uuid(),

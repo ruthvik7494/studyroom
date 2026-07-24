@@ -8,6 +8,7 @@ export const metadata: Metadata = { title: 'Admin', ...noindex };
 
 const NAV = [
   { href: '/admin', label: 'Overview' },
+  { href: '/admin/centres/new', label: '+ Create Centre', primary: true },
   { href: '/admin/users', label: 'Users' },
   { href: '/admin/bookings', label: 'Bookings' },
   { href: '/admin/centres', label: 'Approvals' },
@@ -36,7 +37,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </header>
       <nav className="mb-6 flex flex-wrap gap-1" aria-label="Admin sections">
         {NAV.map((n) => (
-          <Link key={n.href} href={n.href as never} className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground">
+          <Link
+            key={n.href}
+            href={n.href as never}
+            className={
+              'primary' in n && n.primary
+                ? 'rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90'
+                : 'rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }
+          >
             {n.label}
           </Link>
         ))}
