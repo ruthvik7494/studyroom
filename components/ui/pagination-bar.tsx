@@ -24,15 +24,16 @@ export function PaginationBar({ page, totalPages, hrefForPage }: PaginationBarPr
 
   const linkClass = (active: boolean) =>
     cn(
-      'flex h-9 min-w-9 items-center justify-center rounded-md px-2 text-sm font-semibold',
-      active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+      'flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-sm font-semibold transition-colors',
+      active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
     );
-  const disabledClass = 'flex h-9 min-w-9 items-center justify-center rounded-md px-2 text-sm font-semibold text-muted-foreground/40 pointer-events-none';
+  const navClass = 'flex h-9 items-center justify-center rounded-full border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary';
+  const disabledClass = 'flex h-9 items-center justify-center rounded-full border px-3 text-sm font-semibold text-muted-foreground/40 pointer-events-none';
 
   return (
-    <nav className="mt-8 flex items-center justify-center gap-1" aria-label="Pagination">
+    <nav className="mt-6 flex items-center justify-center gap-1.5" aria-label="Pagination">
       {page > 1 ? (
-        <Link href={hrefForPage(page - 1)} className={linkClass(false)} aria-label="Previous page">‹ Prev</Link>
+        <Link href={hrefForPage(page - 1)} className={navClass} aria-label="Previous page">‹ Prev</Link>
       ) : (
         <span className={disabledClass} aria-hidden>‹ Prev</span>
       )}
@@ -58,7 +59,7 @@ export function PaginationBar({ page, totalPages, hrefForPage }: PaginationBarPr
       )}
 
       {page < totalPages ? (
-        <Link href={hrefForPage(page + 1)} className={linkClass(false)} aria-label="Next page">Next ›</Link>
+        <Link href={hrefForPage(page + 1)} className={navClass} aria-label="Next page">Next ›</Link>
       ) : (
         <span className={disabledClass} aria-hidden>Next ›</span>
       )}
