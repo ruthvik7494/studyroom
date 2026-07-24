@@ -8,7 +8,7 @@ import { centreJsonLd, breadcrumbJsonLd, safeJsonLd } from '@/lib/seo';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatINR } from '@/lib/utils';
+import { formatINR, cn } from '@/lib/utils';
 import { EnquiryForm } from '@/features/enquiries/components/enquiry-form';
 import { ReviewForm } from '@/features/reviews/components/review-form';
 import { ReportReviewButton } from '@/features/reviews/components/report-review-button';
@@ -16,7 +16,7 @@ import { SaveButton } from '@/features/saved/components/save-button';
 import { CheckInButton } from '@/features/checkins/components/check-in-button';
 import { ClaimForm } from '@/features/claims/components/claim-form';
 import { ResultsMap } from '@/features/centres/components/results-map';
-import { CentreCard } from '@/features/centres/components/centre-card';
+import { CentreCard, STATUS_STYLE } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
 import { isSaved } from '@/features/saved/services/saved.service';
 import type { Json } from '@/types/database.types';
@@ -143,7 +143,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
       )}
 
       {/* Full-width header/cover image */}
-      <div className="relative h-[500px] w-full overflow-hidden bg-gradient-to-br from-secondary to-accent">
+      <div className="relative h-[375px] w-full overflow-hidden bg-gradient-to-br from-secondary to-accent">
         {centre.cover_url ? (
           <Image src={centre.cover_url} alt={`${centre.name} study space`} fill priority sizes="100vw" className="object-cover" />
         ) : (
@@ -160,27 +160,41 @@ export default async function CentreDetailPage({ params }: PageProps) {
           </div>
         )}
 
-        <header>
-          <h1 className="font-display text-2xl font-bold">{centre.name}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">📍 {centre.area} · <span className="text-brand-gold2">★</span> {centre.rating.toFixed(1)} ({centre.reviews_count})</p>
-          {centre.address && <p className="mt-1 text-sm text-foreground/80">{centre.address}</p>}
-          <div className="mt-2 flex flex-wrap gap-2">
+        <header className="border-b pb-6">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="font-display text-3xl font-bold tracking-tight">{centre.name}</h1>
             {centre.is_verified && <Badge variant="secondary">✓ Verified</Badge>}
             {centre.women_safe_verified && <Badge variant="safe">🛡 Women-safe</Badge>}
-            {centre.occupancy && (
-              <Badge variant={centre.occupancy.status === 'full' ? 'warning' : 'success'}>
-                {centre.occupancy.seatsFree} seats free
-              </Badge>
-            )}
           </div>
-        </header>
 
-        {isPublic && viewer && (
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <SaveButton centreId={centre.id} initialSaved={saved} />
-            <CheckInButton centreId={centre.id} inHere={inHere} busyElsewhere={busyElsewhere} />
-          </div>
-        )}
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><span aria-hidden>📍</span>{centre.area}</span>
+            <span aria-hidden className="text-muted-foreground/40">·</span>
+            <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+              <span aria-hidden className="text-brand-gold2">★</span>{centre.rating.toFixed(1)}
+            </span>
+            <span>({centre.reviews_count} review{centre.reviews_count === 1 ? '' : 's'})</span>
+          </p>
+
+          {centre.address && <p className="mt-1.5 text-sm text-foreground/70">{centre.address}</p>}
+
+          {centre.occupancy && (() => {
+            const status = STATUS_STYLE[centre.occupancy.status] ?? STATUS_STYLE.unknown!;
+            return (
+              <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green">
+                <span aria-hidden className={cn('h-2 w-2 rounded-full', status.dot)} />
+                {centre.occupancy.seatsFree} seats free
+              </p>
+            );
+          })()}
+
+          {isPublic && viewer && (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <SaveButton centreId={centre.id} initialSaved={saved} />
+              <CheckInButton centreId={centre.id} inHere={inHere} busyElsewhere={busyElsewhere} />
+            </div>
+          )}
+        </header>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
           {/* Left column — main content */}

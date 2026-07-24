@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn, formatINR } from '@/lib/utils';
 import type { CentreListItem } from '../types';
 
-const STATUS_STYLE: Record<string, { dot: string; label: string }> = {
+export const STATUS_STYLE: Record<string, { dot: string; label: string }> = {
   open: { dot: 'bg-status-free', label: 'Seats free' },
   filling: { dot: 'bg-status-filling', label: 'Filling up' },
   full: { dot: 'bg-status-full', label: 'Full now' },
