@@ -51,7 +51,7 @@ export async function searchCentresPaginated(db: DB, params: PaginatedCentreSear
     // Same sanitisation as listCentres's search — strip PostgREST filter
     // control characters so the query can't break or widen the `or()` filter.
     const safe = params.q.replace(/[,()%*\\]/g, ' ').trim().slice(0, 80);
-    if (safe) query = query.or(`name.ilike.%${safe}%,area.ilike.%${safe}%,address.ilike.%${safe}%`);
+    if (safe) query = query.or(`name.ilike.*${safe}*,area.ilike.*${safe}*,address.ilike.*${safe}*`);
   }
 
   const { data, error } = await query;
@@ -125,7 +125,7 @@ export async function listCentres(db: DB, params: CentreSearch): Promise<CentreP
     // Sanitize: PostgREST `or()` uses commas/parens as syntax and % as wildcard.
     // Strip them from user input so a query can't break or widen the filter.
     const safe = params.q.replace(/[,()%*\\]/g, ' ').trim().slice(0, 80);
-    if (safe) query = query.or(`name.ilike.%${safe}%,area.ilike.%${safe}%`);
+    if (safe) query = query.or(`name.ilike.*${safe}*,area.ilike.*${safe}*`);
   }
 
   // keyset: rows strictly "after" the cursor in (rating desc, id desc) order

@@ -19,6 +19,11 @@ export const metadata: Metadata = {
 
 const PAGE_SIZE = 8;
 
+// Every render depends on searchParams (search/sort/view/page), and a client-side
+// Link navigation to a bare /centres was observed serving a stale cached shell
+// until a manual refresh. Forcing fully dynamic rendering rules that out.
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
