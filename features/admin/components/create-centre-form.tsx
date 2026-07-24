@@ -1,63 +1,75 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ImageUploader } from '@/features/centres/components/image-uploader';
+import { uploadCentreImage } from '@/features/centres/components/image-uploader';
 import { adminCentreCreateSchema, type AdminCentreCreate } from '@/features/centres/schema';
 import { adminCreateCentre } from '../actions';
 
 interface Amenity { id: string; label: string; icon: string | null }
 
 /**
- * Admin "Create Centre" — a single screen, but a two-part submit under the
- * hood: details save first (returns a centre id), then photo upload unlocks,
- * because Storage paths are namespaced by centre id and can't be written to
- * before the row exists. From the admin's point of view it's still one form,
- * one flow, top to bottom.
+ * Admin "Create Centre" — one form, one submit. Cover image and gallery files
+ * are picked here but not uploaded yet; they're only sent to Storage after
+ * `adminCreateCentre` returns a real centre id, because Storage's own security
+ * rule (RLS) checks the upload's folder name against an existing, owned
+ * centre row — that check can't pass before the row exists. That sequencing
+ * happens inside this one click, though; nothing extra is shown to the admin.
  */
 export function CreateCentreForm({ amenities }: { amenities: Amenity[] }) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [created, setCreated] = useState<{ id: string; slug: string } | null>(null);
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<AdminCentreCreate>({
+  const [phase, setPhase] = useState<'idle' | 'saving' | 'uploading'>('idle');
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  const { register, handleSubmit, formState: { errors } } = useForm<AdminCentreCreate>({
     resolver: zodResolver(adminCentreCreateSchema),
     defaultValues: { seats: 10, amenityIds: [] },
   });
 
+  const busy = phase !== 'idle';
+
   const onSubmit = async (values: AdminCentreCreate) => {
     setServerError(null);
-    const res = await adminCreateCentre(values);
-    if (!res.ok) { setServerError(res.error.message); return; }
-    setCreated(res.data);
-  };
 
-  const finish = () => {
+    setPhase('saving');
+    const res = await adminCreateCentre(values);
+    if (!res.ok) { setServerError(res.error.message); setPhase('idle'); return; }
+
+    const coverFile = coverInputRef.current?.files?.[0] ?? null;
+    const galleryFiles = Array.from(galleryInputRef.current?.files ?? []);
+
+    if (coverFile || galleryFiles.length) {
+      setPhase('uploading');
+      const uploadErrors: string[] = [];
+
+      if (coverFile) {
+        const coverRes = await uploadCentreImage(res.data.id, coverFile, true);
+        if (!coverRes.ok) uploadErrors.push(`Cover image: ${coverRes.error}`);
+      }
+      for (const file of galleryFiles) {
+        const galleryRes = await uploadCentreImage(res.data.id, file, false);
+        if (!galleryRes.ok) uploadErrors.push(`${file.name}: ${galleryRes.error}`);
+      }
+
+      if (uploadErrors.length) {
+        // The centre itself was already created successfully — don't lose that.
+        // Surface which photo(s) failed so the admin can retry just those from
+        // the centre's edit page, instead of re-doing the whole form.
+        setServerError(`Centre saved, but some photos didn't upload: ${uploadErrors.join('; ')}`);
+        setPhase('idle');
+        return;
+      }
+    }
+
     router.push('/admin/centres');
     router.refresh();
   };
-
-  if (created) {
-    return (
-      <div className="max-w-xl space-y-6">
-        <p className="rounded-md bg-secondary p-3 text-sm text-brand-green">
-          “{created.slug}” saved and live. Add photos below, or finish now and add them later.
-        </p>
-        <div>
-          <h2 className="mb-2 font-display text-sm font-bold">Main image</h2>
-          <ImageUploader centreId={created.id} isCover label="Upload the main/cover photo" />
-        </div>
-        <div>
-          <h2 className="mb-2 font-display text-sm font-bold">Gallery</h2>
-          <ImageUploader centreId={created.id} multiple label="Upload gallery photos (select several at once)" />
-        </div>
-        <Button type="button" onClick={finish}>Done</Button>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-xl space-y-4" noValidate>
@@ -109,10 +121,22 @@ export function CreateCentreForm({ amenities }: { amenities: Amenity[] }) {
         </div>
       </fieldset>
 
+      <div>
+        <Label htmlFor="cover">Header Image / Cover Image</Label>
+        <input id="cover" ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="mt-1 block text-sm" />
+        <p className="mt-1 text-xs text-muted-foreground">JPEG, PNG, WebP, or AVIF — under 5 MB.</p>
+      </div>
+
+      <div>
+        <Label htmlFor="gallery">Gallery</Label>
+        <input id="gallery" ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="mt-1 block text-sm" />
+        <p className="mt-1 text-xs text-muted-foreground">Select multiple photos at once. Same formats, under 5 MB each.</p>
+      </div>
+
       {serverError && <p className="text-sm text-destructive" role="alert">{serverError}</p>}
 
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Saving…' : 'Create Centre'}
+      <Button type="submit" disabled={busy}>
+        {phase === 'saving' ? 'Saving…' : phase === 'uploading' ? 'Uploading photos…' : 'Create Centre'}
       </Button>
     </form>
   );
