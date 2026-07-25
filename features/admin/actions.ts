@@ -230,6 +230,13 @@ export async function adminUploadCentreImage(formData: FormData): Promise<Result
   const { error: upErr } = await adminDb.storage.from('listing-images').upload(path, file, { upsert: false, contentType: file.type });
   if (upErr) return err('INTERNAL', `Upload failed: ${upErr.message}`);
 
+  if (isCover) {
+    // Only one row per centre may have is_cover = true (uq_listing_cover) —
+    // demote the existing cover to a regular gallery photo first.
+    const { error: demoteErr } = await adminDb.from('listing_images').update({ is_cover: false }).eq('centre_id', centreId).eq('is_cover', true);
+    if (demoteErr) return err('INTERNAL', demoteErr.message);
+  }
+
   const { error: insErr } = await adminDb.from('listing_images').insert({ centre_id: centreId, storage_path: path, is_cover: isCover });
   if (insErr) return err('INTERNAL', insErr.message);
 

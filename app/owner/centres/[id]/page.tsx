@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth/rbac';
 import { noindex } from '@/lib/seo';
 import { ListingForm } from '@/features/centres/components/listing-form';
 import { ImageUploader } from '@/features/centres/components/image-uploader';
+import { DeletePhotoButton } from '@/features/centres/components/delete-photo-button';
 
 export const metadata: Metadata = { title: 'Edit listing', ...noindex };
 
@@ -18,17 +19,19 @@ export default async function EditListingPage({ params }: PageProps) {
   const user = await requireRole('owner');
   const db = await createClient();
 
-  const [{ data: centre }, { data: resource }, { data: selectedAmenities }, { data: amenities }, { data: gallery }] = await Promise.all([
+  const [{ data: centre }, { data: resource }, { data: selectedAmenities }, { data: amenities }, { data: images }] = await Promise.all([
     db.from('centres').select('id, owner_id, name, address, space_type, lat, lng, description, women_safe_verified, cover_url').eq('id', id).maybeSingle(),
     db.from('resources').select('unit_count, pricing').eq('centre_id', id).limit(1).maybeSingle(),
     db.from('centre_amenities').select('amenity_id').eq('centre_id', id),
     db.from('amenities').select('id, label, icon').order('sort_order'),
-    db.from('listing_images').select('id, storage_path').eq('centre_id', id).order('sort_order', { ascending: true }),
+    db.from('listing_images').select('id, storage_path, is_cover').eq('centre_id', id).order('sort_order', { ascending: true }),
   ]);
 
   if (!centre || centre.owner_id !== user.id) notFound(); // owner-scoped
 
   const pricing = (resource?.pricing ?? {}) as Record<string, number>;
+  const coverImage = images?.find((img) => img.is_cover);
+  const gallery = (images ?? []).filter((img) => !img.is_cover);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-8">
@@ -55,20 +58,26 @@ export default async function EditListingPage({ params }: PageProps) {
       <section className="mt-8 max-w-xl space-y-6">
         <div>
           <h2 className="mb-2 font-display text-lg font-bold">Header Image / Cover Image</h2>
-          {centre.cover_url && (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={centre.cover_url} alt="" className="mb-3 h-40 w-full rounded-lg object-cover" />
+          {centre.cover_url && coverImage && (
+            <div className="relative mb-3 h-40 w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={centre.cover_url} alt="" className="h-full w-full rounded-lg object-cover" />
+              <DeletePhotoButton imageId={coverImage.id} />
+            </div>
           )}
           <ImageUploader centreId={centre.id} isCover label="Upload the main/cover photo" />
         </div>
 
         <div>
           <h2 className="mb-2 font-display text-lg font-bold">Gallery</h2>
-          {gallery && gallery.length > 0 && (
+          {gallery.length > 0 && (
             <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {gallery.map((img) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={img.id} src={galleryUrl(img.storage_path)} alt="" className="aspect-[4/3] w-full rounded-lg object-cover" />
+                <div key={img.id} className="relative aspect-[4/3]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={galleryUrl(img.storage_path)} alt="" className="h-full w-full rounded-lg object-cover" />
+                  <DeletePhotoButton imageId={img.id} />
+                </div>
               ))}
             </div>
           )}

@@ -240,6 +240,14 @@ export async function uploadCentreImage(formData: FormData): Promise<Result<{ st
   const { error: upErr } = await adminDb.storage.from('listing-images').upload(path, file, { upsert: false, contentType: file.type });
   if (upErr) return err('INTERNAL', `Upload failed: ${upErr.message}`);
 
+  if (isCover) {
+    // Only one row per centre may have is_cover = true (uq_listing_cover) —
+    // demote the existing cover to a regular gallery photo first, rather
+    // than leaving it to violate the constraint on insert below.
+    const { error: demoteErr } = await adminDb.from('listing_images').update({ is_cover: false }).eq('centre_id', centreId).eq('is_cover', true);
+    if (demoteErr) return err('INTERNAL', demoteErr.message);
+  }
+
   const { error: insErr } = await adminDb.from('listing_images').insert({ centre_id: centreId, storage_path: path, is_cover: isCover });
   if (insErr) return err('INTERNAL', insErr.message);
 
@@ -302,5 +310,43 @@ export async function registerDocument(raw: unknown): Promise<Result<{ id: strin
     if (error) throw error;
     revalidatePath('/owner/centres');
     return { id: data.id };
+  });
+}
+
+const deleteImageSchema = z.object({ imageId: z.string().uuid() });
+
+/**
+ * Delete a gallery/cover photo — removes both the Storage object and the
+ * listing_images row. Uses the service-role client for the same reason the
+ * upload path does: ownership is verified explicitly first, then the write
+ * proceeds without depending on the Storage RLS layer that's been unreliable
+ * elsewhere in this flow. If the deleted photo was the cover, cover_url is
+ * cleared too, so the detail page doesn't keep pointing at a removed file.
+ */
+export async function deleteListingImage(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(deleteImageSchema, raw, async (input) => {
+    const user = await requireRole('owner'); // admin passes any role check too
+
+    const { data: img } = await adminDb
+      .from('listing_images')
+      .select('id, centre_id, storage_path, is_cover, centres:centre_id(owner_id)')
+      .eq('id', input.imageId)
+      .maybeSingle();
+    if (!img) return { ok: true as const }; // already gone — nothing to do
+
+    const ownerId = (img.centres as unknown as { owner_id: string } | null)?.owner_id;
+    if (ownerId !== user.id && user.role !== 'admin') throw new ActionError('FORBIDDEN', 'That photo isn’t yours to remove.');
+
+    await adminDb.storage.from('listing-images').remove([img.storage_path]);
+    const { error } = await adminDb.from('listing_images').delete().eq('id', input.imageId);
+    if (error) throw error;
+
+    if (img.is_cover) {
+      await adminDb.from('centres').update({ cover_url: null }).eq('id', img.centre_id);
+    }
+
+    revalidatePath('/owner/centres');
+    revalidatePath('/centres');
+    return { ok: true as const };
   });
 }

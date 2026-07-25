@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { adminUpdateCentre, adminUploadCentreImage } from '../actions';
+import { deleteListingImage } from '@/features/centres/actions';
 import type { AdminCentreEditDetail } from '../services/admin.service';
 
 const galleryUrl = (path: string) =>
@@ -24,6 +25,14 @@ export function EditCentreForm({ centre }: { centre: AdminCentreEditDetail }) {
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const busy = phase !== 'idle';
+
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const removePhoto = async (imageId: string) => {
+    setDeleting(imageId);
+    await deleteListingImage({ imageId });
+    router.refresh();
+    setDeleting(null);
+  };
 
   const uploadOne = async (file: File, isCover: boolean): Promise<string | null> => {
     const fd = new FormData();
@@ -100,25 +109,52 @@ export function EditCentreForm({ centre }: { centre: AdminCentreEditDetail }) {
         </label>
       </div>
 
-      {centre.cover_url && (
-        <div>
-          <p className="mb-1 text-sm font-medium">Current cover</p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={centre.cover_url} alt="" className="h-32 w-full rounded-md object-cover" />
-        </div>
-      )}
+      {centre.cover_url && (() => {
+        const coverImg = centre.gallery.find((g) => g.is_cover);
+        return (
+          <div>
+            <p className="mb-1 text-sm font-medium">Current cover</p>
+            <div className="relative h-32 w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={centre.cover_url} alt="" className="h-full w-full rounded-md object-cover" />
+              {coverImg && (
+                <button
+                  type="button"
+                  onClick={() => removePhoto(coverImg.id)}
+                  disabled={deleting === coverImg.id}
+                  aria-label="Remove cover photo"
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs font-bold text-white hover:bg-black/80 disabled:opacity-50"
+                >
+                  {deleting === coverImg.id ? '…' : '✕'}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
       <div>
         <Label htmlFor="cover">Replace Header Image / Cover Image</Label>
         <input id="cover" ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="mt-1 block text-sm" />
       </div>
 
-      {centre.gallery.length > 0 && (
+      {centre.gallery.filter((img) => !img.is_cover).length > 0 && (
         <div>
-          <p className="mb-1 text-sm font-medium">Current gallery ({centre.gallery.length})</p>
+          <p className="mb-1 text-sm font-medium">Current gallery ({centre.gallery.filter((img) => !img.is_cover).length})</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {centre.gallery.map((img) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={img.id} src={galleryUrl(img.storage_path)} alt="" className="h-16 w-full rounded object-cover" />
+            {centre.gallery.filter((img) => !img.is_cover).map((img) => (
+              <div key={img.id} className="relative h-16 w-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={galleryUrl(img.storage_path)} alt="" className="h-full w-full rounded object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removePhoto(img.id)}
+                  disabled={deleting === img.id}
+                  aria-label="Remove photo"
+                  className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] font-bold text-white hover:bg-black/80 disabled:opacity-50"
+                >
+                  {deleting === img.id ? '…' : '✕'}
+                </button>
+              </div>
             ))}
           </div>
         </div>
