@@ -64,7 +64,9 @@ export default async function OwnerBookingsPage({
               <tr key={b.id} className="border-t">
                 <td className="px-3 py-2.5">{b.student?.full_name ?? 'Guest'}</td>
                 <td className="px-3 py-2.5 font-semibold">{b.centre?.name ?? '—'}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{new Date(b.starts_at).toLocaleDateString()}</td>
+                <td className="px-3 py-2.5 text-muted-foreground">
+                  {new Date(b.starts_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
+                </td>
                 <td className="px-3 py-2.5">{formatINR(Number(b.amount))}</td>
                 <td className="px-3 py-2.5"><BookingStatusBadge status={b.status} /></td>
                 <td className="px-3 py-2.5"><PaymentStatusBadge status={b.payment} /></td>

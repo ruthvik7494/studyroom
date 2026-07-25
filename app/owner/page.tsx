@@ -32,7 +32,7 @@ function BookingList({ title, rows, empty }: { title: string; rows: Awaited<Retu
               <div>
                 <p className="text-sm font-semibold">{b.centre?.name ?? '—'}</p>
                 <p className="text-xs text-muted-foreground">
-                  {b.student?.full_name ?? 'Guest'} · {b.period} · {new Date(b.starts_at).toLocaleString()}
+                  {b.student?.full_name ?? 'Guest'} · {b.period} · {new Date(b.starts_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
                 </p>
               </div>
               <div className="flex items-center gap-2">

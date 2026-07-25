@@ -1372,6 +1372,7 @@ export type Database = {
           capacity: number
           hour: number
           is_available: boolean
+          is_past: boolean
           taken: number
         }[]
       }

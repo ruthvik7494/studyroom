@@ -10,10 +10,11 @@ interface ResourceOpt { id: string; label: string; tier: string | null; pricing:
 type Period = 'hour' | 'day' | 'month';
 const PERIOD_LABEL: Record<Period, string> = { hour: 'Hourly', day: 'Daily', month: 'Monthly' };
 
-type HourSlot = { hour: number; taken: number; capacity: number; is_available: boolean };
+type HourSlot = { hour: number; taken: number; capacity: number; is_available: boolean; is_past: boolean };
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
-const maxDateISO = () => new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10); // 30-day booking horizon
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const todayISO = () => new Date(Date.now() + IST_OFFSET_MS).toISOString().slice(0, 10);
+const maxDateISO = () => new Date(Date.now() + IST_OFFSET_MS + 30 * 86_400_000).toISOString().slice(0, 10); // 30-day booking horizon
 
 function formatHour(h: number): string {
   const period = h >= 12 ? 'PM' : 'AM';
@@ -128,6 +129,7 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
                   disabled={!s.is_available}
                   aria-pressed={hour === s.hour}
                   onClick={() => setHour(s.hour)}
+                  title={s.is_past ? 'Already passed' : !s.is_available ? 'Fully booked' : undefined}
                   className={cn(
                     'rounded-lg border px-3 py-2 text-sm font-semibold transition-colors',
                     !s.is_available && 'cursor-not-allowed border-transparent bg-secondary/60 text-muted-foreground/50 line-through',

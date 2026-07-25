@@ -11,21 +11,26 @@ import { getUserEmail } from '@/lib/email';
 /** Period → duration in ms, used for 'day'/'month' (hour bookings use the exact chosen slot). */
 const PERIOD_MS: Record<string, number> = { hour: 3_600_000, day: 86_400_000, month: 2_592_000_000 };
 
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+/** Today's date as seen in IST — plain toISOString() is UTC-based and can be
+ * a day behind near midnight IST (e.g. 1 AM IST is still the previous UTC day). */
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Date(Date.now() + IST_OFFSET_MS).toISOString().slice(0, 10);
 }
 
 /**
  * Resolve the requested slot into a concrete start time: the chosen date +
- * chosen hour, for every period. A "Daily" or "Monthly" booking still starts
- * at a specific time of day (e.g. 3 PM) — it isn't just "sometime that day" —
- * so the same hour picker and the same real availability check apply
- * uniformly across hour/day/month, not just to hourly bookings.
+ * chosen hour, for every period. Explicit '+05:30' (IST) offset — matching
+ * resource_hour_slots' fix — so "8 AM" always means 8 AM India time
+ * regardless of the server process's ambient timezone (Vercel runs UTC by
+ * default; a bare date-time string with no offset would otherwise be parsed
+ * as 8 AM UTC, i.e. 1:30 PM IST — a real bug found in testing).
  */
 function resolveSlotStart(date: string | undefined, hour: number | undefined): Date {
   const d = date ?? todayISO();
   const h = hour ?? new Date().getHours();
-  return new Date(`${d}T${String(h).padStart(2, '0')}:00:00`);
+  return new Date(`${d}T${String(h).padStart(2, '0')}:00:00+05:30`);
 }
 
 /**

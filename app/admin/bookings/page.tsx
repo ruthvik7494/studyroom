@@ -69,6 +69,7 @@ export default async function AdminBookingsPage({
               <th scope="col" className="px-3 py-2.5">Centre</th>
               <th scope="col" className="px-3 py-2.5">Student</th>
               <th scope="col" className="px-3 py-2.5">Period</th>
+              <th scope="col" className="px-3 py-2.5">Start</th>
               <th scope="col" className="px-3 py-2.5">Amount</th>
               <th scope="col" className="px-3 py-2.5">Status</th>
               <th scope="col" className="px-3 py-2.5">Payment</th>
@@ -78,13 +79,16 @@ export default async function AdminBookingsPage({
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-10 text-center text-muted-foreground">No bookings match these filters.</td></tr>
+              <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">No bookings match these filters.</td></tr>
             )}
             {rows.map((b) => (
               <tr key={b.id} className="border-t">
                 <td className="px-3 py-2.5 font-semibold">{b.centre?.name ?? '—'}</td>
                 <td className="px-3 py-2.5">{b.student?.full_name ?? 'Guest'}</td>
                 <td className="px-3 py-2.5 capitalize">{b.period}</td>
+                <td className="px-3 py-2.5 text-muted-foreground">
+                  {new Date(b.starts_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
+                </td>
                 <td className="px-3 py-2.5">{formatINR(Number(b.amount))}</td>
                 <td className="px-3 py-2.5"><BookingStatusBadge status={b.status} /></td>
                 <td className="px-3 py-2.5"><PaymentStatusBadge status={b.payment} /></td>
