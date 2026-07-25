@@ -19,6 +19,7 @@ import { ClaimForm } from '@/features/claims/components/claim-form';
 import { ResultsMap } from '@/features/centres/components/results-map';
 import { CentreCard, STATUS_STYLE } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
+import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
 import { isSaved } from '@/features/saved/services/saved.service';
 import type { Json } from '@/types/database.types';
 
@@ -69,26 +70,16 @@ const monthPrice = (pricing: Json): number | null => {
   return null;
 };
 
-/** "6:00 AM" from a Postgres `time` string like "06:00:00". */
-function formatTime(t: string): string {
-  const [hStr, mStr] = t.split(':');
-  const h = Number(hStr);
-  const m = Number(mStr ?? '0');
-  const period = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
-}
-
 export default async function CentreDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const centre = await loadCentre(slug);
   if (!centre) notFound();
 
   const db = await createClient();
-  const [reviews, viewer, { data: hours }] = await Promise.all([
+  const [reviews, viewer, { data: weeklyHours }] = await Promise.all([
     getCentreReviews(db, centre.id),
     getSessionUser(),
-    db.from('booking_rules').select('opening_time, closing_time').eq('centre_id', centre.id).maybeSingle(),
+    db.from('centre_hours').select('day_of_week, is_open, opening_time, closing_time').eq('centre_id', centre.id),
   ]);
   const saved = viewer ? await isSaved(db, viewer.id, centre.id) : false;
 
@@ -106,25 +97,62 @@ export default async function CentreDetailPage({ params }: PageProps) {
   const isPublic = centre.status === 'approved';
   const canPreview = !isPublic && (viewer?.id === centre.owner_id || viewer?.role === 'admin');
 
-  // Open/closed, from booking_rules if the owner/admin has set one up — most
-  // centres don't have a row yet (there's no UI for it elsewhere in the app
-  // either), so this degrades to "Hours not listed" rather than guessing.
-  let openStatus: { open: boolean; text: string } | null = null;
-  if (hours) {
-    const is24h = hours.opening_time.startsWith('00:00') && (hours.closing_time.startsWith('23:5') || hours.closing_time.startsWith('24:00'));
-    if (is24h) {
-      openStatus = { open: true, text: 'Open 24h today' };
+  // Weekly opening hours — built from the real per-day schedule the owner
+  // set while creating/editing their listing (features/centres/schema.ts's
+  // `hours` field). A centre with no rows at all hasn't configured this yet.
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const nowIst = new Date(Date.now() + IST_OFFSET_MS);
+  const todayDow = nowIst.getUTCDay(); // shifted-by-offset Date read via UTC getters = IST wall-clock day
+  const nowMinutes = nowIst.getUTCHours() * 60 + nowIst.getUTCMinutes();
+
+  const fmtTime = (t: string) => {
+    const [hStr, mStr] = t.split(':');
+    const h = Number(hStr), m = Number(mStr ?? 0);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+  };
+
+  const DOW_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  // Monday-first display order, matching the reference design.
+  const DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+  const schedule = weeklyHours && weeklyHours.length > 0
+    ? DISPLAY_ORDER.map((dow) => {
+        const row = weeklyHours.find((h) => h.day_of_week === dow);
+        const isOpen = row?.is_open ?? false;
+        const is24h = !!row && row.opening_time === '00:00:00' && (row.closing_time === '23:59:00' || row.closing_time === '00:00:00');
+        return {
+          label: DOW_LABELS[dow]!,
+          isOpen,
+          is24h,
+          text: !isOpen ? 'Closed' : row?.opening_time && row?.closing_time ? `${fmtTime(row.opening_time)} – ${fmtTime(row.closing_time)}` : 'Closed',
+          isToday: dow === todayDow,
+        };
+      })
+    : null;
+
+  let todayOpen: boolean | null = null;
+  let todayText = '';
+  if (schedule) {
+    const today = schedule.find((d) => d.isToday)!;
+    todayText = today.is24h ? 'Open 24h' : today.text;
+    if (!today.isOpen) {
+      todayOpen = false;
+    } else if (today.is24h) {
+      todayOpen = true;
     } else {
-      const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      const [oh = 0, om = 0] = hours.opening_time.split(':').map(Number);
-      const [ch = 0, cm = 0] = hours.closing_time.split(':').map(Number);
-      const openMin = oh * 60 + om;
-      const closeMin = ch * 60 + cm;
-      const isOpen = closeMin > openMin ? nowMin >= openMin && nowMin < closeMin : nowMin >= openMin || nowMin < closeMin;
-      openStatus = { open: isOpen, text: `${formatTime(hours.opening_time)} – ${formatTime(hours.closing_time)}` };
+      const row = weeklyHours!.find((h) => h.day_of_week === todayDow)!;
+      const [oh = 0, om = 0] = row.opening_time!.split(':').map(Number);
+      const [ch = 0, cm = 0] = row.closing_time!.split(':').map(Number);
+      const openMin = oh * 60 + om, closeMin = ch * 60 + cm;
+      todayOpen = closeMin > openMin ? nowMinutes >= openMin && nowMinutes < closeMin : nowMinutes >= openMin || nowMinutes < closeMin;
     }
   }
+  const nowLabel = nowIst.toLocaleString('en-IN', {
+    timeZone: 'UTC', // nowIst is already shifted; format its UTC fields as wall-clock IST
+    day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+  });
 
   const spaceType = SPACE_TYPE_LABEL[centre.space_type] ?? SPACE_TYPE_LABEL.study_hall!;
 
@@ -326,17 +354,17 @@ export default async function CentreDetailPage({ params }: PageProps) {
 
           {/* Right column — sidebar */}
           <div className="space-y-6">
-            <DetailSectionCard
-              icon="🕐"
-              title={openStatus?.open ? 'Open' : openStatus ? 'Closed' : 'Hours'}
-              action={openStatus && (
-                <span className={openStatus.open ? 'font-semibold text-brand-green' : 'font-semibold text-destructive'}>
-                  {openStatus.open ? 'Open' : 'Closed'}
-                </span>
+            <Card className="p-4">
+              {schedule ? (
+                <OpeningHoursCard todayOpen={todayOpen} todayText={todayText} days={schedule} nowLabel={nowLabel} />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span aria-hidden className="text-lg">🕐</span>
+                  <span className="font-bold">Hours</span>
+                  <span className="ml-auto text-sm text-muted-foreground">Not listed</span>
+                </div>
               )}
-            >
-              <p className="text-sm text-muted-foreground">{openStatus?.text ?? 'Hours not listed'}</p>
-            </DetailSectionCard>
+            </Card>
 
             <DetailSectionCard icon="▦" title="Category">
               <div className="flex items-center gap-3">
