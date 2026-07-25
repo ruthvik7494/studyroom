@@ -1363,7 +1363,11 @@ export type Database = {
         }[]
       }
       resource_hour_slots: {
-        Args: { p_date: string; p_resource_id: string }
+        Args: {
+          p_date: string
+          p_period?: Database["public"]["Enums"]["booking_period"]
+          p_resource_id: string
+        }
         Returns: {
           capacity: number
           hour: number

@@ -16,47 +16,35 @@ function todayISO(): string {
 }
 
 /**
- * Resolve the requested slot into a concrete start time. Hourly bookings use
- * the exact chosen date+hour; day/month bookings start at the centre's
- * opening time (booking_rules) on the chosen date, defaulting to midnight if
- * the centre hasn't configured hours.
+ * Resolve the requested slot into a concrete start time: the chosen date +
+ * chosen hour, for every period. A "Daily" or "Monthly" booking still starts
+ * at a specific time of day (e.g. 3 PM) — it isn't just "sometime that day" —
+ * so the same hour picker and the same real availability check apply
+ * uniformly across hour/day/month, not just to hourly bookings.
  */
-async function resolveSlotStart(
-  db: Awaited<ReturnType<typeof createClient>>,
-  centreId: string,
-  period: 'hour' | 'day' | 'month',
-  date?: string,
-  hour?: number,
-): Promise<Date> {
+function resolveSlotStart(date: string | undefined, hour: number | undefined): Date {
   const d = date ?? todayISO();
-  if (period === 'hour') {
-    const h = hour ?? new Date().getHours();
-    return new Date(`${d}T${String(h).padStart(2, '0')}:00:00`);
-  }
-  const { data: rules } = await db.from('booking_rules').select('opening_time').eq('centre_id', centreId).maybeSingle();
-  const opening = rules?.opening_time ?? '00:00:00';
-  return new Date(`${d}T${opening}`);
+  const h = hour ?? new Date().getHours();
+  return new Date(`${d}T${String(h).padStart(2, '0')}:00:00`);
 }
 
 /**
  * Real-time slot availability — the same overlap check book_seat() enforces,
  * exposed read-only so the UI can show taken/free before the student commits
- * (movie-ticket style: grayed-out slots are genuinely unavailable, not a guess).
+ * (movie-ticket style: grayed-out slots are genuinely unavailable, not a
+ * guess). Period-aware: a day/month slot's "taken" count reflects bookings
+ * overlapping that slot's FULL duration starting at that hour, not just the
+ * hour itself — so "3 PM" being full for a monthly booking correctly means
+ * something occupies that seat for the next 30 days from 3 PM, not just 3–4 PM.
  */
 export async function getResourceAvailability(raw: unknown) {
   return action(availabilitySchema, raw, async (input) => {
     const db = await createClient();
-    if (input.period === 'hour') {
-      const { data, error } = await db.rpc('resource_hour_slots', { p_resource_id: input.resourceId, p_date: input.date });
-      if (error) throw error;
-      return { kind: 'hourly' as const, slots: data ?? [] };
-    }
-    const { data, error } = await db.rpc('resource_day_availability', {
+    const { data, error } = await db.rpc('resource_hour_slots', {
       p_resource_id: input.resourceId, p_date: input.date, p_period: input.period,
     });
     if (error) throw error;
-    const row = data?.[0];
-    return { kind: 'single' as const, taken: row?.taken ?? 0, capacity: row?.capacity ?? 0, isAvailable: row?.is_available ?? false };
+    return { slots: data ?? [] };
   });
 }
 
@@ -85,7 +73,7 @@ export async function createBooking(raw: unknown): Promise<Result<{ id: string }
     const amount = pricing[input.period];
     if (typeof amount !== 'number') throw new ActionError('VALIDATION', 'This option can’t be booked by that period.');
 
-    const startsAt = await resolveSlotStart(db, input.centreId, input.period, input.date, input.hour);
+    const startsAt = resolveSlotStart(input.date, input.hour);
     if (Number.isNaN(startsAt.getTime()) || startsAt.getTime() < Date.now() - 5 * 60_000) {
       throw new ActionError('VALIDATION', 'Pick a valid, upcoming date and time.');
     }

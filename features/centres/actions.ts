@@ -40,6 +40,7 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       website: input.website || null,
       google_place_id: input.googlePlaceId ?? null,
       description: input.about || null,
+      capacity: input.seats, // drives the "seats free" occupancy badge — was missing entirely, defaulted to 0
       is_published: false,
       // is_verified is deliberately NOT settable here — that's an admin
       // attestation, reviewed alongside the listing during approval, not

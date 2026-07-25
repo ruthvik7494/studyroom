@@ -11,10 +11,6 @@ type Period = 'hour' | 'day' | 'month';
 const PERIOD_LABEL: Record<Period, string> = { hour: 'Hourly', day: 'Daily', month: 'Monthly' };
 
 type HourSlot = { hour: number; taken: number; capacity: number; is_available: boolean };
-type Availability =
-  | { kind: 'hourly'; slots: HourSlot[] }
-  | { kind: 'single'; taken: number; capacity: number; isAvailable: boolean }
-  | null;
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const maxDateISO = () => new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10); // 30-day booking horizon
@@ -26,11 +22,13 @@ function formatHour(h: number): string {
 }
 
 /**
- * Real slot picker — a chosen date (and, for hourly bookings, a chosen hour)
- * is checked against actual overlapping bookings before you can confirm.
- * Taken slots are disabled, not just visually implied: the same check runs
- * again server-side in book_seat() at the moment of booking, so a slot that
- * fills between your load and your click is still caught correctly.
+ * Real slot picker for every period, not just hourly: a Daily or Monthly
+ * booking still starts at a specific time of day, and picking "3 PM" is
+ * checked against actual overlapping bookings before you can confirm — a
+ * taken 3 PM slot shows as unavailable and reduces the free count, the same
+ * way a specific hourly slot does. The same check runs again server-side in
+ * book_seat() at the moment of booking, so a slot that fills between your
+ * load and your click is still caught correctly.
  */
 export function BookingPanel({ centreId, slug, resources }: { centreId: string; slug: string; resources: ResourceOpt[] }) {
   const router = useRouter();
@@ -38,7 +36,7 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
   const [period, setPeriod] = useState<Period>('month');
   const [date, setDate] = useState(todayISO());
   const [hour, setHour] = useState<number | null>(null);
-  const [availability, setAvailability] = useState<Availability>(null);
+  const [slots, setSlots] = useState<HourSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -48,20 +46,17 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
   const amount = selected?.pricing[period];
 
   useEffect(() => {
-    if (!resourceId || !date) return;
+    if (!resourceId || !date || !period) return;
     setHour(null);
     setLoadingSlots(true);
     getResourceAvailability({ resourceId, period, date }).then((res) => {
-      setAvailability(res.ok ? res.data : null);
+      setSlots(res.ok ? res.data.slots : []);
       setLoadingSlots(false);
     });
   }, [resourceId, period, date]);
 
-  const canBook =
-    typeof amount === 'number' &&
-    (period !== 'hour'
-      ? availability?.kind === 'single' && availability.isAvailable
-      : hour !== null && availability?.kind === 'hourly' && availability.slots.find((s) => s.hour === hour)?.is_available);
+  const chosenSlot = hour !== null ? slots.find((s) => s.hour === hour) : undefined;
+  const canBook = typeof amount === 'number' && !!chosenSlot?.is_available;
 
   const book = async () => {
     setError(null); setBusy(true);
@@ -103,7 +98,9 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
       )}
 
       <div>
-        <label htmlFor="booking-date" className="mb-2 block text-sm font-medium">Date</label>
+        <label htmlFor="booking-date" className="mb-2 block text-sm font-medium">
+          {period === 'month' ? 'Start date' : 'Date'}
+        </label>
         <input
           id="booking-date"
           type="date"
@@ -115,14 +112,16 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
         />
       </div>
 
-      {period === 'hour' ? (
-        <div>
-          <p className="mb-2 text-sm font-medium">Time slot</p>
-          {loadingSlots ? (
-            <p className="text-sm text-muted-foreground">Checking availability…</p>
-          ) : availability?.kind === 'hourly' && availability.slots.length > 0 ? (
+      <div>
+        <p className="mb-2 text-sm font-medium">
+          {period === 'hour' ? 'Time slot' : 'Start time'}
+        </p>
+        {loadingSlots ? (
+          <p className="text-sm text-muted-foreground">Checking availability…</p>
+        ) : slots.length > 0 ? (
+          <>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {availability.slots.map((s) => (
+              {slots.map((s) => (
                 <button
                   key={s.hour}
                   type="button"
@@ -140,19 +139,17 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
                 </button>
               ))}
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No hourly slots configured for this date.</p>
-          )}
-        </div>
-      ) : (
-        availability?.kind === 'single' && !loadingSlots && (
-          <p className={`text-sm font-medium ${availability.isAvailable ? 'text-brand-green' : 'text-destructive'}`}>
-            {availability.isAvailable
-              ? `${availability.capacity - availability.taken} of ${availability.capacity} available for this date`
-              : 'Fully booked for this date — try another.'}
-          </p>
-        )
-      )}
+            {chosenSlot && (
+              <p className={`mt-2 text-sm font-medium ${chosenSlot.is_available ? 'text-brand-green' : 'text-destructive'}`}>
+                {chosenSlot.capacity - chosenSlot.taken} of {chosenSlot.capacity} seats free at {formatHour(chosenSlot.hour)}
+                {period !== 'hour' && ` (for the full ${period === 'day' ? 'day' : 'month'})`}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">No slots configured for this date.</p>
+        )}
+      </div>
 
       <Card className="flex items-center justify-between p-4">
         <div>
