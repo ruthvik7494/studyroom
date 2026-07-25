@@ -134,7 +134,7 @@ export async function getAllCentres(db: DB, params: AdminCentreSearch): Promise<
 
 export interface AdminCentreEditDetail {
   id: string; name: string; address: string | null; description: string | null;
-  cover_url: string | null;
+  cover_url: string | null; is_verified: boolean; women_safe_verified: boolean;
   gallery: { id: string; storage_path: string; is_cover: boolean }[];
 }
 
@@ -142,7 +142,7 @@ export interface AdminCentreEditDetail {
 export async function getCentreForAdminEdit(db: DB, centreId: string): Promise<AdminCentreEditDetail | null> {
   const { data: centre, error } = await db
     .from('centres')
-    .select('id, name, address, description, cover_url')
+    .select('id, name, address, description, cover_url, is_verified, women_safe_verified')
     .eq('id', centreId)
     .maybeSingle();
   if (error) throw error;

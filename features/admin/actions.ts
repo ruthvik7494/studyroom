@@ -1,4 +1,5 @@
 'use server';
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { admin as adminDb } from '@/lib/supabase/admin';
@@ -9,7 +10,7 @@ import type { Result } from '@/lib/result';
 import { ActionError, ok, err } from '@/lib/result';
 import type { Database } from '@/types/database.types';
 import { moderateCentreSchema, moderateReviewSchema, resolveReportSchema, moderateClaimSchema, setUserRoleSchema } from './schema';
-import { adminCentreCreateSchema } from '@/features/centres/schema';
+import { adminCentreCreateSchema, adminCentreCreateBaseSchema } from '@/features/centres/schema';
 import { notifyCentreDecision } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
 
@@ -45,10 +46,16 @@ export async function adminCreateCentre(raw: unknown): Promise<Result<{ id: stri
         description: input.about || null,
         capacity: input.seats, // drives occupancy/check-in display — separate from resources.unit_count below, kept in sync
         status: 'approved', // admin-created = admin-approved, no separate review step
+        is_verified: input.isVerified,
+        women_safe_verified: input.womenSafe,
       })
       .select('id, slug')
       .single();
     if (error) throw error;
+
+    const pricing: Record<string, number> = {};
+    if (input.priceDaily !== undefined) pricing.day = input.priceDaily;
+    if (input.priceMonthly !== undefined) pricing.month = input.priceMonthly;
 
     const { error: resourceErr } = await db.from('resources').insert({
       centre_id: centre.id,
@@ -56,7 +63,7 @@ export async function adminCreateCentre(raw: unknown): Promise<Result<{ id: stri
       tier: 'open',
       label: 'General seating',
       unit_count: input.seats,
-      pricing: { month: input.price },
+      pricing,
     });
     if (resourceErr) throw resourceErr;
 
@@ -67,7 +74,7 @@ export async function adminCreateCentre(raw: unknown): Promise<Result<{ id: stri
       if (amenityErr) throw amenityErr;
     }
 
-    await logAudit('centre.admin_created', 'centre', centre.id, { name: input.name, price: input.price });
+    await logAudit('centre.admin_created', 'centre', centre.id, { name: input.name, pricing });
     revalidatePath('/admin/centres');
     revalidatePath('/centres');
     return { id: centre.id, slug: centre.slug };
@@ -238,9 +245,11 @@ export async function adminUploadCentreImage(formData: FormData): Promise<Result
 }
 
 const adminUpdateCentreSchema = moderateCentreSchema.pick({ centreId: true }).extend({
-  name: adminCentreCreateSchema.shape.name.optional(),
-  address: adminCentreCreateSchema.shape.address.optional(),
-  about: adminCentreCreateSchema.shape.about.optional(),
+  name: adminCentreCreateBaseSchema.shape.name.optional(),
+  address: adminCentreCreateBaseSchema.shape.address.optional(),
+  about: adminCentreCreateBaseSchema.shape.about.optional(),
+  isVerified: z.coerce.boolean().optional(),
+  womenSafe: z.coerce.boolean().optional(),
 });
 
 /**
@@ -257,11 +266,13 @@ export async function adminUpdateCentre(raw: unknown): Promise<Result<{ ok: true
     if (input.name !== undefined) patch.name = input.name;
     if (input.address !== undefined) patch.address = input.address;
     if (input.about !== undefined) patch.description = input.about || null;
+    if (input.isVerified !== undefined) patch.is_verified = input.isVerified;
+    if (input.womenSafe !== undefined) patch.women_safe_verified = input.womenSafe;
 
     const { error } = await db.from('centres').update(patch as never).eq('id', input.centreId);
     if (error) throw error;
 
-    await logAudit('centre.admin_updated', 'centre', input.centreId, patch);
+    await logAudit('centre.admin_updated', 'centre', input.centreId, patch as Record<string, unknown>);
     revalidatePath('/admin/centres/all');
     revalidatePath('/centres');
     return { ok: true as const };

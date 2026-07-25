@@ -41,8 +41,16 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       google_place_id: input.googlePlaceId ?? null,
       description: input.about || null,
       is_published: false,
+      // is_verified is deliberately NOT settable here — that's an admin
+      // attestation, reviewed alongside the listing during approval, not
+      // something an owner can claim for themselves.
+      women_safe_verified: input.womenSafeClaim ?? false,
     }).select('id, slug').single();
     if (error) throw error;
+
+    const pricing: Record<string, number> = {};
+    if (input.priceDaily !== undefined) pricing.day = input.priceDaily;
+    if (input.priceMonthly !== undefined) pricing.month = input.priceMonthly;
 
     const { error: resourceErr } = await supabase.from('resources').insert({
       centre_id: centre.id,
@@ -50,7 +58,7 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       tier: 'open',
       label: 'General seating',
       unit_count: input.seats,
-      pricing: { month: input.price },
+      pricing,
     });
     if (resourceErr) throw resourceErr;
 

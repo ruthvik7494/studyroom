@@ -97,15 +97,33 @@ export function CreateCentreForm({ amenities }: { amenities: Amenity[] }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label htmlFor="price">Price (₹ / month)</Label>
-          <Input id="price" type="number" min={1} aria-invalid={!!errors.price} {...register('price')} />
-          {errors.price && <p className="mt-1 text-xs text-destructive">{errors.price.message}</p>}
+          <Label htmlFor="priceDaily">Price (₹ / day)</Label>
+          <Input id="priceDaily" type="number" min={1} aria-invalid={!!errors.priceDaily} {...register('priceDaily')} />
+          {errors.priceDaily && <p className="mt-1 text-xs text-destructive">{errors.priceDaily.message}</p>}
         </div>
         <div>
-          <Label htmlFor="seats">Total seats</Label>
-          <Input id="seats" type="number" min={1} aria-invalid={!!errors.seats} {...register('seats')} />
-          {errors.seats && <p className="mt-1 text-xs text-destructive">{errors.seats.message}</p>}
+          <Label htmlFor="priceMonthly">Price (₹ / month)</Label>
+          <Input id="priceMonthly" type="number" min={1} aria-invalid={!!errors.priceMonthly} {...register('priceMonthly')} />
+          {errors.priceMonthly && <p className="mt-1 text-xs text-destructive">{errors.priceMonthly.message}</p>}
         </div>
+      </div>
+      <p className="text-xs text-muted-foreground">Fill in at least one — daily, monthly, or both.</p>
+
+      <div>
+        <Label htmlFor="seats">Total seats</Label>
+        <Input id="seats" type="number" min={1} aria-invalid={!!errors.seats} {...register('seats')} />
+        {errors.seats && <p className="mt-1 text-xs text-destructive">{errors.seats.message}</p>}
+      </div>
+
+      <div className="flex flex-col gap-2 rounded-md border p-3">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" className="h-4 w-4 rounded border-input" {...register('isVerified')} />
+          ✓ Verified — StudyNook has confirmed this listing is legitimate
+        </label>
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" className="h-4 w-4 rounded border-input" {...register('womenSafe')} />
+          🛡 Women-safe — confirmed to have women-safe access/facilities
+        </label>
       </div>
 
       <div>

@@ -15,6 +15,8 @@ export function EditCentreForm({ centre }: { centre: AdminCentreEditDetail }) {
   const [name, setName] = useState(centre.name);
   const [address, setAddress] = useState(centre.address ?? '');
   const [about, setAbout] = useState(centre.description ?? '');
+  const [isVerified, setIsVerified] = useState(centre.is_verified);
+  const [womenSafe, setWomenSafe] = useState(centre.women_safe_verified);
   const [serverError, setServerError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [phase, setPhase] = useState<'idle' | 'saving' | 'uploading'>('idle');
@@ -37,7 +39,7 @@ export function EditCentreForm({ centre }: { centre: AdminCentreEditDetail }) {
     setServerError(null); setNotice(null);
 
     setPhase('saving');
-    const res = await adminUpdateCentre({ centreId: centre.id, name, address, about });
+    const res = await adminUpdateCentre({ centreId: centre.id, name, address, about, isVerified, womenSafe });
     if (!res.ok) { setServerError(res.error.message); setPhase('idle'); return; }
 
     const coverFile = coverInputRef.current?.files?.[0] ?? null;
@@ -85,6 +87,17 @@ export function EditCentreForm({ centre }: { centre: AdminCentreEditDetail }) {
           onChange={(e) => setAbout(e.target.value)}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         />
+      </div>
+
+      <div className="flex flex-col gap-2 rounded-md border p-3">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" className="h-4 w-4 rounded border-input" checked={isVerified} onChange={(e) => setIsVerified(e.target.checked)} />
+          ✓ Verified — StudyNook has confirmed this listing is legitimate
+        </label>
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" className="h-4 w-4 rounded border-input" checked={womenSafe} onChange={(e) => setWomenSafe(e.target.checked)} />
+          🛡 Women-safe — confirmed to have women-safe access/facilities
+        </label>
       </div>
 
       {centre.cover_url && (

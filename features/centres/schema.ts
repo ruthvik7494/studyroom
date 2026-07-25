@@ -81,10 +81,12 @@ export const centreUpsertSchema = z.object({
   googlePlaceId: z.string().trim().max(300).optional(),
   // Pricing/capacity/content — previously only on the admin quick-create form;
   // owners need the same fields since this is their actual listing.
-  price: z.coerce.number().int().positive('Enter a monthly price').max(1_000_000),
+  priceDaily: z.coerce.number().int().positive().max(1_000_000).optional(),
+  priceMonthly: z.coerce.number().int().positive().max(1_000_000).optional(),
   seats: z.coerce.number().int().positive().max(1000).default(10),
   about: z.string().trim().max(2000).optional().or(z.literal('')),
   amenityIds: z.array(z.string().uuid()).max(40).default([]),
+  womenSafeClaim: z.coerce.boolean().default(false),
 });
 export type CentreUpsert = z.infer<typeof centreUpsertSchema>;
 
@@ -118,14 +120,21 @@ export type CentreAmenities = z.infer<typeof centreAmenitiesSchema>;
  * capacity can't function with zero seats — admin can adjust the real count
  * directly in Supabase until a seat-management UI exists.
  */
-export const adminCentreCreateSchema = z.object({
+export const adminCentreCreateBaseSchema = z.object({
   name: z.string().trim().min(2, 'Name is too short').max(120),
   address: z.string().trim().min(2, 'Address is too short').max(240),
-  price: z.coerce.number().int().positive('Enter a monthly price').max(1_000_000),
+  priceDaily: z.coerce.number().int().positive().max(1_000_000).optional(),
+  priceMonthly: z.coerce.number().int().positive().max(1_000_000).optional(),
   about: z.string().trim().max(2000).optional().or(z.literal('')),
   seats: z.coerce.number().int().positive().max(1000).default(10),
   amenityIds: z.array(z.string().uuid()).max(40).default([]),
+  isVerified: z.coerce.boolean().default(false),
+  womenSafe: z.coerce.boolean().default(false),
 });
+export const adminCentreCreateSchema = adminCentreCreateBaseSchema.refine(
+  (v) => v.priceDaily !== undefined || v.priceMonthly !== undefined,
+  { message: 'Enter at least one price (daily or monthly)', path: ['priceMonthly'] },
+);
 export type AdminCentreCreate = z.infer<typeof adminCentreCreateSchema>;
 
 /** Verification document registration (after upload to Storage). */
