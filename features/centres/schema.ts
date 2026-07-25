@@ -66,6 +66,15 @@ export const centrePaginatedSearchSchema = z.object({
 export type CentrePaginatedSearch = z.infer<typeof centrePaginatedSearchSchema>;
 
 /** Owner create/update payload. */
+const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+/** One weekday's hours. day 0 = Sunday .. 6 = Saturday — matches JS Date.getDay() and Postgres EXTRACT(DOW). */
+const dayHoursSchema = z.object({
+  isOpen: z.coerce.boolean().default(true),
+  openingTime: z.string().regex(TIME_RE, 'Invalid time').default('06:00'),
+  closingTime: z.string().regex(TIME_RE, 'Invalid time').default('22:00'),
+});
+const DEFAULT_WEEKLY_HOURS = Array.from({ length: 7 }, () => ({ isOpen: true, openingTime: '06:00', closingTime: '22:00' }));
+
 export const centreUpsertSchema = z.object({
   name: z.string().trim().min(2, 'Name is too short').max(120),
   address: z.string().trim().min(2, 'Address is too short').max(240),
@@ -86,6 +95,8 @@ export const centreUpsertSchema = z.object({
   about: z.string().trim().max(2000).optional().or(z.literal('')),
   amenityIds: z.array(z.string().uuid()).max(40).default([]),
   womenSafeClaim: z.coerce.boolean().default(false),
+  /** Exactly 7 entries, index 0 = Sunday .. 6 = Saturday. */
+  hours: z.array(dayHoursSchema).length(7).default(DEFAULT_WEEKLY_HOURS),
 });
 export type CentreUpsert = z.infer<typeof centreUpsertSchema>;
 

@@ -19,12 +19,13 @@ export default async function EditListingPage({ params }: PageProps) {
   const user = await requireRole('owner');
   const db = await createClient();
 
-  const [{ data: centre }, { data: resource }, { data: selectedAmenities }, { data: amenities }, { data: images }] = await Promise.all([
+  const [{ data: centre }, { data: resource }, { data: selectedAmenities }, { data: amenities }, { data: images }, { data: hoursRows }] = await Promise.all([
     db.from('centres').select('id, owner_id, name, address, space_type, lat, lng, description, women_safe_verified, cover_url').eq('id', id).maybeSingle(),
     db.from('resources').select('unit_count, pricing').eq('centre_id', id).limit(1).maybeSingle(),
     db.from('centre_amenities').select('amenity_id').eq('centre_id', id),
     db.from('amenities').select('id, label, icon').order('sort_order'),
     db.from('listing_images').select('id, storage_path, is_cover').eq('centre_id', id).order('sort_order', { ascending: true }),
+    db.from('centre_hours').select('day_of_week, is_open, opening_time, closing_time').eq('centre_id', id),
   ]);
 
   if (!centre || centre.owner_id !== user.id) notFound(); // owner-scoped
@@ -32,6 +33,14 @@ export default async function EditListingPage({ params }: PageProps) {
   const pricing = (resource?.pricing ?? {}) as Record<string, number>;
   const coverImage = images?.find((img) => img.is_cover);
   const gallery = (images ?? []).filter((img) => !img.is_cover);
+  const hours = Array.from({ length: 7 }, (_, dayOfWeek) => {
+    const row = hoursRows?.find((h) => h.day_of_week === dayOfWeek);
+    return {
+      isOpen: row?.is_open ?? true,
+      openingTime: row?.opening_time?.slice(0, 5) ?? '06:00',
+      closingTime: row?.closing_time?.slice(0, 5) ?? '22:00',
+    };
+  });
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-8">
@@ -52,6 +61,7 @@ export default async function EditListingPage({ params }: PageProps) {
           seats: resource?.unit_count ?? 10,
           womenSafeClaim: centre.women_safe_verified ?? false,
           amenityIds: (selectedAmenities ?? []).map((a) => a.amenity_id),
+          hours,
         }}
       />
 

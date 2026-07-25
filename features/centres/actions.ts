@@ -69,6 +69,18 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       if (amenityErr) throw amenityErr;
     }
 
+    if (input.hours && input.hours.length) {
+      const hourRows = input.hours.map((d, dayOfWeek) => ({
+        centre_id: centre.id,
+        day_of_week: dayOfWeek,
+        is_open: d.isOpen,
+        opening_time: d.isOpen ? `${d.openingTime}:00` : null,
+        closing_time: d.isOpen ? `${d.closingTime}:00` : null,
+      }));
+      const { error: hoursErr } = await supabase.from('centre_hours').insert(hourRows);
+      if (hoursErr) throw hoursErr;
+    }
+
     revalidatePath('/centres');
     return { id: centre.id, slug: centre.slug };
   });
@@ -130,6 +142,20 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
         const { error: amenityErr } = await db.from('centre_amenities').insert(rows);
         if (amenityErr) throw amenityErr;
       }
+    }
+
+    // Weekly hours: full replace (7 rows, one per day of week).
+    if (fields.hours !== undefined) {
+      await db.from('centre_hours').delete().eq('centre_id', centreId);
+      const hourRows = fields.hours.map((d, dayOfWeek) => ({
+        centre_id: centreId,
+        day_of_week: dayOfWeek,
+        is_open: d.isOpen,
+        opening_time: d.isOpen ? `${d.openingTime}:00` : null,
+        closing_time: d.isOpen ? `${d.closingTime}:00` : null,
+      }));
+      const { error: hoursErr } = await db.from('centre_hours').insert(hourRows);
+      if (hoursErr) throw hoursErr;
     }
 
     revalidatePath('/owner/centres');

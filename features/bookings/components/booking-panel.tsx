@@ -38,6 +38,7 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
   const [date, setDate] = useState(todayISO());
   const [hour, setHour] = useState<number | null>(null);
   const [slots, setSlots] = useState<HourSlot[]>([]);
+  const [closed, setClosed] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -52,6 +53,7 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
     setLoadingSlots(true);
     getResourceAvailability({ resourceId, period, date }).then((res) => {
       setSlots(res.ok ? res.data.slots : []);
+      setClosed(res.ok ? res.data.closed : false);
       setLoadingSlots(false);
     });
   }, [resourceId, period, date]);
@@ -119,6 +121,10 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
         </p>
         {loadingSlots ? (
           <p className="text-sm text-muted-foreground">Checking availability…</p>
+        ) : closed ? (
+          <p className="text-sm font-medium text-destructive">
+            Closed on {new Date(`${date}T00:00:00+05:30`).toLocaleDateString('en-IN', { weekday: 'long', timeZone: 'Asia/Kolkata' })}s — pick another date.
+          </p>
         ) : slots.length > 0 ? (
           <>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">

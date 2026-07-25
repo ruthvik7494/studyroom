@@ -45,11 +45,19 @@ function resolveSlotStart(date: string | undefined, hour: number | undefined): D
 export async function getResourceAvailability(raw: unknown) {
   return action(availabilitySchema, raw, async (input) => {
     const db = await createClient();
+
+    const { data: resource } = await db.from('resources').select('centre_id').eq('id', input.resourceId).maybeSingle();
+    let closed = false;
+    if (resource) {
+      const { data: openToday } = await db.rpc('centre_is_open_on', { p_centre_id: resource.centre_id, p_date: input.date });
+      closed = openToday === false;
+    }
+
     const { data, error } = await db.rpc('resource_hour_slots', {
       p_resource_id: input.resourceId, p_date: input.date, p_period: input.period,
     });
     if (error) throw error;
-    return { slots: data ?? [] };
+    return { slots: data ?? [], closed };
   });
 }
 
@@ -102,6 +110,8 @@ export async function createBooking(raw: unknown): Promise<Result<{ id: string }
         throw new ActionError('CONFLICT', 'That slot just got booked by someone else. Please pick another.');
       if (error.message.includes('RESOURCE_NOT_FOUND'))
         throw new ActionError('NOT_FOUND', 'That option is no longer available.');
+      if (error.message.includes('CENTRE_CLOSED'))
+        throw new ActionError('VALIDATION', 'This centre is closed on that day. Please pick another date.');
       throw error;
     }
 

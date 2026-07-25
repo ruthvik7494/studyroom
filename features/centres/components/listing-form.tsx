@@ -11,6 +11,9 @@ import { createCentre, updateCentre, uploadCentreImage } from '../actions';
 
 interface Amenity { id: string; label: string; icon: string | null }
 
+/** index 0 = Sunday .. 6 = Saturday — matches centre_hours.day_of_week / JS Date.getDay(). */
+const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 type Props =
   | { mode: 'create'; centreId?: undefined; defaults?: undefined; amenities: Amenity[] }
   | { mode: 'edit'; centreId: string; defaults: Partial<CentreUpsert>; amenities: Amenity[] };
@@ -31,7 +34,7 @@ export function ListingForm(props: Props) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<CentreUpsert>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<CentreUpsert>({
     resolver: zodResolver(centreUpsertSchema),
     defaultValues: { spaceType: 'study_hall', seats: 10, amenityIds: [], ...props.defaults },
   });
@@ -159,6 +162,33 @@ export function ListingForm(props: Props) {
             </label>
           ))}
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-2 text-sm font-medium">Opening Hours</legend>
+        <div className="space-y-2 rounded-md border p-3">
+          {DAY_LABELS.map((label, i) => {
+            const isOpen = watch(`hours.${i}.isOpen`);
+            return (
+              <div key={label} className="flex flex-wrap items-center gap-2">
+                <label className="flex w-32 shrink-0 items-center gap-2 text-sm font-medium">
+                  <input type="checkbox" className="h-4 w-4 rounded border-input" {...register(`hours.${i}.isOpen`)} />
+                  {label}
+                </label>
+                {isOpen ? (
+                  <div className="flex items-center gap-2 text-sm">
+                    <input type="time" className="h-9 rounded-md border border-input bg-background px-2 text-sm" {...register(`hours.${i}.openingTime`)} />
+                    <span className="text-muted-foreground">to</span>
+                    <input type="time" className="h-9 rounded-md border border-input bg-background px-2 text-sm" {...register(`hours.${i}.closingTime`)} />
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Closed</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">Students can only book seats during these hours — a day marked closed has no bookable slots at all.</p>
       </fieldset>
 
       <div className="grid grid-cols-2 gap-3">
