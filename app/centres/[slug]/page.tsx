@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getCentreBySlug, getCentreReviews } from '@/features/centres/services/centres.service';
 import { getSessionUser } from '@/lib/auth/rbac';
@@ -220,7 +221,19 @@ export default async function CentreDetailPage({ params }: PageProps) {
               )}
             </DetailSectionCard>
 
-            <DetailSectionCard icon="🎫" title="Seats & pricing" headingId="pricing-heading">
+            <DetailSectionCard
+              icon="🎫"
+              title="Seats & pricing"
+              headingId="pricing-heading"
+              action={isPublic && centre.resources.length > 0 && (
+                <Link
+                  href={`/centres/${centre.slug}/book`}
+                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                >
+                  Book a seat
+                </Link>
+              )}
+            >
               {centre.resources.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Pricing details coming soon.</p>
               ) : (
