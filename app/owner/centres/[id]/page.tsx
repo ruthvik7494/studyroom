@@ -17,7 +17,7 @@ export default async function EditListingPage({ params }: PageProps) {
 
   const { data: centre } = await db
     .from('centres')
-    .select('id, owner_id, name, area, space_type, lat, lng, emoji')
+    .select('id, owner_id, name, area, space_type, lat, lng, emoji, description')
     .eq('id', id)
     .maybeSingle();
 
@@ -36,6 +36,7 @@ export default async function EditListingPage({ params }: PageProps) {
           lat: centre.lat ?? 0,
           lng: centre.lng ?? 0,
           emoji: centre.emoji,
+          about: centre.description ?? '',
         }}
       />
       <section className="mt-8">

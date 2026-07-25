@@ -79,6 +79,12 @@ export const centreUpsertSchema = z.object({
   website: httpUrl('Enter a valid website URL').optional().or(z.literal('')),
   // Google Places import: the Place ID captured from the picker
   googlePlaceId: z.string().trim().max(300).optional(),
+  // Pricing/capacity/content — previously only on the admin quick-create form;
+  // owners need the same fields since this is their actual listing.
+  price: z.coerce.number().int().positive('Enter a monthly price').max(1_000_000),
+  seats: z.coerce.number().int().positive().max(1000).default(10),
+  about: z.string().trim().max(2000).optional().or(z.literal('')),
+  amenityIds: z.array(z.string().uuid()).max(40).default([]),
 });
 export type CentreUpsert = z.infer<typeof centreUpsertSchema>;
 
