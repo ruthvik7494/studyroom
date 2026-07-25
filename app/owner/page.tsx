@@ -59,7 +59,7 @@ export default async function OwnerDashboardPage() {
   ]);
 
   return (
-    <div>
+    <main className="mx-auto max-w-3xl px-6 py-8">
       <h1 className="font-display text-xl font-bold">Dashboard</h1>
       <p className="mt-1 text-sm text-muted-foreground">Bookings, occupancy and revenue across your centres.</p>
 
@@ -78,6 +78,6 @@ export default async function OwnerDashboardPage() {
         <BookingList title="Today" rows={todayRows} empty="No bookings scheduled for today." />
         <BookingList title="Upcoming" rows={upcomingRows} empty="No upcoming bookings." />
       </div>
-    </div>
+    </main>
   );
 }
