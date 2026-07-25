@@ -10,16 +10,20 @@ export const metadata: Metadata = { title: 'Edit listing', ...noindex };
 
 interface PageProps { params: Promise<{ id: string }> }
 
+const galleryUrl = (path: string) =>
+  path.startsWith('http') ? path : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listing-images/${path}`;
+
 export default async function EditListingPage({ params }: PageProps) {
   const { id } = await params;
   const user = await requireRole('owner');
   const db = await createClient();
 
-  const [{ data: centre }, { data: resource }, { data: selectedAmenities }, { data: amenities }] = await Promise.all([
-    db.from('centres').select('id, owner_id, name, address, space_type, lat, lng, description, women_safe_verified').eq('id', id).maybeSingle(),
+  const [{ data: centre }, { data: resource }, { data: selectedAmenities }, { data: amenities }, { data: gallery }] = await Promise.all([
+    db.from('centres').select('id, owner_id, name, address, space_type, lat, lng, description, women_safe_verified, cover_url').eq('id', id).maybeSingle(),
     db.from('resources').select('unit_count, pricing').eq('centre_id', id).limit(1).maybeSingle(),
     db.from('centre_amenities').select('amenity_id').eq('centre_id', id),
     db.from('amenities').select('id, label, icon').order('sort_order'),
+    db.from('listing_images').select('id, storage_path').eq('centre_id', id).order('sort_order', { ascending: true }),
   ]);
 
   if (!centre || centre.owner_id !== user.id) notFound(); // owner-scoped
@@ -47,9 +51,29 @@ export default async function EditListingPage({ params }: PageProps) {
           amenityIds: (selectedAmenities ?? []).map((a) => a.amenity_id),
         }}
       />
-      <section className="mt-8">
-        <h2 className="mb-3 font-display text-lg font-bold">Photos</h2>
-        <ImageUploader centreId={centre.id} />
+
+      <section className="mt-8 max-w-xl space-y-6">
+        <div>
+          <h2 className="mb-2 font-display text-lg font-bold">Header Image / Cover Image</h2>
+          {centre.cover_url && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={centre.cover_url} alt="" className="mb-3 h-40 w-full rounded-lg object-cover" />
+          )}
+          <ImageUploader centreId={centre.id} isCover label="Upload the main/cover photo" />
+        </div>
+
+        <div>
+          <h2 className="mb-2 font-display text-lg font-bold">Gallery</h2>
+          {gallery && gallery.length > 0 && (
+            <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {gallery.map((img) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={img.id} src={galleryUrl(img.storage_path)} alt="" className="aspect-[4/3] w-full rounded-lg object-cover" />
+              ))}
+            </div>
+          )}
+          <ImageUploader centreId={centre.id} multiple label="Upload gallery photos (select several at once)" />
+        </div>
       </section>
     </main>
   );
