@@ -15,13 +15,16 @@ export default async function EditListingPage({ params }: PageProps) {
   const user = await requireRole('owner');
   const db = await createClient();
 
-  const { data: centre } = await db
-    .from('centres')
-    .select('id, owner_id, name, area, space_type, lat, lng, emoji, description')
-    .eq('id', id)
-    .maybeSingle();
+  const [{ data: centre }, { data: resource }, { data: selectedAmenities }, { data: amenities }] = await Promise.all([
+    db.from('centres').select('id, owner_id, name, address, space_type, lat, lng, description, women_safe_verified').eq('id', id).maybeSingle(),
+    db.from('resources').select('unit_count, pricing').eq('centre_id', id).limit(1).maybeSingle(),
+    db.from('centre_amenities').select('amenity_id').eq('centre_id', id),
+    db.from('amenities').select('id, label, icon').order('sort_order'),
+  ]);
 
   if (!centre || centre.owner_id !== user.id) notFound(); // owner-scoped
+
+  const pricing = (resource?.pricing ?? {}) as Record<string, number>;
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-8">
@@ -29,14 +32,19 @@ export default async function EditListingPage({ params }: PageProps) {
       <ListingForm
         mode="edit"
         centreId={centre.id}
+        amenities={amenities ?? []}
         defaults={{
           name: centre.name,
-          area: centre.area ?? '',
+          address: centre.address ?? '',
           spaceType: centre.space_type,
           lat: centre.lat ?? 0,
           lng: centre.lng ?? 0,
-          emoji: centre.emoji,
           about: centre.description ?? '',
+          priceDaily: pricing.day,
+          priceMonthly: pricing.month,
+          seats: resource?.unit_count ?? 10,
+          womenSafeClaim: centre.women_safe_verified ?? false,
+          amenityIds: (selectedAmenities ?? []).map((a) => a.amenity_id),
         }}
       />
       <section className="mt-8">

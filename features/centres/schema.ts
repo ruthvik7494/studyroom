@@ -68,8 +68,7 @@ export type CentrePaginatedSearch = z.infer<typeof centrePaginatedSearchSchema>;
 /** Owner create/update payload. */
 export const centreUpsertSchema = z.object({
   name: z.string().trim().min(2, 'Name is too short').max(120),
-  area: z.string().trim().min(2).max(80),
-  address: z.string().trim().max(240).optional(),
+  address: z.string().trim().min(2, 'Address is too short').max(240),
   spaceType: z.enum(['study_hall', 'reading_room', 'coworking', 'both']),
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),

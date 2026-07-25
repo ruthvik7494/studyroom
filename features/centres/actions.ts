@@ -30,8 +30,8 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       owner_id: user.id,
       name: input.name,
       slug,
-      area: input.area,
-      address: input.address ?? null,
+      area: input.address, // area still backs /locations/[slug] filtering — kept in sync with the single Address field
+      address: input.address,
       space_type: input.spaceType,
       lat: input.lat,
       lng: input.lng,
@@ -93,16 +93,47 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
 
     const patch: Record<string, unknown> = {};
     if (fields.name !== undefined) patch.name = fields.name;
-    if (fields.area !== undefined) patch.area = fields.area;
+    if (fields.address !== undefined) { patch.address = fields.address; patch.area = fields.address; }
     if (fields.spaceType !== undefined) patch.space_type = fields.spaceType;
     if (fields.lat !== undefined) patch.lat = fields.lat;
     if (fields.lng !== undefined) patch.lng = fields.lng;
-    if (fields.emoji !== undefined) patch.emoji = fields.emoji;
     if (fields.about !== undefined) patch.description = fields.about || null;
+    if (fields.womenSafeClaim !== undefined) patch.women_safe_verified = fields.womenSafeClaim;
 
-    const { error } = await db.from('centres').update(patch as never).eq('id', centreId);
-    if (error) throw error;
+    if (Object.keys(patch).length) {
+      const { error } = await db.from('centres').update(patch as never).eq('id', centreId);
+      if (error) throw error;
+    }
+
+    // Pricing/seats live on the centre's resource row, not on centres itself.
+    if (fields.priceDaily !== undefined || fields.priceMonthly !== undefined || fields.seats !== undefined) {
+      const { data: resource } = await db.from('resources').select('id, pricing').eq('centre_id', centreId).limit(1).maybeSingle();
+      if (resource) {
+        const resourcePatch: Record<string, unknown> = {};
+        if (fields.seats !== undefined) resourcePatch.unit_count = fields.seats;
+        if (fields.priceDaily !== undefined || fields.priceMonthly !== undefined) {
+          const pricing: Record<string, number> = {};
+          if (fields.priceDaily !== undefined) pricing.day = fields.priceDaily;
+          if (fields.priceMonthly !== undefined) pricing.month = fields.priceMonthly;
+          resourcePatch.pricing = pricing;
+        }
+        const { error: resourceErr } = await db.from('resources').update(resourcePatch as never).eq('id', resource.id);
+        if (resourceErr) throw resourceErr;
+      }
+    }
+
+    // Facilities: full replace, same pattern as setCentreAmenities.
+    if (fields.amenityIds !== undefined) {
+      await db.from('centre_amenities').delete().eq('centre_id', centreId);
+      if (fields.amenityIds.length) {
+        const rows = fields.amenityIds.map((amenity_id) => ({ centre_id: centreId, amenity_id }));
+        const { error: amenityErr } = await db.from('centre_amenities').insert(rows);
+        if (amenityErr) throw amenityErr;
+      }
+    }
+
     revalidatePath('/owner/centres');
+    revalidatePath('/centres');
     return { ok: true as const };
   });
 }
