@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getAllCentres } from '@/features/admin/services/admin.service';
 import { DeleteCentreButton } from '@/features/admin/components/delete-centre-button';
+import { RestoreCentreButton } from '@/features/admin/components/restore-centre-button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -47,19 +48,27 @@ function SearchIcon() {
   );
 }
 
-interface PageProps { searchParams: Promise<{ q?: string; page?: string }> }
+interface PageProps { searchParams: Promise<{ q?: string; page?: string; archived?: string }> }
 
 export default async function AllCentresPage({ searchParams }: PageProps) {
-  const { q, page: pageRaw } = await searchParams;
+  const { q, page: pageRaw, archived } = await searchParams;
   const page = Math.max(1, Number(pageRaw) || 1);
+  const showArchived = archived === '1';
 
   const db = await createClient();
-  const result = await getAllCentres(db, { q, page, pageSize: PAGE_SIZE });
+  const result = await getAllCentres(db, { q, page, pageSize: PAGE_SIZE, showArchived });
 
   const hrefForPage = (p: number) => {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
+    if (showArchived) params.set('archived', '1');
     params.set('page', String(p));
+    return `/admin/centres/all?${params.toString()}`;
+  };
+  const hrefForTab = (archivedTab: boolean) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (archivedTab) params.set('archived', '1');
     return `/admin/centres/all?${params.toString()}`;
   };
 
@@ -67,10 +76,26 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
     <section aria-labelledby="all-centres-heading">
       <h2 id="all-centres-heading" className="mb-4 font-display text-lg font-bold">All Centres</h2>
 
+      <div className="mb-4 flex gap-1">
+        <Link
+          href={hrefForTab(false)}
+          className={`rounded-md px-3 py-1.5 text-sm font-semibold ${!showArchived ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+        >
+          Active
+        </Link>
+        <Link
+          href={hrefForTab(true)}
+          className={`rounded-md px-3 py-1.5 text-sm font-semibold ${showArchived ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+        >
+          Deleted
+        </Link>
+      </div>
+
       <Card className="overflow-hidden rounded-2xl">
         {/* Search — same GET form/behavior, redesigned as an inset pill search bar */}
         <div className="border-b p-4">
           <form action="/admin/centres/all" method="get" className="relative max-w-md">
+            {showArchived && <input type="hidden" name="archived" value="1" />}
             <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
               <SearchIcon />
             </span>
@@ -89,9 +114,13 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
 
         {result.items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="text-3xl" aria-hidden>🏢</span>
-            <p className="mt-2 font-display font-semibold">{q ? 'No centres match that search' : 'No centres yet'}</p>
-            <p className="text-sm text-muted-foreground">{q ? 'Try a different name.' : 'Use Create Centre to add the first one.'}</p>
+            <span className="text-3xl" aria-hidden>{showArchived ? '🗑️' : '🏢'}</span>
+            <p className="mt-2 font-display font-semibold">
+              {q ? 'No centres match that search' : showArchived ? 'Nothing deleted' : 'No centres yet'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {q ? 'Try a different name.' : showArchived ? 'Deleted listings will show up here.' : 'Use Create Centre to add the first one.'}
+            </p>
           </div>
         ) : (
           <>
@@ -125,8 +154,14 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
                     <TableCell><Badge variant={STATUS_VARIANT[c.status] ?? 'secondary'}>{c.status}</Badge></TableCell>
                     <TableCell className="pr-6 text-right">
                       <div className="flex items-center justify-end gap-3">
-                        <Link href={`/admin/centres/${c.id}/edit`} className="text-sm font-semibold text-primary hover:underline">Edit</Link>
-                        <DeleteCentreButton centreId={c.id} />
+                        {showArchived ? (
+                          <RestoreCentreButton centreId={c.id} />
+                        ) : (
+                          <>
+                            <Link href={`/admin/centres/${c.id}/edit`} className="text-sm font-semibold text-primary hover:underline">Edit</Link>
+                            <DeleteCentreButton centreId={c.id} />
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

@@ -101,17 +101,26 @@ export interface AdminCentreListItem {
   owner: { full_name: string | null } | null;
 }
 
-export interface AdminCentreSearch { q?: string; page: number; pageSize: number }
+export interface AdminCentreSearch { q?: string; page: number; pageSize: number; showArchived?: boolean }
 export interface AdminCentrePage {
   items: AdminCentreListItem[]; total: number; page: number; pageSize: number; totalPages: number;
 }
 
-/** All centres regardless of status, name-searchable, numbered-paginated — the "All Centres" admin view. */
+/**
+ * All centres, name-searchable, numbered-paginated — the "All Centres" admin
+ * view. By default excludes archived (soft-deleted) centres — "Delete" sets
+ * status to 'archived' rather than removing the row, and without this filter
+ * a deleted listing just sat in the same list with a different badge, which
+ * looked exactly like delete wasn't working. Pass showArchived to see (and
+ * restore) what's been deleted instead.
+ */
 export async function getAllCentres(db: DB, params: AdminCentreSearch): Promise<AdminCentrePage> {
   let query = db
     .from('centres')
     .select('id, name, slug, area, address, status, created_at, owner:owner_id(full_name)', { count: 'exact' })
     .order('created_at', { ascending: false });
+
+  query = params.showArchived ? query.eq('status', 'archived') : query.neq('status', 'archived');
 
   if (params.q) {
     // Same PostgREST filter-character sanitisation used by the public search.
