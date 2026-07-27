@@ -50,6 +50,7 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
     if (error) throw error;
 
     const pricing: Record<string, number> = {};
+    if (input.priceHourly !== undefined) pricing.hour = input.priceHourly;
     if (input.priceDaily !== undefined) pricing.day = input.priceDaily;
     if (input.priceMonthly !== undefined) pricing.month = input.priceMonthly;
 
@@ -118,13 +119,14 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
     }
 
     // Pricing/seats live on the centre's resource row, not on centres itself.
-    if (fields.priceDaily !== undefined || fields.priceMonthly !== undefined || fields.seats !== undefined) {
+    if (fields.priceHourly !== undefined || fields.priceDaily !== undefined || fields.priceMonthly !== undefined || fields.seats !== undefined) {
       const { data: resource } = await db.from('resources').select('id, pricing').eq('centre_id', centreId).limit(1).maybeSingle();
       if (resource) {
         const resourcePatch: Record<string, unknown> = {};
         if (fields.seats !== undefined) resourcePatch.unit_count = fields.seats;
-        if (fields.priceDaily !== undefined || fields.priceMonthly !== undefined) {
+        if (fields.priceHourly !== undefined || fields.priceDaily !== undefined || fields.priceMonthly !== undefined) {
           const pricing: Record<string, number> = {};
+          if (fields.priceHourly !== undefined) pricing.hour = fields.priceHourly;
           if (fields.priceDaily !== undefined) pricing.day = fields.priceDaily;
           if (fields.priceMonthly !== undefined) pricing.month = fields.priceMonthly;
           resourcePatch.pricing = pricing;

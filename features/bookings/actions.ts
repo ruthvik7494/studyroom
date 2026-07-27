@@ -3,13 +3,11 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/auth/rbac';
 import { action } from '@/lib/auth/action';
-import { ActionError, type Result, err, ok } from '@/lib/result';
+import { ActionError, type Result } from '@/lib/result';
 import { bookingSchema, cancelSchema, rescheduleSchema, waitlistSchema, availabilitySchema } from './schema';
+import { priceForPeriod, PERIOD_DAYS } from './pricing';
 import { notifyBooking } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
-
-/** Period → duration in ms, used for 'day'/'month' (hour bookings use the exact chosen slot). */
-const PERIOD_MS: Record<string, number> = { hour: 3_600_000, day: 86_400_000, month: 2_592_000_000 };
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
@@ -37,10 +35,9 @@ function resolveSlotStart(date: string | undefined, hour: number | undefined): D
  * Real-time slot availability — the same overlap check book_seat() enforces,
  * exposed read-only so the UI can show taken/free before the student commits
  * (movie-ticket style: grayed-out slots are genuinely unavailable, not a
- * guess). Period-aware: a day/month slot's "taken" count reflects bookings
- * overlapping that slot's FULL duration starting at that hour, not just the
- * hour itself — so "3 PM" being full for a monthly booking correctly means
- * something occupies that seat for the next 30 days from 3 PM, not just 3–4 PM.
+ * guess). Period-aware: a day+ slot's "taken" count reflects bookings
+ * overlapping that slot's full duration starting at that hour (a separate
+ * pool from hourly walk-ins — see 0031's migration notes).
  */
 export async function getResourceAvailability(raw: unknown) {
   return action(availabilitySchema, raw, async (input) => {
@@ -62,12 +59,15 @@ export async function getResourceAvailability(raw: unknown) {
 }
 
 /**
- * Create a booking. Prices from the resource's pricing json (server-side — the
- * client never sends the amount). RLS requires user_id = auth.uid(). The slot
- * (date + hour, for hourly bookings) comes from the student's own selection on
- * the booking page — see resolveSlotStart above — instead of always "now".
+ * Create a booking. Prices come from priceForPeriod() (shared with the UI) —
+ * never trusted from the client. Hourly bookings (one hour or several) go
+ * through book_seat_multi, which creates one row per hour, all-or-nothing —
+ * each hour is its own independent capacity bucket, so a 3-hour booking
+ * (9, 10, 11 AM) correctly reduces each of those three hours' availability
+ * independently, leaving 8 AM / 12 PM untouched. Day-or-longer periods use
+ * book_seat as a single row spanning the period's real length.
  */
-export async function createBooking(raw: unknown): Promise<Result<{ id: string }>> {
+export async function createBooking(raw: unknown): Promise<Result<{ id: string; isGroup: boolean }>> {
   return action(bookingSchema, raw, async (input) => {
     const user = await requireUser();
     const db = await createClient();
@@ -83,16 +83,46 @@ export async function createBooking(raw: unknown): Promise<Result<{ id: string }
     }
 
     const pricing = (resource.pricing ?? {}) as Record<string, number>;
-    const amount = pricing[input.period];
-    if (typeof amount !== 'number') throw new ActionError('VALIDATION', 'This option can’t be booked by that period.');
+    const date = input.date ?? todayISO();
 
-    const startsAt = resolveSlotStart(input.date, input.hour);
+    if (input.period === 'hour') {
+      const hours = input.hours && input.hours.length ? input.hours : input.hour !== undefined ? [input.hour] : [];
+      if (!hours.length) throw new ActionError('VALIDATION', 'Pick at least one time slot.');
+
+      const perHour = priceForPeriod(pricing, 'hour');
+      if (perHour === null) throw new ActionError('VALIDATION', 'This option can’t be booked hourly.');
+
+      const { data, error } = await db.rpc('book_seat_multi', {
+        p_centre_id: input.centreId,
+        p_resource_id: input.resourceId,
+        p_date: date,
+        p_hours: hours,
+        p_amount_per_hour: perHour,
+      });
+      if (error) {
+        if (error.message.includes('RESOURCE_FULL'))
+          throw new ActionError('CONFLICT', 'One of those hours just got booked by someone else. Please review and try again.');
+        if (error.message.includes('RESOURCE_NOT_FOUND'))
+          throw new ActionError('NOT_FOUND', 'That option is no longer available.');
+        if (error.message.includes('CENTRE_CLOSED'))
+          throw new ActionError('VALIDATION', 'This centre is closed on that day. Please pick another date.');
+        throw error;
+      }
+
+      await notifyBooking(user.id, 'created');
+      revalidatePath('/account');
+      return { id: data as string, isGroup: hours.length > 1 };
+    }
+
+    const amount = priceForPeriod(pricing, input.period);
+    if (amount === null) throw new ActionError('VALIDATION', 'This option can’t be booked by that period.');
+
+    const startsAt = resolveSlotStart(date, input.hour);
     if (Number.isNaN(startsAt.getTime()) || startsAt.getTime() < Date.now() - 5 * 60_000) {
       throw new ActionError('VALIDATION', 'Pick a valid, upcoming date and time.');
     }
-    const endsAt = new Date(
-      input.period === 'hour' ? startsAt.getTime() + 3_600_000 : startsAt.getTime() + (PERIOD_MS[input.period] ?? 0),
-    );
+    const days = PERIOD_DAYS[input.period] ?? 1;
+    const endsAt = new Date(startsAt.getTime() + days * 86_400_000);
 
     // Atomic, capacity-checked booking. The DB function locks the resource row,
     // rejects if full, and inserts — preventing double-booking under concurrency.
@@ -117,7 +147,7 @@ export async function createBooking(raw: unknown): Promise<Result<{ id: string }
 
     await notifyBooking(user.id, 'created'); // in-app only; email follows on payment
     revalidatePath('/account');
-    return { id: data as string };
+    return { id: data as string, isGroup: false };
   });
 }
 
@@ -161,7 +191,8 @@ export async function rescheduleBooking(raw: unknown): Promise<Result<{ id: stri
     if (!['pending', 'confirmed'].includes(old.status)) throw new ActionError('CONFLICT', 'This booking can’t be rescheduled.');
 
     const startsAt = new Date(input.startsAt);
-    const endsAt = new Date(startsAt.getTime() + (PERIOD_MS[old.period] ?? 0));
+    const days = old.period === 'hour' ? null : (PERIOD_DAYS[old.period as keyof typeof PERIOD_DAYS] ?? 1);
+    const endsAt = new Date(startsAt.getTime() + (days !== null ? days * 86_400_000 : 3_600_000));
 
     // 1. Acquire the new slot (atomic capacity check).
     const { data: newId, error: bookErr } = await db.rpc('book_seat', {

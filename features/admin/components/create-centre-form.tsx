@@ -95,7 +95,12 @@ export function CreateCentreForm({ amenities }: { amenities: Amenity[] }) {
         {errors.address && <p className="mt-1 text-xs text-destructive">{errors.address.message}</p>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <Label htmlFor="priceHourly">Price (₹ / hour)</Label>
+          <Input id="priceHourly" type="number" min={1} aria-invalid={!!errors.priceHourly} {...register('priceHourly')} />
+          {errors.priceHourly && <p className="mt-1 text-xs text-destructive">{errors.priceHourly.message}</p>}
+        </div>
         <div>
           <Label htmlFor="priceDaily">Price (₹ / day)</Label>
           <Input id="priceDaily" type="number" min={1} aria-invalid={!!errors.priceDaily} {...register('priceDaily')} />
@@ -107,7 +112,10 @@ export function CreateCentreForm({ amenities }: { amenities: Amenity[] }) {
           {errors.priceMonthly && <p className="mt-1 text-xs text-destructive">{errors.priceMonthly.message}</p>}
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">Fill in at least one — daily, monthly, or both.</p>
+      <p className="text-xs text-muted-foreground">
+        Fill in at least one. Weekly, Fortnightly, Quarterly, Half-yearly and Yearly prices are calculated
+        automatically from the Daily/Monthly rate (e.g. Weekly = Daily × 7).
+      </p>
 
       <div>
         <Label htmlFor="seats">Total seats</Label>

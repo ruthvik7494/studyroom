@@ -89,6 +89,7 @@ export const centreUpsertSchema = z.object({
   googlePlaceId: z.string().trim().max(300).optional(),
   // Pricing/capacity/content — previously only on the admin quick-create form;
   // owners need the same fields since this is their actual listing.
+  priceHourly: z.coerce.number().int().positive().max(1_000_000).optional(),
   priceDaily: z.coerce.number().int().positive().max(1_000_000).optional(),
   priceMonthly: z.coerce.number().int().positive().max(1_000_000).optional(),
   seats: z.coerce.number().int().positive().max(1000).default(10),
@@ -133,6 +134,7 @@ export type CentreAmenities = z.infer<typeof centreAmenitiesSchema>;
 export const adminCentreCreateBaseSchema = z.object({
   name: z.string().trim().min(2, 'Name is too short').max(120),
   address: z.string().trim().min(2, 'Address is too short').max(240),
+  priceHourly: z.coerce.number().int().positive().max(1_000_000).optional(),
   priceDaily: z.coerce.number().int().positive().max(1_000_000).optional(),
   priceMonthly: z.coerce.number().int().positive().max(1_000_000).optional(),
   about: z.string().trim().max(2000).optional().or(z.literal('')),
@@ -142,8 +144,8 @@ export const adminCentreCreateBaseSchema = z.object({
   womenSafe: z.coerce.boolean().default(false),
 });
 export const adminCentreCreateSchema = adminCentreCreateBaseSchema.refine(
-  (v) => v.priceDaily !== undefined || v.priceMonthly !== undefined,
-  { message: 'Enter at least one price (daily or monthly)', path: ['priceMonthly'] },
+  (v) => v.priceHourly !== undefined || v.priceDaily !== undefined || v.priceMonthly !== undefined,
+  { message: 'Enter at least one price (hourly, daily, or monthly)', path: ['priceMonthly'] },
 );
 export type AdminCentreCreate = z.infer<typeof adminCentreCreateSchema>;
 

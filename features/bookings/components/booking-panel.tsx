@@ -1,14 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatINR, cn } from '@/lib/utils';
 import { createBooking, getResourceAvailability } from '../actions';
+import { PERIOD_LABEL, PERIOD_DAYS, priceForPeriod, availablePeriods, type Period } from '../pricing';
 
 interface ResourceOpt { id: string; label: string; tier: string | null; pricing: Record<string, number> }
-type Period = 'hour' | 'day' | 'month';
-const PERIOD_LABEL: Record<Period, string> = { hour: 'Hourly', day: 'Daily', month: 'Monthly' };
 
 type HourSlot = { hour: number; taken: number; capacity: number; is_available: boolean; is_past: boolean };
 
@@ -22,21 +21,32 @@ function formatHour(h: number): string {
   return `${h12} ${period}`;
 }
 
+function addDays(dateISO: string, days: number): string {
+  const d = new Date(`${dateISO}T00:00:00+05:30`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function formatDateLong(dateISO: string): string {
+  return new Date(`${dateISO}T00:00:00+05:30`).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
+}
+
 /**
- * Real slot picker for every period, not just hourly: a Daily or Monthly
- * booking still starts at a specific time of day, and picking "3 PM" is
- * checked against actual overlapping bookings before you can confirm — a
- * taken 3 PM slot shows as unavailable and reduces the free count, the same
- * way a specific hourly slot does. The same check runs again server-side in
- * book_seat() at the moment of booking, so a slot that fills between your
- * load and your click is still caught correctly.
+ * Real slot picker. Hourly bookings support selecting several hours at once
+ * (e.g. 9, 10, 11 AM for a 3-hour session) — each hour is checked and booked
+ * as its own independent seat, so "9 AM has 2 of 3 left" stays correct
+ * regardless of what's booked at 10 AM or 11 AM. Day-or-longer bookings pick
+ * one start time and show a calculated end date. Slots are colour-coded:
+ * green = available (hover for the seat count), red = fully booked, gray =
+ * already past — checked again server-side at the moment of booking, so a
+ * slot that fills between page load and click is still caught correctly.
  */
 export function BookingPanel({ centreId, slug, resources }: { centreId: string; slug: string; resources: ResourceOpt[] }) {
   const router = useRouter();
   const [resourceId, setResourceId] = useState(resources[0]?.id ?? '');
   const [period, setPeriod] = useState<Period>('month');
   const [date, setDate] = useState(todayISO());
-  const [hour, setHour] = useState<number | null>(null);
+  const [selectedHours, setSelectedHours] = useState<number[]>([]);
   const [slots, setSlots] = useState<HourSlot[]>([]);
   const [closed, setClosed] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -44,12 +54,14 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
   const [busy, setBusy] = useState(false);
 
   const selected = resources.find((r) => r.id === resourceId);
-  const periods = selected ? (Object.keys(selected.pricing) as Period[]).filter((p) => p in PERIOD_LABEL) : [];
-  const amount = selected?.pricing[period];
+  const periods = useMemo(() => (selected ? availablePeriods(selected.pricing) : []), [selected]);
+  const perUnitAmount = selected ? priceForPeriod(selected.pricing, period) : null;
+  const isMultiHour = period === 'hour';
+  const totalAmount = isMultiHour && perUnitAmount !== null ? perUnitAmount * selectedHours.length : perUnitAmount;
 
   useEffect(() => {
     if (!resourceId || !date || !period) return;
-    setHour(null);
+    setSelectedHours([]);
     setLoadingSlots(true);
     getResourceAvailability({ resourceId, period, date }).then((res) => {
       setSlots(res.ok ? res.data.slots : []);
@@ -58,15 +70,28 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
     });
   }, [resourceId, period, date]);
 
-  const chosenSlot = hour !== null ? slots.find((s) => s.hour === hour) : undefined;
-  const canBook = typeof amount === 'number' && !!chosenSlot?.is_available;
+  const toggleHour = (hour: number, available: boolean) => {
+    if (!available) return;
+    setSelectedHours((prev) => (prev.includes(hour) ? prev.filter((h) => h !== hour) : [...prev, hour].sort((a, b) => a - b)));
+  };
+
+  const canBook = isMultiHour
+    ? selectedHours.length > 0 && perUnitAmount !== null
+    : selectedHours.length === 1 && perUnitAmount !== null && slots.find((s) => s.hour === selectedHours[0])?.is_available;
+
+  const endDate = !isMultiHour && period !== 'day' ? addDays(date, PERIOD_DAYS[period] ?? 1) : null;
 
   const book = async () => {
     setError(null); setBusy(true);
-    const res = await createBooking({ centreId, resourceId, period, date, hour: hour ?? undefined });
+    const res = await createBooking({
+      centreId, resourceId, period, date,
+      hour: isMultiHour ? undefined : selectedHours[0],
+      hours: isMultiHour ? selectedHours : undefined,
+    });
     setBusy(false);
     if (!res.ok) { setError(res.error.message); return; }
-    router.push(`/centres/${slug}/book/confirmed?id=${res.data.id}`);
+    const groupParam = res.data.isGroup ? '&group=1' : '';
+    router.push(`/centres/${slug}/book/confirmed?id=${res.data.id}${groupParam}`);
     router.refresh();
   };
 
@@ -93,7 +118,7 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
             {periods.map((p) => (
               <button key={p} onClick={() => setPeriod(p)} aria-pressed={period === p}
                 className={`rounded-md border px-4 py-2 text-sm font-semibold ${period === p ? 'border-primary bg-accent text-foreground' : 'border-input text-muted-foreground'}`}>
-                {PERIOD_LABEL[p]} · {formatINR(selected!.pricing[p]!)}
+                {PERIOD_LABEL[p]} · {formatINR(priceForPeriod(selected!.pricing, p)!)}
               </button>
             ))}
           </div>
@@ -102,7 +127,7 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
 
       <div>
         <label htmlFor="booking-date" className="mb-2 block text-sm font-medium">
-          {period === 'month' ? 'Start date' : 'Date'}
+          {period === 'day' || period === 'hour' ? 'Date' : 'Start date'}
         </label>
         <input
           id="booking-date"
@@ -113,11 +138,16 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
           onChange={(e) => setDate(e.target.value)}
           className="h-10 rounded-md border border-input bg-background px-3 text-sm"
         />
+        {endDate && (
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Ends <span className="font-medium text-foreground">{formatDateLong(endDate)}</span>
+          </p>
+        )}
       </div>
 
       <div>
         <p className="mb-2 text-sm font-medium">
-          {period === 'hour' ? 'Time slot' : 'Start time'}
+          {isMultiHour ? 'Time slots (select one or more)' : 'Start time'}
         </p>
         {loadingSlots ? (
           <p className="text-sm text-muted-foreground">Checking availability…</p>
@@ -126,43 +156,50 @@ export function BookingPanel({ centreId, slug, resources }: { centreId: string; 
             Closed on {new Date(`${date}T00:00:00+05:30`).toLocaleDateString('en-IN', { weekday: 'long', timeZone: 'Asia/Kolkata' })}s — pick another date.
           </p>
         ) : slots.length > 0 ? (
-          <>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {slots.map((s) => (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {slots.map((s) => {
+              const isSelected = selectedHours.includes(s.hour);
+              const seatsFree = s.capacity - s.taken;
+              const title = s.is_past
+                ? 'Already passed'
+                : !s.is_available
+                  ? 'Seat unavailable'
+                  : `${seatsFree} of ${s.capacity} seat${s.capacity === 1 ? '' : 's'} available`;
+              return (
                 <button
                   key={s.hour}
                   type="button"
                   disabled={!s.is_available}
-                  aria-pressed={hour === s.hour}
-                  onClick={() => setHour(s.hour)}
-                  title={s.is_past ? 'Already passed' : !s.is_available ? 'Fully booked' : undefined}
+                  aria-pressed={isSelected}
+                  onClick={() => toggleHour(s.hour, s.is_available)}
+                  title={title}
                   className={cn(
                     'rounded-lg border px-3 py-2 text-sm font-semibold transition-colors',
-                    !s.is_available && 'cursor-not-allowed border-transparent bg-secondary/60 text-muted-foreground/50 line-through',
-                    s.is_available && hour === s.hour && 'border-primary bg-primary text-primary-foreground',
-                    s.is_available && hour !== s.hour && 'border-input hover:bg-secondary',
+                    s.is_past && 'cursor-not-allowed border-transparent bg-secondary text-muted-foreground/60',
+                    !s.is_past && !s.is_available && 'cursor-not-allowed border-transparent bg-status-full text-white',
+                    !s.is_past && s.is_available && !isSelected && 'border-transparent bg-status-free text-white hover:opacity-80',
+                    !s.is_past && s.is_available && isSelected && 'border-primary bg-primary text-primary-foreground',
                   )}
                 >
                   {formatHour(s.hour)}
                 </button>
-              ))}
-            </div>
-            {chosenSlot && (
-              <p className={`mt-2 text-sm font-medium ${chosenSlot.is_available ? 'text-brand-green' : 'text-destructive'}`}>
-                {chosenSlot.capacity - chosenSlot.taken} of {chosenSlot.capacity} seats free at {formatHour(chosenSlot.hour)}
-                {period !== 'hour' && ` (for the full ${period === 'day' ? 'day' : 'month'})`}
-              </p>
-            )}
-          </>
+              );
+            })}
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground">No slots configured for this date.</p>
         )}
+        <p className="mt-2 text-xs text-muted-foreground">
+          <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-free align-middle" /> Available</span>
+          <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-full align-middle" /> Fully booked</span>
+          <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-secondary align-middle" /> Past</span>
+        </p>
       </div>
 
       <Card className="flex items-center justify-between p-4">
         <div>
-          <p className="text-xs text-muted-foreground">Total</p>
-          <p className="font-display text-xl font-bold text-brand-green">{typeof amount === 'number' ? formatINR(amount) : '—'}</p>
+          <p className="text-xs text-muted-foreground">Total{isMultiHour && selectedHours.length > 1 ? ` (${selectedHours.length} hours)` : ''}</p>
+          <p className="font-display text-xl font-bold text-brand-green">{typeof totalAmount === 'number' ? formatINR(totalAmount) : '—'}</p>
         </div>
         <Button onClick={book} disabled={busy || !canBook}>{busy ? 'Booking…' : 'Confirm booking'}</Button>
       </Card>

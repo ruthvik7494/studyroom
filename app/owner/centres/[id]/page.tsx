@@ -56,6 +56,7 @@ export default async function EditListingPage({ params }: PageProps) {
           lat: centre.lat ?? 0,
           lng: centre.lng ?? 0,
           about: centre.description ?? '',
+          priceHourly: pricing.hour,
           priceDaily: pricing.day,
           priceMonthly: pricing.month,
           seats: resource?.unit_count ?? 10,

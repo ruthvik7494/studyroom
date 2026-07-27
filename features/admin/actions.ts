@@ -54,6 +54,7 @@ export async function adminCreateCentre(raw: unknown): Promise<Result<{ id: stri
     if (error) throw error;
 
     const pricing: Record<string, number> = {};
+    if (input.priceHourly !== undefined) pricing.hour = input.priceHourly;
     if (input.priceDaily !== undefined) pricing.day = input.priceDaily;
     if (input.priceMonthly !== undefined) pricing.month = input.priceMonthly;
 
