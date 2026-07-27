@@ -83,8 +83,14 @@ export const centreUpsertSchema = z.object({
   country: z.string().trim().max(100).default('India'),
   postcode: z.string().trim().max(12).optional().or(z.literal('')),
   spaceType: z.enum(['study_hall', 'reading_room', 'coworking', 'both']),
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
+  lat: z.preprocess(
+    (v) => (v === '' || v === undefined || (typeof v === 'number' && Number.isNaN(v)) ? undefined : v),
+    z.coerce.number().min(-90).max(90).optional(),
+  ),
+  lng: z.preprocess(
+    (v) => (v === '' || v === undefined || (typeof v === 'number' && Number.isNaN(v)) ? undefined : v),
+    z.coerce.number().min(-180).max(180).optional(),
+  ),
   emoji: z.string().max(4).default('📖'),
   // contact
   phone: z.string().trim().max(20).optional(),

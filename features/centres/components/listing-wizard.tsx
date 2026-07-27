@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,17 +38,33 @@ const GALLERY_SLOTS = ['Exterior View', 'Reception', 'Reading Hall', 'Seating Ar
 
 const STEPS = ['Profile & Category', 'Address & Contact', 'Operating Hours', 'Facilities & Amenities', 'Social Networks', 'Gallery', 'Review & Publish'];
 
+/** Which step each field lives on — used to jump to the first step with a validation error, since errors on a hidden step are otherwise invisible. */
+const FIELD_STEP: Partial<Record<keyof CentreUpsert, number>> = {
+  name: 0, seats: 0, about: 0, spaceType: 0,
+  address: 1, city: 1, state: 1, country: 1, postcode: 1, lat: 1, lng: 1, phone: 1, altPhone: 1, businessEmail: 1, website: 1,
+  priceHourly: 2, priceDaily: 2, priceWeekly: 2, priceFortnightly: 2, priceMonthly: 2, priceQuarterly: 2, priceHalfYearly: 2, priceYearly: 2, hours: 2,
+  amenityIds: 3, womenSafeClaim: 3,
+  facebook: 4, instagram: 4, youtube: 4, linkedin: 4, twitter: 4, whatsapp: 4, googleBusiness: 4,
+};
+
 type Props =
   | { mode: 'create'; centreId?: undefined; defaults?: undefined; amenities: Amenity[] }
   | { mode: 'edit'; centreId: string; defaults: Partial<CentreUpsert>; amenities: Amenity[] };
 
 /**
  * 7-step listing wizard. Everything lives in ONE react-hook-form instance —
- * Next/Back just change which step is visible, so nothing is lost moving
- * between steps. Photos (logo, cover, gallery) are picked as files here but
- * only actually uploaded once the centre is saved on the final step — the
- * same reasoning as the old single-page form: Storage needs a real centre id
- * to upload into, which only exists after the text fields are saved.
+ * Next/Back just change which step is visible, so text-field values are
+ * never lost moving between steps (that's normal RHF behaviour).
+ *
+ * Files are different: a native <input type="file"> is uncontrolled, and
+ * React unmounts a step's DOM entirely when it's not the active step (the
+ * `{step === N && (...)}` pattern). That means the file input itself — and
+ * whatever it had selected — is destroyed the moment you navigate away, and
+ * a fresh one appears with nothing selected when you come back. Fixed by
+ * holding every picked File in this component's own React state (logoFile,
+ * coverFile, galleryFiles) instead of trusting the DOM node to remember —
+ * state survives the remount; the DOM node's own "no file chosen" display
+ * doesn't matter once the picked filename is shown from state instead.
  */
 export function ListingWizard(props: Props) {
   const router = useRouter();
@@ -56,9 +72,10 @@ export function ListingWizard(props: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [phase, setPhase] = useState<'idle' | 'saving' | 'uploading'>('idle');
 
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const coverInputRef = useRef<HTMLInputElement>(null);
-  const galleryRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [galleryFiles, setGalleryFiles] = useState<Record<string, File>>({});
+  const [extraFiles, setExtraFiles] = useState<File[]>([]);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<CentreUpsert>({
     resolver: zodResolver(centreUpsertSchema),
@@ -78,7 +95,7 @@ export function ListingWizard(props: Props) {
     return res.ok ? null : res.error.message;
   };
 
-  const onSubmit = async (formValues: CentreUpsert) => {
+  const doSubmit = async (formValues: CentreUpsert) => {
     setServerError(null);
     setPhase('saving');
 
@@ -89,13 +106,12 @@ export function ListingWizard(props: Props) {
 
     const centreId = props.mode === 'create' && 'id' in res.data ? res.data.id : props.centreId;
     if (centreId) {
-      const logoFile = logoInputRef.current?.files?.[0] ?? null;
-      const coverFile = coverInputRef.current?.files?.[0] ?? null;
-      const galleryFiles = GALLERY_SLOTS
-        .map((slot) => ({ slot, file: galleryRefs.current[slot]?.files?.[0] ?? null }))
-        .filter((g): g is { slot: string; file: File } => !!g.file);
+      const allGalleryFiles = [
+        ...Object.entries(galleryFiles).map(([slot, file]) => ({ slot, file })),
+        ...extraFiles.map((file) => ({ slot: undefined as string | undefined, file })),
+      ];
 
-      if (logoFile || coverFile || galleryFiles.length) {
+      if (logoFile || coverFile || allGalleryFiles.length) {
         setPhase('uploading');
         const uploadErrors: string[] = [];
 
@@ -110,9 +126,9 @@ export function ListingWizard(props: Props) {
           const e = await uploadOne(centreId, coverFile, { isCover: true });
           if (e) uploadErrors.push(`Cover image: ${e}`);
         }
-        for (const { slot, file } of galleryFiles) {
-          const e = await uploadOne(centreId, file, { category: slot });
-          if (e) uploadErrors.push(`${slot}: ${e}`);
+        for (const { slot, file } of allGalleryFiles) {
+          const e = await uploadOne(centreId, file, slot ? { category: slot } : {});
+          if (e) uploadErrors.push(`${slot ?? file.name}: ${e}`);
         }
 
         if (uploadErrors.length) {
@@ -127,12 +143,32 @@ export function ListingWizard(props: Props) {
     router.refresh();
   };
 
+  /** Validation failed — jump to the first step that actually has an error, since it's otherwise invisible from a later step. */
+  const onInvalid = (formErrors: typeof errors) => {
+    const erroredFields = Object.keys(formErrors) as (keyof CentreUpsert)[];
+    const steps = erroredFields.map((f) => FIELD_STEP[f]).filter((s): s is number => s !== undefined);
+    if (steps.length > 0) setStep(Math.min(...steps));
+    setServerError('Please check the highlighted fields — some steps need attention before this can be saved.');
+  };
+
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
   const back = () => setStep((s) => Math.max(s - 1, 0));
   const goto = (i: number) => setStep(i);
 
+  const onLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => setLogoFile(e.target.files?.[0] ?? null);
+  const onCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => setCoverFile(e.target.files?.[0] ?? null);
+  const onGalleryChange = (slot: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setGalleryFiles((prev) => {
+      const next = { ...prev };
+      if (file) next[slot] = file; else delete next[slot];
+      return next;
+    });
+  };
+  const onExtraChange = (e: React.ChangeEvent<HTMLInputElement>) => setExtraFiles(Array.from(e.target.files ?? []));
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+    <form onSubmit={handleSubmit(doSubmit, onInvalid)} noValidate>
       {/* Stepper */}
       <div className="mb-6 flex items-center gap-1 overflow-x-auto">
         {STEPS.map((label, i) => (
@@ -172,13 +208,13 @@ export function ListingWizard(props: Props) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="logo">Business Logo</Label>
-              <input id="logo" ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="mt-1 block text-sm" />
-              <p className="mt-1 text-xs text-muted-foreground">PNG, JPG (max 5MB)</p>
+              <input id="logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={onLogoChange} className="mt-1 block text-sm" />
+              <p className="mt-1 text-xs text-muted-foreground">{logoFile ? `Selected: ${logoFile.name}` : 'PNG, JPG (max 5MB)'}</p>
             </div>
             <div>
               <Label htmlFor="cover">Cover Image</Label>
-              <input id="cover" ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="mt-1 block text-sm" />
-              <p className="mt-1 text-xs text-muted-foreground">PNG, JPG (max 5MB)</p>
+              <input id="cover" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={onCoverChange} className="mt-1 block text-sm" />
+              <p className="mt-1 text-xs text-muted-foreground">{coverFile ? `Selected: ${coverFile.name}` : 'PNG, JPG (max 5MB)'}</p>
             </div>
           </div>
 
@@ -240,16 +276,17 @@ export function ListingWizard(props: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="lat">Latitude</Label>
+              <Label htmlFor="lat">Latitude <span className="text-muted-foreground">(optional)</span></Label>
               <Input id="lat" type="number" step="any" aria-invalid={!!errors.lat} {...register('lat', { valueAsNumber: true })} />
               {errors.lat && <p className="mt-1 text-xs text-destructive">{errors.lat.message}</p>}
             </div>
             <div>
-              <Label htmlFor="lng">Longitude</Label>
+              <Label htmlFor="lng">Longitude <span className="text-muted-foreground">(optional)</span></Label>
               <Input id="lng" type="number" step="any" aria-invalid={!!errors.lng} {...register('lng', { valueAsNumber: true })} />
               {errors.lng && <p className="mt-1 text-xs text-destructive">{errors.lng.message}</p>}
             </div>
           </div>
+          <p className="-mt-2 text-xs text-muted-foreground">Leave blank if you're not sure — you can add these later. Without them, this centre won't appear in "near me" search.</p>
 
           <fieldset>
             <legend className="mb-2 text-sm font-medium">Contact Details</legend>
@@ -376,20 +413,36 @@ export function ListingWizard(props: Props) {
       {/* STEP 6 — Gallery */}
       {step === 5 && (
         <div>
-          <p className="mb-3 text-sm text-muted-foreground">Upload photos of your study centre</p>
+          <p className="mb-3 text-sm text-muted-foreground">Upload photos of your study centre — one per category, plus any extras below</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {GALLERY_SLOTS.map((slot) => (
               <div key={slot}>
                 <Label htmlFor={`gallery-${slot}`}>{slot}</Label>
                 <input
                   id={`gallery-${slot}`}
-                  ref={(el) => { galleryRefs.current[slot] = el; }}
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/avif"
+                  onChange={onGalleryChange(slot)}
                   className="mt-1 block w-full text-xs"
                 />
+                {galleryFiles[slot] && <p className="mt-1 truncate text-xs text-brand-green">✓ {galleryFiles[slot]!.name}</p>}
               </div>
             ))}
+          </div>
+
+          <div className="mt-4 border-t pt-4">
+            <Label htmlFor="extra-photos">Additional Photos</Label>
+            <input
+              id="extra-photos"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              multiple
+              onChange={onExtraChange}
+              className="mt-1 block text-sm"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {extraFiles.length > 0 ? `${extraFiles.length} extra photo${extraFiles.length > 1 ? 's' : ''} selected` : 'Select several at once for anything beyond the categories above.'}
+            </p>
           </div>
         </div>
       )}
@@ -399,12 +452,12 @@ export function ListingWizard(props: Props) {
         <div className="space-y-3">
           <p className="mb-2 text-sm text-muted-foreground">Review your details before publishing your listing</p>
           {[
-            { title: 'Profile & Category', i: 0, lines: [values.name, SPACE_TYPES.find((t) => t.value === values.spaceType)?.label, `${values.seats} seats`] },
+            { title: 'Profile & Category', i: 0, lines: [values.name, SPACE_TYPES.find((t) => t.value === values.spaceType)?.label, `${values.seats} seats`, logoFile ? `Logo: ${logoFile.name}` : null, coverFile ? `Cover: ${coverFile.name}` : null] },
             { title: 'Address & Contact', i: 1, lines: [values.address, [values.city, values.state, values.postcode].filter(Boolean).join(', '), values.phone] },
             { title: 'Operating Hours', i: 2, lines: [PRICE_FIELDS.filter((p) => values[p.key]).map((p) => `${p.label}: ₹${values[p.key]}`).join(' · ') || 'No prices set'] },
             { title: 'Facilities & Amenities', i: 3, lines: [`${values.amenityIds?.length ?? 0} facilities selected`] },
             { title: 'Social Networks', i: 4, lines: [[values.facebook, values.instagram, values.youtube, values.linkedin, values.twitter, values.whatsapp, values.googleBusiness].filter(Boolean).length + ' links added'] },
-            { title: 'Gallery', i: 5, lines: ['Photos picked above will upload once you publish'] },
+            { title: 'Gallery', i: 5, lines: [`${Object.keys(galleryFiles).length + extraFiles.length} photo${Object.keys(galleryFiles).length + extraFiles.length === 1 ? '' : 's'} selected — uploads once you publish`] },
           ].map((s) => (
             <div key={s.title} className="flex items-start justify-between rounded-lg border p-3">
               <div>
