@@ -49,8 +49,8 @@ const FIELD_STEP: Partial<Record<keyof CentreUpsert, number>> = {
 };
 
 type Props =
-  | { mode: 'create'; centreId?: undefined; defaults?: undefined; amenities: Amenity[] }
-  | { mode: 'edit'; centreId: string; defaults: Partial<CentreUpsert>; amenities: Amenity[] };
+  | { mode: 'create'; centreId?: undefined; defaults?: undefined; amenities: Amenity[]; intro?: string }
+  | { mode: 'edit'; centreId: string; defaults: Partial<CentreUpsert>; amenities: Amenity[]; intro?: string };
 
 /**
  * 7-step listing wizard. Everything lives in ONE react-hook-form instance —
@@ -170,32 +170,33 @@ export function ListingWizard(props: Props) {
 
   return (
     <form onSubmit={handleSubmit(doSubmit, onInvalid)} noValidate>
-      {/* Stepper */}
-      <div className="mb-6 flex items-center gap-1 overflow-x-auto">
-        {STEPS.map((label, i) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => goto(i)}
-            className="flex shrink-0 items-center gap-1.5"
-            aria-current={step === i ? 'step' : undefined}
-          >
-            <span
-              className={cn(
-                'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
-                i === step ? 'bg-[#2d6c4f] text-white' : i < step ? 'bg-[#2d6c4f]/20 text-[#2d6c4f]' : 'bg-secondary text-muted-foreground',
-              )}
-            >
-              {i + 1}
-            </span>
-            {i < STEPS.length - 1 && <span className="h-px w-4 bg-border" aria-hidden />}
-          </button>
-        ))}
-      </div>
-      <p className="mb-1 text-xs font-medium text-muted-foreground">Step {step + 1} of {STEPS.length}</p>
-      <h2 className="mb-1 font-display text-xl font-bold">{STEPS[step]}</h2>
+      <Card className="rounded-2xl p-5 sm:p-6">
+        {props.intro && <p className="mb-5 text-sm text-muted-foreground">{props.intro}</p>}
 
-      <Card className="mt-4 rounded-2xl p-5 sm:p-6">
+        {/* Stepper */}
+        <div className="mb-6 flex items-center gap-1 overflow-x-auto">
+          {STEPS.map((label, i) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => goto(i)}
+              className="flex shrink-0 items-center gap-1.5"
+              aria-current={step === i ? 'step' : undefined}
+            >
+              <span
+                className={cn(
+                  'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
+                  i === step ? 'bg-[#2d6c4f] text-white' : i < step ? 'bg-[#2d6c4f]/20 text-[#2d6c4f]' : 'bg-secondary text-muted-foreground',
+                )}
+              >
+                {i + 1}
+              </span>
+              {i < STEPS.length - 1 && <span className="h-px w-4 bg-border" aria-hidden />}
+            </button>
+          ))}
+        </div>
+        <p className="mb-1 text-xs font-medium text-muted-foreground">Step {step + 1} of {STEPS.length}</p>
+        <h2 className="mb-4 font-display text-xl font-bold">{STEPS[step]}</h2>
 
       {/* STEP 1 — Profile & Category */}
       {step === 0 && (
@@ -472,27 +473,27 @@ export function ListingWizard(props: Props) {
           ))}
         </div>
       )}
-      </Card>
 
-      {serverError && <p className="mt-4 text-sm text-destructive" role="alert">{serverError}</p>}
+        {serverError && <p className="mt-4 text-sm text-destructive" role="alert">{serverError}</p>}
 
-      <div className="mt-6 flex items-center justify-between">
-        <Button type="button" variant="outline" onClick={back} disabled={step === 0 || busy}>Back</Button>
-        <div className="flex gap-2">
-          {step === STEPS.length - 1 && (
-            <Button type="submit" variant="outline" disabled={busy}>
-              {phase === 'saving' ? 'Saving…' : 'Save Draft'}
-            </Button>
-          )}
-          {step < STEPS.length - 1 ? (
-            <Button type="button" onClick={next} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90">Next →</Button>
-          ) : (
-            <Button type="submit" disabled={busy} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90">
-              {phase === 'saving' ? 'Saving…' : phase === 'uploading' ? 'Uploading photos…' : (props.mode === 'create' ? 'Preview & Publish →' : 'Save changes')}
-            </Button>
-          )}
+        <div className="mt-6 flex items-center justify-between border-t pt-5">
+          <Button type="button" variant="outline" onClick={back} disabled={step === 0 || busy}>Back</Button>
+          <div className="flex gap-2">
+            {step === STEPS.length - 1 && (
+              <Button type="submit" variant="outline" disabled={busy}>
+                {phase === 'saving' ? 'Saving…' : 'Save Draft'}
+              </Button>
+            )}
+            {step < STEPS.length - 1 ? (
+              <Button type="button" onClick={next} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90">Next →</Button>
+            ) : (
+              <Button type="submit" disabled={busy} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90">
+                {phase === 'saving' ? 'Saving…' : phase === 'uploading' ? 'Uploading photos…' : (props.mode === 'create' ? 'Preview & Publish →' : 'Save changes')}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      </Card>
     </form>
   );
 }

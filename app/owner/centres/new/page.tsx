@@ -13,8 +13,7 @@ export default async function NewListingPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
-      <p className="mb-6 text-sm text-muted-foreground">Add your study space. It stays a draft until you submit it for review.</p>
-      <ListingWizard mode="create" amenities={amenities ?? []} />
+      <ListingWizard mode="create" amenities={amenities ?? []} intro="Add your study space. It stays a draft until you submit it for review." />
     </main>
   );
 }
