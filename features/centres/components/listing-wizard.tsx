@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -193,6 +194,8 @@ export function ListingWizard(props: Props) {
       </div>
       <p className="mb-1 text-xs font-medium text-muted-foreground">Step {step + 1} of {STEPS.length}</p>
       <h2 className="mb-1 font-display text-xl font-bold">{STEPS[step]}</h2>
+
+      <Card className="mt-4 rounded-2xl p-5 sm:p-6">
 
       {/* STEP 1 — Profile & Category */}
       {step === 0 && (
@@ -469,6 +472,7 @@ export function ListingWizard(props: Props) {
           ))}
         </div>
       )}
+      </Card>
 
       {serverError && <p className="mt-4 text-sm text-destructive" role="alert">{serverError}</p>}
 

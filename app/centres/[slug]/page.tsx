@@ -399,34 +399,40 @@ export default async function CentreDetailPage({ params }: PageProps) {
               </DetailSectionCard>
             )}
 
+            {(centre.phone || centre.alt_phone || centre.business_email || centre.website) && (
+              <DetailSectionCard icon="📞" title="Contact Detail">
+                <div className="space-y-1.5 text-sm">
+                  {centre.phone && <p>📱 <a href={`tel:${centre.phone}`} className="hover:underline">{centre.phone}</a></p>}
+                  {centre.alt_phone && <p>📱 <a href={`tel:${centre.alt_phone}`} className="hover:underline">{centre.alt_phone}</a> <span className="text-xs text-muted-foreground">(alternate)</span></p>}
+                  {centre.business_email && <p>✉ <a href={`mailto:${centre.business_email}`} className="hover:underline">{centre.business_email}</a></p>}
+                  {centre.website && <p>🌐 <a href={centre.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{centre.website}</a></p>}
+                </div>
+              </DetailSectionCard>
+            )}
+
+            {(() => {
+              const social = (centre.social ?? {}) as Record<string, string>;
+              const links: [string, string, string][] = [
+                ['Facebook', social.facebook, '📘'], ['Instagram', social.instagram, '📷'], ['YouTube', social.youtube, '▶️'],
+                ['LinkedIn', social.linkedin, '💼'], ['X (Twitter)', social.twitter, '𝕏'], ['WhatsApp', social.whatsapp, '💬'],
+                ['Google Business', social.googleBusiness, '📍'],
+              ].filter(([, url]) => !!url) as [string, string, string][];
+              return links.length > 0 ? (
+                <DetailSectionCard icon="🔗" title="Social Networks">
+                  <div className="flex flex-wrap gap-2">
+                    {links.map(([label, url, icon]) => (
+                      <a key={label} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold hover:bg-secondary">
+                        <span aria-hidden>{icon}</span>{label}
+                      </a>
+                    ))}
+                  </div>
+                </DetailSectionCard>
+              ) : null;
+            })()}
+
             {centre.status === 'approved' && (
               <DetailSectionCard icon="✉" title="Contact business" headingId="contact-heading">
-                {(centre.phone || centre.alt_phone || centre.business_email || centre.website) && (
-                  <div className="mb-4 space-y-1 border-b pb-4 text-sm">
-                    {centre.phone && <p>📞 <a href={`tel:${centre.phone}`} className="hover:underline">{centre.phone}</a></p>}
-                    {centre.alt_phone && <p>📞 <a href={`tel:${centre.alt_phone}`} className="hover:underline">{centre.alt_phone}</a> <span className="text-xs text-muted-foreground">(alternate)</span></p>}
-                    {centre.business_email && <p>✉ <a href={`mailto:${centre.business_email}`} className="hover:underline">{centre.business_email}</a></p>}
-                    {centre.website && <p>🌐 <a href={centre.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{centre.website}</a></p>}
-                  </div>
-                )}
                 <EnquiryForm centreId={centre.id} />
-                {(() => {
-                  const social = (centre.social ?? {}) as Record<string, string>;
-                  const links: [string, string][] = [
-                    ['Facebook', social.facebook], ['Instagram', social.instagram], ['YouTube', social.youtube],
-                    ['LinkedIn', social.linkedin], ['X (Twitter)', social.twitter], ['WhatsApp', social.whatsapp],
-                    ['Google Business', social.googleBusiness],
-                  ].filter(([, url]) => !!url) as [string, string][];
-                  return links.length > 0 ? (
-                    <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
-                      {links.map(([label, url]) => (
-                        <a key={label} href={url} target="_blank" rel="noopener noreferrer" className="rounded-full border px-3 py-1 text-xs font-semibold hover:bg-secondary">
-                          {label}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null;
-                })()}
               </DetailSectionCard>
             )}
           </div>
