@@ -30,11 +30,13 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
 
   const centre = bookings[0]!.centres as unknown as { name: string } | null;
   const totalAmount = bookings.reduce((sum, b) => sum + Number(b.amount), 0);
+  const unpaidAmount = bookings.filter((b) => b.payment !== 'paid').reduce((sum, b) => sum + Number(b.amount), 0);
   const allPaid = bookings.every((b) => b.payment === 'paid');
+  const isGroupBooking = group === '1' && bookings.length > 1;
 
   return (
     <main className="mx-auto max-w-lg px-6 py-16 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-success text-text-success" aria-hidden>✓</div>
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-status-free/15 text-status-free" aria-hidden>✓</div>
       <h1 className="mt-4 font-display text-2xl font-bold">Booking confirmed</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         {bookings.length > 1 ? `Your ${bookings.length} seats at ${centre?.name} are reserved.` : `Your seat at ${centre?.name} is reserved.`}
@@ -49,11 +51,9 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
                   {new Date(b.starts_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
                   {' '}— {formatINR(Number(b.amount))}
                 </span>
-                {b.payment === 'unpaid' ? (
-                  <PayButton bookingId={b.id} />
-                ) : (
-                  <span className="text-xs font-semibold text-brand-green">Paid</span>
-                )}
+                <span className={b.payment === 'paid' ? 'text-xs font-semibold text-brand-green' : 'text-xs text-muted-foreground'}>
+                  {b.payment === 'paid' ? 'Paid' : 'Pending'}
+                </span>
               </div>
             ))}
           </div>
@@ -64,8 +64,15 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
         <div className="flex justify-between py-1 text-sm"><span className="text-muted-foreground">Payment</span><span className="font-medium">{allPaid ? 'Paid' : 'Unpaid'}</span></div>
       </Card>
 
-      {bookings.length === 1 && bookings[0]!.payment === 'unpaid' && (
-        <div className="mt-4 flex justify-center"><PayButton bookingId={bookings[0]!.id} /></div>
+      {!allPaid && (
+        <div className="mt-4 flex flex-col items-center gap-1">
+          <div className="flex justify-center">
+            {isGroupBooking
+              ? <PayButton groupId={id} />
+              : <PayButton bookingId={bookings[0]!.id} />}
+          </div>
+          {isGroupBooking && <p className="text-xs text-muted-foreground">Pays the remaining {formatINR(unpaidAmount)} for all unpaid hours in one go.</p>}
+        </div>
       )}
 
       <div className="mt-6 flex justify-center gap-3">

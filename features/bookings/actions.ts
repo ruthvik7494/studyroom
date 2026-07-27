@@ -111,7 +111,7 @@ export async function createBooking(raw: unknown): Promise<Result<{ id: string; 
 
       await notifyBooking(user.id, 'created');
       revalidatePath('/account');
-      return { id: data as string, isGroup: hours.length > 1 };
+      return { id: data as string, isGroup: true };
     }
 
     const amount = priceForPeriod(pricing, input.period);

@@ -9,7 +9,10 @@ import { notifyBooking } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
 import { z } from 'zod';
 
-const startSchema = z.object({ bookingId: z.string().uuid() });
+const startSchema = z.object({
+  bookingId: z.string().uuid().optional(),
+  groupId: z.string().uuid().optional(),
+}).refine((v) => !!v.bookingId !== !!v.groupId, { message: 'Provide exactly one of bookingId or groupId' });
 
 interface StartResult {
   configured: boolean;
@@ -19,18 +22,45 @@ interface StartResult {
 }
 
 /**
- * Begin payment for a booking. If Razorpay isn't configured, returns
- * { configured:false } and the UI shows a pay-at-centre confirmation instead.
+ * Begin payment for a booking, or a whole multi-hour group at once. If
+ * Razorpay isn't configured, returns { configured:false } and the UI shows a
+ * pay-at-centre confirmation instead.
+ *
+ * Group payment: sums only the still-unpaid bookings in the group (in case
+ * some were already paid individually before this existed, or in a retry),
+ * creates ONE order for that total, and stamps that same razorpay_order_id
+ * onto every one of those rows. The webhook already updates every booking
+ * matching an order id (not just one row), so marking them all paid needs no
+ * change there — see app/api/webhooks/razorpay/route.ts.
  */
 export async function startPayment(raw: unknown): Promise<Result<StartResult>> {
   return action(startSchema, raw, async (input) => {
     const user = await requireUser();
     const db = await createClient();
 
+    if (input.groupId) {
+      const { data: bookings } = await db
+        .from('bookings')
+        .select('id, amount, user_id, payment')
+        .eq('booking_group_id', input.groupId);
+      if (!bookings || bookings.length === 0 || bookings[0]!.user_id !== user.id) {
+        throw new ActionError('NOT_FOUND', 'Booking not found.');
+      }
+      const unpaid = bookings.filter((b) => b.payment !== 'paid');
+      if (unpaid.length === 0) throw new ActionError('CONFLICT', 'This booking is already paid.');
+
+      if (!razorpayConfigured) return { configured: false };
+
+      const total = unpaid.reduce((sum, b) => sum + Number(b.amount), 0);
+      const order = await createOrder(total, input.groupId);
+      await db.from('bookings').update({ razorpay_order_id: order.id }).in('id', unpaid.map((b) => b.id));
+      return { configured: true, orderId: order.id, amount: order.amount, keyId: publishableKey };
+    }
+
     const { data: booking } = await db
       .from('bookings')
       .select('id, amount, user_id, payment')
-      .eq('id', input.bookingId)
+      .eq('id', input.bookingId!)
       .maybeSingle();
     if (!booking || booking.user_id !== user.id) throw new ActionError('NOT_FOUND', 'Booking not found.');
     if (booking.payment === 'paid') throw new ActionError('CONFLICT', 'This booking is already paid.');
@@ -44,13 +74,14 @@ export async function startPayment(raw: unknown): Promise<Result<StartResult>> {
 }
 
 const verifySchema = z.object({
-  bookingId: z.string().uuid(),
+  bookingId: z.string().uuid().optional(),
+  groupId: z.string().uuid().optional(),
   orderId: z.string(),
   paymentId: z.string(),
   signature: z.string(),
-});
+}).refine((v) => !!v.bookingId !== !!v.groupId, { message: 'Provide exactly one of bookingId or groupId' });
 
-/** Verify the checkout signature and mark the booking paid + confirmed. */
+/** Verify the checkout signature and mark the booking(s) paid + confirmed. */
 export async function confirmPayment(raw: unknown): Promise<Result<{ ok: true }>> {
   return action(verifySchema, raw, async (input) => {
     const user = await requireUser();
@@ -58,14 +89,17 @@ export async function confirmPayment(raw: unknown): Promise<Result<{ ok: true }>
       throw new ActionError('FORBIDDEN', 'Payment could not be verified.');
     }
     const db = await createClient();
-    const { data: updated, error } = await db
+
+    let query = db
       .from('bookings')
       .update({ payment: 'paid', status: 'confirmed', razorpay_payment_id: input.paymentId })
-      .eq('id', input.bookingId)
       .eq('user_id', user.id)
       .eq('razorpay_order_id', input.orderId) // bind to the order we created
-      .neq('status', 'confirmed')             // exactly-once vs the webhook
-      .select('user_id');
+      .neq('status', 'confirmed');            // exactly-once vs the webhook
+
+    query = input.groupId ? query.eq('booking_group_id', input.groupId) : query.eq('id', input.bookingId!);
+
+    const { data: updated, error } = await query.select('user_id');
     if (error) throw error;
     if (updated && updated.length > 0) {
       const email = await getUserEmail(user.id);
