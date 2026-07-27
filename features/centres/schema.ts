@@ -78,26 +78,45 @@ const DEFAULT_WEEKLY_HOURS = Array.from({ length: 7 }, () => ({ isOpen: true, op
 export const centreUpsertSchema = z.object({
   name: z.string().trim().min(2, 'Name is too short').max(120),
   address: z.string().trim().min(2, 'Address is too short').max(240),
+  city: z.string().trim().max(100).optional().or(z.literal('')),
+  state: z.string().trim().max(100).optional().or(z.literal('')),
+  country: z.string().trim().max(100).default('India'),
+  postcode: z.string().trim().max(12).optional().or(z.literal('')),
   spaceType: z.enum(['study_hall', 'reading_room', 'coworking', 'both']),
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   emoji: z.string().max(4).default('📖'),
   // contact
   phone: z.string().trim().max(20).optional(),
+  altPhone: z.string().trim().max(20).optional().or(z.literal('')),
+  businessEmail: z.string().trim().email('Enter a valid email').optional().or(z.literal('')),
   website: httpUrl('Enter a valid website URL').optional().or(z.literal('')),
   // Google Places import: the Place ID captured from the picker
   googlePlaceId: z.string().trim().max(300).optional(),
-  // Pricing/capacity/content — previously only on the admin quick-create form;
-  // owners need the same fields since this is their actual listing.
+  // Pricing/capacity/content — every period is its own independent field now
+  // (not derived from Daily/Monthly); an owner fills in whichever they offer.
   priceHourly: z.coerce.number().int().positive().max(1_000_000).optional(),
   priceDaily: z.coerce.number().int().positive().max(1_000_000).optional(),
+  priceWeekly: z.coerce.number().int().positive().max(1_000_000).optional(),
+  priceFortnightly: z.coerce.number().int().positive().max(1_000_000).optional(),
   priceMonthly: z.coerce.number().int().positive().max(1_000_000).optional(),
+  priceQuarterly: z.coerce.number().int().positive().max(1_000_000).optional(),
+  priceHalfYearly: z.coerce.number().int().positive().max(1_000_000).optional(),
+  priceYearly: z.coerce.number().int().positive().max(1_000_000).optional(),
   seats: z.coerce.number().int().positive().max(1000).default(10),
   about: z.string().trim().max(2000).optional().or(z.literal('')),
   amenityIds: z.array(z.string().uuid()).max(40).default([]),
   womenSafeClaim: z.coerce.boolean().default(false),
   /** Exactly 7 entries, index 0 = Sunday .. 6 = Saturday. */
   hours: z.array(dayHoursSchema).length(7).default(DEFAULT_WEEKLY_HOURS),
+  // Social — folded in here so the wizard's step 5 is part of the same form.
+  facebook: httpUrl('Enter a valid URL').optional().or(z.literal('')),
+  instagram: httpUrl('Enter a valid URL').optional().or(z.literal('')),
+  youtube: httpUrl('Enter a valid URL').optional().or(z.literal('')),
+  linkedin: httpUrl('Enter a valid URL').optional().or(z.literal('')),
+  twitter: httpUrl('Enter a valid URL').optional().or(z.literal('')),
+  whatsapp: z.string().trim().max(20).optional().or(z.literal('')),
+  googleBusiness: httpUrl('Enter a valid URL').optional().or(z.literal('')),
 });
 export type CentreUpsert = z.infer<typeof centreUpsertSchema>;
 

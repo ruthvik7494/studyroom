@@ -20,8 +20,8 @@ import { ResultsMap } from '@/features/centres/components/results-map';
 import { CentreCard, STATUS_STYLE } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
 import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
+import { PERIOD_LABEL, priceForPeriod, availablePeriods } from '@/features/bookings/pricing';
 import { isSaved } from '@/features/saved/services/saved.service';
-import type { Json } from '@/types/database.types';
 
 /** Returns either an external image URL or a Supabase Storage URL. */
 const galleryUrl = (path: string) => {
@@ -62,13 +62,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-const monthPrice = (pricing: Json): number | null => {
-  if (pricing && typeof pricing === 'object' && !Array.isArray(pricing)) {
-    const m = (pricing as Record<string, Json>).month;
-    return typeof m === 'number' ? m : null;
-  }
-  return null;
-};
 
 export default async function CentreDetailPage({ params }: PageProps) {
   const { slug } = await params;
@@ -192,7 +185,13 @@ export default async function CentreDetailPage({ params }: PageProps) {
         <header className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{centre.name}</h1>
+              <div className="flex items-center gap-3">
+                {centre.logo_url && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={centre.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-full border object-cover" />
+                )}
+                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{centre.name}</h1>
+              </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-brand-gold2/10 px-3 py-1 text-sm font-bold text-brand-gold2">
@@ -207,7 +206,11 @@ export default async function CentreDetailPage({ params }: PageProps) {
                 </span>
               </div>
 
-              {centre.address && <p className="mt-2 text-sm text-foreground/60">{centre.address}</p>}
+              {(centre.address || centre.city) && (
+                <p className="mt-2 text-sm text-foreground/60">
+                  {[centre.address, centre.city, centre.state, centre.postcode, centre.country].filter(Boolean).join(', ')}
+                </p>
+              )}
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {centre.is_verified && (
@@ -267,14 +270,24 @@ export default async function CentreDetailPage({ params }: PageProps) {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {centre.resources.map((r) => {
-                    const m = monthPrice(r.pricing);
+                    const pricing = (r.pricing ?? {}) as Record<string, number>;
+                    const periods = availablePeriods(pricing);
                     return (
-                      <Card key={r.id} className="flex items-center justify-between p-4">
-                        <div>
-                          <p className="font-semibold">{r.label}</p>
-                          <p className="text-xs capitalize text-muted-foreground">{r.resource_type.replace('_', ' ')}{r.tier ? ` · ${r.tier}` : ''}</p>
-                        </div>
-                        <p className="font-display font-bold text-brand-green">{m ? `${formatINR(m)}/mo` : '—'}</p>
+                      <Card key={r.id} className="p-4">
+                        <p className="font-semibold">{r.label}</p>
+                        <p className="text-xs capitalize text-muted-foreground">{r.resource_type.replace('_', ' ')}{r.tier ? ` · ${r.tier}` : ''}</p>
+                        {periods.length === 0 ? (
+                          <p className="mt-2 text-sm text-muted-foreground">—</p>
+                        ) : (
+                          <dl className="mt-2 space-y-0.5">
+                            {periods.map((p) => (
+                              <div key={p} className="flex items-center justify-between text-sm">
+                                <dt className="text-muted-foreground">{PERIOD_LABEL[p]}</dt>
+                                <dd className="font-display font-bold text-brand-green">{formatINR(priceForPeriod(pricing, p)!)}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
                       </Card>
                     );
                   })}
@@ -388,7 +401,32 @@ export default async function CentreDetailPage({ params }: PageProps) {
 
             {centre.status === 'approved' && (
               <DetailSectionCard icon="✉" title="Contact business" headingId="contact-heading">
+                {(centre.phone || centre.alt_phone || centre.business_email || centre.website) && (
+                  <div className="mb-4 space-y-1 border-b pb-4 text-sm">
+                    {centre.phone && <p>📞 <a href={`tel:${centre.phone}`} className="hover:underline">{centre.phone}</a></p>}
+                    {centre.alt_phone && <p>📞 <a href={`tel:${centre.alt_phone}`} className="hover:underline">{centre.alt_phone}</a> <span className="text-xs text-muted-foreground">(alternate)</span></p>}
+                    {centre.business_email && <p>✉ <a href={`mailto:${centre.business_email}`} className="hover:underline">{centre.business_email}</a></p>}
+                    {centre.website && <p>🌐 <a href={centre.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{centre.website}</a></p>}
+                  </div>
+                )}
                 <EnquiryForm centreId={centre.id} />
+                {(() => {
+                  const social = (centre.social ?? {}) as Record<string, string>;
+                  const links: [string, string][] = [
+                    ['Facebook', social.facebook], ['Instagram', social.instagram], ['YouTube', social.youtube],
+                    ['LinkedIn', social.linkedin], ['X (Twitter)', social.twitter], ['WhatsApp', social.whatsapp],
+                    ['Google Business', social.googleBusiness],
+                  ].filter(([, url]) => !!url) as [string, string][];
+                  return links.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
+                      {links.map(([label, url]) => (
+                        <a key={label} href={url} target="_blank" rel="noopener noreferrer" className="rounded-full border px-3 py-1 text-xs font-semibold hover:bg-secondary">
+                          {label}
+                        </a>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
               </DetailSectionCard>
             )}
           </div>

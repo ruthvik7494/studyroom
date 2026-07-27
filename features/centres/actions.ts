@@ -32,11 +32,17 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       slug,
       area: input.address, // area still backs /locations/[slug] filtering — kept in sync with the single Address field
       address: input.address,
+      city: input.city || null,
+      state: input.state || null,
+      country: input.country || 'India',
+      postcode: input.postcode || null,
       space_type: input.spaceType,
       lat: input.lat,
       lng: input.lng,
       emoji: input.emoji,
       phone: input.phone ?? null,
+      alt_phone: input.altPhone || null,
+      business_email: input.businessEmail || null,
       website: input.website || null,
       google_place_id: input.googlePlaceId ?? null,
       description: input.about || null,
@@ -46,13 +52,27 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       // attestation, reviewed alongside the listing during approval, not
       // something an owner can claim for themselves.
       women_safe_verified: input.womenSafeClaim ?? false,
+      social: {
+        facebook: input.facebook || undefined,
+        instagram: input.instagram || undefined,
+        youtube: input.youtube || undefined,
+        linkedin: input.linkedin || undefined,
+        twitter: input.twitter || undefined,
+        whatsapp: input.whatsapp || undefined,
+        googleBusiness: input.googleBusiness || undefined,
+      },
     }).select('id, slug').single();
     if (error) throw error;
 
     const pricing: Record<string, number> = {};
     if (input.priceHourly !== undefined) pricing.hour = input.priceHourly;
     if (input.priceDaily !== undefined) pricing.day = input.priceDaily;
+    if (input.priceWeekly !== undefined) pricing.week = input.priceWeekly;
+    if (input.priceFortnightly !== undefined) pricing.fortnight = input.priceFortnightly;
     if (input.priceMonthly !== undefined) pricing.month = input.priceMonthly;
+    if (input.priceQuarterly !== undefined) pricing.quarter = input.priceQuarterly;
+    if (input.priceHalfYearly !== undefined) pricing.half_year = input.priceHalfYearly;
+    if (input.priceYearly !== undefined) pricing.year = input.priceYearly;
 
     const { error: resourceErr } = await supabase.from('resources').insert({
       centre_id: centre.id,
@@ -107,11 +127,34 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
     const patch: Record<string, unknown> = {};
     if (fields.name !== undefined) patch.name = fields.name;
     if (fields.address !== undefined) { patch.address = fields.address; patch.area = fields.address; }
+    if (fields.city !== undefined) patch.city = fields.city || null;
+    if (fields.state !== undefined) patch.state = fields.state || null;
+    if (fields.country !== undefined) patch.country = fields.country || 'India';
+    if (fields.postcode !== undefined) patch.postcode = fields.postcode || null;
     if (fields.spaceType !== undefined) patch.space_type = fields.spaceType;
     if (fields.lat !== undefined) patch.lat = fields.lat;
     if (fields.lng !== undefined) patch.lng = fields.lng;
+    if (fields.phone !== undefined) patch.phone = fields.phone || null;
+    if (fields.altPhone !== undefined) patch.alt_phone = fields.altPhone || null;
+    if (fields.businessEmail !== undefined) patch.business_email = fields.businessEmail || null;
+    if (fields.website !== undefined) patch.website = fields.website || null;
     if (fields.about !== undefined) patch.description = fields.about || null;
     if (fields.womenSafeClaim !== undefined) patch.women_safe_verified = fields.womenSafeClaim;
+    if (
+      fields.facebook !== undefined || fields.instagram !== undefined || fields.youtube !== undefined ||
+      fields.linkedin !== undefined || fields.twitter !== undefined || fields.whatsapp !== undefined ||
+      fields.googleBusiness !== undefined
+    ) {
+      patch.social = {
+        facebook: fields.facebook || undefined,
+        instagram: fields.instagram || undefined,
+        youtube: fields.youtube || undefined,
+        linkedin: fields.linkedin || undefined,
+        twitter: fields.twitter || undefined,
+        whatsapp: fields.whatsapp || undefined,
+        googleBusiness: fields.googleBusiness || undefined,
+      };
+    }
 
     if (Object.keys(patch).length) {
       const { error } = await db.from('centres').update(patch as never).eq('id', centreId);
@@ -119,16 +162,25 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
     }
 
     // Pricing/seats live on the centre's resource row, not on centres itself.
-    if (fields.priceHourly !== undefined || fields.priceDaily !== undefined || fields.priceMonthly !== undefined || fields.seats !== undefined) {
+    const priceFields = [
+      fields.priceHourly, fields.priceDaily, fields.priceWeekly, fields.priceFortnightly,
+      fields.priceMonthly, fields.priceQuarterly, fields.priceHalfYearly, fields.priceYearly,
+    ];
+    if (priceFields.some((v) => v !== undefined) || fields.seats !== undefined) {
       const { data: resource } = await db.from('resources').select('id, pricing').eq('centre_id', centreId).limit(1).maybeSingle();
       if (resource) {
         const resourcePatch: Record<string, unknown> = {};
         if (fields.seats !== undefined) resourcePatch.unit_count = fields.seats;
-        if (fields.priceHourly !== undefined || fields.priceDaily !== undefined || fields.priceMonthly !== undefined) {
+        if (priceFields.some((v) => v !== undefined)) {
           const pricing: Record<string, number> = {};
           if (fields.priceHourly !== undefined) pricing.hour = fields.priceHourly;
           if (fields.priceDaily !== undefined) pricing.day = fields.priceDaily;
+          if (fields.priceWeekly !== undefined) pricing.week = fields.priceWeekly;
+          if (fields.priceFortnightly !== undefined) pricing.fortnight = fields.priceFortnightly;
           if (fields.priceMonthly !== undefined) pricing.month = fields.priceMonthly;
+          if (fields.priceQuarterly !== undefined) pricing.quarter = fields.priceQuarterly;
+          if (fields.priceHalfYearly !== undefined) pricing.half_year = fields.priceHalfYearly;
+          if (fields.priceYearly !== undefined) pricing.year = fields.priceYearly;
           resourcePatch.pricing = pricing;
         }
         const { error: resourceErr } = await db.from('resources').update(resourcePatch as never).eq('id', resource.id);
@@ -249,6 +301,7 @@ export async function uploadCentreImage(formData: FormData): Promise<Result<{ st
 
   const centreId = formData.get('centreId');
   const isCover = formData.get('isCover') === 'true';
+  const category = formData.get('category'); // e.g. "Reception", "Reading Hall" — optional labeled-slot tag
   const file = formData.get('file');
 
   if (typeof centreId !== 'string' || !centreId) return err('VALIDATION', 'Missing centre.');
@@ -276,7 +329,8 @@ export async function uploadCentreImage(formData: FormData): Promise<Result<{ st
     if (demoteErr) return err('INTERNAL', demoteErr.message);
   }
 
-  const { error: insErr } = await adminDb.from('listing_images').insert({ centre_id: centreId, storage_path: path, is_cover: isCover });
+  const { error: insErr } = await adminDb.from('listing_images')
+    .insert({ centre_id: centreId, storage_path: path, is_cover: isCover, category: typeof category === 'string' && category ? category : null });
   if (insErr) return err('INTERNAL', insErr.message);
 
   if (isCover) {
@@ -288,6 +342,38 @@ export async function uploadCentreImage(formData: FormData): Promise<Result<{ st
   revalidatePath('/owner/centres');
   revalidatePath('/centres');
   return ok({ storagePath: path });
+}
+
+/** Upload the centre's business logo (separate from the cover photo). Same trusted-upload pattern. */
+export async function uploadCentreLogo(formData: FormData): Promise<Result<{ url: string }>> {
+  const user = await requireRole('owner');
+
+  const centreId = formData.get('centreId');
+  const file = formData.get('file');
+  if (typeof centreId !== 'string' || !centreId) return err('VALIDATION', 'Missing centre.');
+  if (!(file instanceof File)) return err('VALIDATION', 'No file provided.');
+  if (!ALLOWED_IMAGE_MIME.includes(file.type)) {
+    return err('VALIDATION', `${file.type || 'That file type'} isn't supported — use JPEG, PNG, WebP, or AVIF.`);
+  }
+  if (file.size > 5 * 1024 * 1024) return err('VALIDATION', 'Image must be under 5 MB.');
+
+  const { data: centre } = await adminDb.from('centres').select('id, owner_id').eq('id', centreId).maybeSingle();
+  if (!centre) return err('NOT_FOUND', 'Centre not found.');
+  if (centre.owner_id !== user.id && user.role !== 'admin') return err('FORBIDDEN', 'That listing isn’t yours.');
+
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const path = `${centreId}/logo-${crypto.randomUUID()}.${ext}`;
+
+  const { error: upErr } = await adminDb.storage.from('listing-images').upload(path, file, { upsert: false, contentType: file.type });
+  if (upErr) return err('INTERNAL', `Upload failed: ${upErr.message}`);
+
+  const { data: pub } = adminDb.storage.from('listing-images').getPublicUrl(path);
+  const { error: updErr } = await adminDb.from('centres').update({ logo_url: pub.publicUrl }).eq('id', centreId);
+  if (updErr) return err('INTERNAL', updErr.message);
+
+  revalidatePath('/owner/centres');
+  revalidatePath('/centres');
+  return ok({ url: pub.publicUrl });
 }
 
 /** Replace the centre's amenity set with the selected amenity IDs. */

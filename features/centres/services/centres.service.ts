@@ -178,7 +178,7 @@ export async function getCentreBySlug(db: DB, slug: string): Promise<CentreDetai
   const { data: centre, error } = await db
     .from('centres')
     .select(
-      'id, owner_id, name, slug, space_type, area, address, lat, lng, capacity, cover_url, emoji, rating, reviews_count, is_verified, women_safe_verified, is_published, status, rejection_reason, admin_notes, location_id, updated_at, created_at, reviewed_by, reviewed_at, google_place_id, social, website, phone, description',
+      'id, owner_id, name, slug, space_type, area, address, lat, lng, capacity, cover_url, emoji, rating, reviews_count, is_verified, women_safe_verified, is_published, status, rejection_reason, admin_notes, location_id, updated_at, created_at, reviewed_by, reviewed_at, google_place_id, social, website, phone, description, logo_url, city, state, country, postcode, alt_phone, business_email',
     )
     .eq('slug', slug)
     .maybeSingle();
@@ -189,7 +189,7 @@ export async function getCentreBySlug(db: DB, slug: string): Promise<CentreDetai
     await Promise.all([
       db.from('resources').select('id, centre_id, resource_type, tier, label, unit_count, pricing, is_active').eq('centre_id', centre.id).eq('is_active', true),
       db.from('centre_live_occupancy').select('*').eq('centre_id', centre.id).maybeSingle(),
-      db.from('listing_images').select('id, storage_path, alt, is_cover, sort_order').eq('centre_id', centre.id).order('sort_order', { ascending: true }),
+      db.from('listing_images').select('id, storage_path, alt, is_cover, sort_order, category').eq('centre_id', centre.id).order('sort_order', { ascending: true }),
       db.from('centre_amenities').select('amenities(slug, label, icon)').eq('centre_id', centre.id),
     ]);
 
