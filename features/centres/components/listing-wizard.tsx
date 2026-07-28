@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { centreUpsertSchema, type CentreUpsert } from '../schema';
-import { createCentre, updateCentre, uploadCentreImage, uploadCentreLogo } from '../actions';
+import { createCentre, updateCentre, uploadCentreImage, uploadCentreLogo, submitForReview } from '../actions';
 
 interface Amenity { id: string; label: string; icon: string | null }
 
@@ -75,8 +75,10 @@ export function ListingWizard(props: Props) {
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [galleryFiles, setGalleryFiles] = useState<Record<string, File>>({});
+  const [galleryFiles, setGalleryFiles] = useState<Record<string, File[]>>({});
   const [extraFiles, setExtraFiles] = useState<File[]>([]);
+  /** Which button was actually clicked — 'draft' (stays a draft) or 'publish' (also submits for admin review). A ref, not state: the submit handler runs synchronously right after the click, before a state update would be guaranteed to have flushed. */
+  const submitIntent = useRef<'draft' | 'publish'>('draft');
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<CentreUpsert>({
     resolver: zodResolver(centreUpsertSchema),
@@ -108,7 +110,7 @@ export function ListingWizard(props: Props) {
     const centreId = props.mode === 'create' && 'id' in res.data ? res.data.id : props.centreId;
     if (centreId) {
       const allGalleryFiles = [
-        ...Object.entries(galleryFiles).map(([slot, file]) => ({ slot, file })),
+        ...Object.entries(galleryFiles).flatMap(([slot, files]) => files.map((file) => ({ slot, file }))),
         ...extraFiles.map((file) => ({ slot: undefined as string | undefined, file })),
       ];
 
@@ -138,6 +140,19 @@ export function ListingWizard(props: Props) {
           return;
         }
       }
+
+      // Save Draft stops here — the centre stays a draft, exactly as its
+      // name says. Publish additionally submits it for admin review; a
+      // draft never goes through this step, so the two buttons now have
+      // genuinely different outcomes instead of both just saving the same way.
+      if (props.mode === 'create' && submitIntent.current === 'publish') {
+        const submitRes = await submitForReview({ centreId });
+        if (!submitRes.ok) {
+          setServerError(`Saved as a draft, but couldn't submit for review: ${submitRes.error.message}`);
+          setPhase('idle');
+          return;
+        }
+      }
     }
 
     router.push('/owner/centres');
@@ -159,10 +174,10 @@ export function ListingWizard(props: Props) {
   const onLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => setLogoFile(e.target.files?.[0] ?? null);
   const onCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => setCoverFile(e.target.files?.[0] ?? null);
   const onGalleryChange = (slot: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     setGalleryFiles((prev) => {
       const next = { ...prev };
-      if (file) next[slot] = file; else delete next[slot];
+      if (files.length) next[slot] = files; else delete next[slot];
       return next;
     });
   };
@@ -417,7 +432,7 @@ export function ListingWizard(props: Props) {
       {/* STEP 6 — Gallery */}
       {step === 5 && (
         <div>
-          <p className="mb-3 text-sm text-muted-foreground">Upload photos of your study centre — one per category, plus any extras below</p>
+          <p className="mb-3 text-sm text-muted-foreground">Upload photos of your study centre — select several per category if you like, plus any extras below</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {GALLERY_SLOTS.map((slot) => (
               <div key={slot}>
@@ -426,10 +441,13 @@ export function ListingWizard(props: Props) {
                   id={`gallery-${slot}`}
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/avif"
+                  multiple
                   onChange={onGalleryChange(slot)}
                   className="mt-1 block w-full text-xs"
                 />
-                {galleryFiles[slot] && <p className="mt-1 truncate text-xs text-brand-green">✓ {galleryFiles[slot]!.name}</p>}
+                {galleryFiles[slot]?.length ? (
+                  <p className="mt-1 text-xs text-brand-green">✓ {galleryFiles[slot]!.length} photo{galleryFiles[slot]!.length > 1 ? 's' : ''} selected</p>
+                ) : null}
               </div>
             ))}
           </div>
@@ -461,7 +479,7 @@ export function ListingWizard(props: Props) {
             { title: 'Operating Hours', i: 2, lines: [PRICE_FIELDS.filter((p) => values[p.key]).map((p) => `${p.label}: ₹${values[p.key]}`).join(' · ') || 'No prices set'] },
             { title: 'Facilities & Amenities', i: 3, lines: [`${values.amenityIds?.length ?? 0} facilities selected`] },
             { title: 'Social Networks', i: 4, lines: [[values.facebook, values.instagram, values.youtube, values.linkedin, values.twitter, values.whatsapp, values.googleBusiness].filter(Boolean).length + ' links added'] },
-            { title: 'Gallery', i: 5, lines: [`${Object.keys(galleryFiles).length + extraFiles.length} photo${Object.keys(galleryFiles).length + extraFiles.length === 1 ? '' : 's'} selected — uploads once you publish`] },
+            { title: 'Gallery', i: 5, lines: [(() => { const n = Object.values(galleryFiles).reduce((s, f) => s + f.length, 0) + extraFiles.length; return `${n} photo${n === 1 ? '' : 's'} selected — uploads once you publish`; })()] },
           ].map((s) => (
             <div key={s.title} className="flex items-start justify-between rounded-lg border p-3">
               <div>
@@ -480,14 +498,14 @@ export function ListingWizard(props: Props) {
           <Button type="button" variant="outline" onClick={back} disabled={step === 0 || busy}>Back</Button>
           <div className="flex gap-2">
             {step === STEPS.length - 1 && (
-              <Button type="submit" variant="outline" disabled={busy}>
+              <Button type="submit" variant="outline" disabled={busy} onClick={() => { submitIntent.current = 'draft'; }}>
                 {phase === 'saving' ? 'Saving…' : 'Save Draft'}
               </Button>
             )}
             {step < STEPS.length - 1 ? (
               <Button type="button" onClick={next} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90">Next →</Button>
             ) : (
-              <Button type="submit" disabled={busy} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90">
+              <Button type="submit" disabled={busy} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90" onClick={() => { submitIntent.current = 'publish'; }}>
                 {phase === 'saving' ? 'Saving…' : phase === 'uploading' ? 'Uploading photos…' : (props.mode === 'create' ? 'Preview & Publish →' : 'Save changes')}
               </Button>
             )}
