@@ -429,6 +429,40 @@ export async function registerDocument(raw: unknown): Promise<Result<{ id: strin
   });
 }
 
+const mapsUrlSchema = z.object({ url: z.string().trim().url('Enter a valid URL') });
+
+/**
+ * Parse a pasted Google Maps URL into lat/lng. Handles both long-form URLs
+ * (which already contain the coordinates, e.g. ".../@12.97,77.59,15z...") and
+ * short "maps.app.goo.gl" share links, which redirect to the long form and
+ * have no coordinates in the short URL itself — those need a real request to
+ * follow the redirect, which is why this is a server action rather than a
+ * client-side regex.
+ */
+export async function resolveMapsUrl(raw: unknown): Promise<Result<{ lat: number; lng: number }>> {
+  return action(mapsUrlSchema, raw, async (input) => {
+    let finalUrl = input.url;
+    try {
+      const res = await fetch(input.url, { redirect: 'follow' });
+      finalUrl = res.url || input.url;
+    } catch {
+      // Fall back to parsing the pasted URL as-is — some hosts block
+      // server-side fetches; the long-form URL case still works fine.
+    }
+
+    const patterns = [
+      /@(-?\d+\.\d+),(-?\d+\.\d+)/,      // .../@lat,lng,zoomz...
+      /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/, // ?q=lat,lng
+      /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,  // .../!3dlat!4dlng... (place detail URLs)
+    ];
+    for (const re of patterns) {
+      const m = finalUrl.match(re);
+      if (m) return { lat: Number(m[1]), lng: Number(m[2]) };
+    }
+    throw new ActionError('VALIDATION', 'Couldn’t find coordinates in that link — try pasting the full map URL, or enter latitude/longitude manually.');
+  });
+}
+
 const deleteImageSchema = z.object({ imageId: z.string().uuid() });
 
 /**

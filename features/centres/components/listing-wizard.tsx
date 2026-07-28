@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { centreUpsertSchema, type CentreUpsert } from '../schema';
-import { createCentre, updateCentre, uploadCentreImage, uploadCentreLogo, submitForReview } from '../actions';
+import { createCentre, updateCentre, uploadCentreImage, uploadCentreLogo, submitForReview, resolveMapsUrl } from '../actions';
 import { DeletePhotoButton } from './delete-photo-button';
+import { PlacesPicker } from './places-picker';
 
 interface Amenity { id: string; label: string; icon: string | null }
 
@@ -91,6 +92,9 @@ export function ListingWizard(props: Props) {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [galleryFiles, setGalleryFiles] = useState<Record<string, File[]>>({});
   const [extraFiles, setExtraFiles] = useState<File[]>([]);
+  const [mapsUrl, setMapsUrl] = useState('');
+  const [resolvingUrl, setResolvingUrl] = useState(false);
+  const [mapsUrlError, setMapsUrlError] = useState<string | null>(null);
   /** Which button was actually clicked — 'draft' (stays a draft) or 'publish' (also submits for admin review). A ref, not state: the submit handler runs synchronously right after the click, before a state update would be guaranteed to have flushed. */
   const submitIntent = useRef<'draft' | 'publish'>('draft');
 
@@ -196,6 +200,16 @@ export function ListingWizard(props: Props) {
     });
   };
   const onExtraChange = (e: React.ChangeEvent<HTMLInputElement>) => setExtraFiles(Array.from(e.target.files ?? []));
+
+  const onResolveMapsUrl = async () => {
+    setMapsUrlError(null);
+    setResolvingUrl(true);
+    const res = await resolveMapsUrl({ url: mapsUrl });
+    setResolvingUrl(false);
+    if (!res.ok) { setMapsUrlError(res.error.message); return; }
+    setValue('lat', res.data.lat, { shouldValidate: true });
+    setValue('lng', res.data.lng, { shouldValidate: true });
+  };
 
   return (
     <form onSubmit={(e) => e.preventDefault()} noValidate>
@@ -357,47 +371,95 @@ export function ListingWizard(props: Props) {
 
       {/* STEP 2 — Address & Contact */}
       {step === 1 && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <p className="text-sm text-muted-foreground">Add your study centre location and contact details</p>
 
-          <div>
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" placeholder="123, MG Road, Near City Library" aria-invalid={!!errors.address} {...register('address')} />
-            {errors.address && <p className="mt-1 text-xs text-destructive">{errors.address.message}</p>}
+          <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+            <div>
+              <PlacesPicker
+                onSelect={(place) => {
+                  setValue('address', place.address, { shouldValidate: true });
+                  setValue('lat', place.lat, { shouldValidate: true });
+                  setValue('lng', place.lng, { shouldValidate: true });
+                  setValue('googlePlaceId', place.googlePlaceId);
+                }}
+              />
+            </div>
+            <p className="hidden pb-2.5 text-sm font-semibold text-muted-foreground sm:block">OR</p>
+            <div>
+              <Label htmlFor="mapsUrl">Paste Google Maps URL</Label>
+              <div className="flex gap-2">
+                <Input id="mapsUrl" placeholder="https://maps.google.com/…" value={mapsUrl} onChange={(e) => setMapsUrl(e.target.value)} />
+                <Button type="button" variant="outline" disabled={!mapsUrl || resolvingUrl} onClick={onResolveMapsUrl}>
+                  {resolvingUrl ? '…' : '🔗'}
+                </Button>
+              </div>
+              {mapsUrlError && <p className="mt-1 text-xs text-destructive">{mapsUrlError}</p>}
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="city">City</Label>
-              <Input id="city" {...register('city')} />
+              <p className="mb-2 text-sm font-medium">Address Details</p>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="address">Address</Label>
+                  <Input id="address" placeholder="123, MG Road, Near City Library" aria-invalid={!!errors.address} {...register('address')} />
+                  {errors.address && <p className="mt-1 text-xs text-destructive">{errors.address.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input id="city" {...register('city')} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="state">State</Label>
+                    <Input id="state" {...register('state')} />
+                  </div>
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input id="country" {...register('country')} />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="postcode">Postcode</Label>
+                  <Input id="postcode" className="max-w-[160px]" {...register('postcode')} />
+                </div>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="state">State</Label>
-              <Input id="state" {...register('state')} />
-            </div>
-            <div>
-              <Label htmlFor="postcode">Postcode</Label>
-              <Input id="postcode" {...register('postcode')} />
-            </div>
-            <div>
-              <Label htmlFor="country">Country</Label>
-              <Input id="country" {...register('country')} />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="lat">Latitude <span className="text-muted-foreground">(optional)</span></Label>
-              <Input id="lat" type="number" step="any" aria-invalid={!!errors.lat} {...register('lat', { valueAsNumber: true })} />
-              {errors.lat && <p className="mt-1 text-xs text-destructive">{errors.lat.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="lng">Longitude <span className="text-muted-foreground">(optional)</span></Label>
-              <Input id="lng" type="number" step="any" aria-invalid={!!errors.lng} {...register('lng', { valueAsNumber: true })} />
-              {errors.lng && <p className="mt-1 text-xs text-destructive">{errors.lng.message}</p>}
+              <p className="mb-2 text-sm font-medium">Location on Map</p>
+              {values.lat && values.lng ? (
+                <div className="overflow-hidden rounded-xl border">
+                  <iframe
+                    title="Centre location"
+                    src={`https://www.google.com/maps?q=${values.lat},${values.lng}&z=15&output=embed`}
+                    className="h-64 w-full"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              ) : (
+                <div className="flex h-64 items-center justify-center rounded-xl border bg-secondary/40 text-center text-sm text-muted-foreground">
+                  Search a location or paste a Maps link<br />to see it on the map here.
+                </div>
+              )}
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="lat">Latitude <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input id="lat" type="number" step="any" aria-invalid={!!errors.lat} {...register('lat', { valueAsNumber: true })} />
+                  {errors.lat && <p className="mt-1 text-xs text-destructive">{errors.lat.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="lng">Longitude <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input id="lng" type="number" step="any" aria-invalid={!!errors.lng} {...register('lng', { valueAsNumber: true })} />
+                  {errors.lng && <p className="mt-1 text-xs text-destructive">{errors.lng.message}</p>}
+                </div>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">Filled in automatically above, or enter manually. Without these, this centre won't appear in "near me" search.</p>
             </div>
           </div>
-          <p className="-mt-2 text-xs text-muted-foreground">Leave blank if you're not sure — you can add these later. Without them, this centre won't appear in "near me" search.</p>
 
           <fieldset>
             <legend className="mb-2 text-sm font-medium">Contact Details</legend>
