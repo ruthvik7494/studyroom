@@ -553,17 +553,51 @@ export function ListingWizard(props: Props) {
       {/* STEP 6 — Gallery */}
       {step === 5 && (
         <div>
-          <p className="mb-3 text-sm text-muted-foreground">Upload photos of your study centre — select several per category if you like, plus any extras below</p>
+          <p className="mb-4 text-sm text-muted-foreground">Upload photos of your study centre — select several per category if you like, plus any extras below</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {GALLERY_SLOTS.map((slot) => {
               const existing = props.mode === 'edit' ? props.photos.gallery.filter((g) => g.category === slot) : [];
+              const picked = galleryFiles[slot] ?? [];
+              const previewUrl = picked.length > 0 ? URL.createObjectURL(picked[0]!) : existing[0]?.url;
+              const extraCount = picked.length + existing.length - (previewUrl ? 1 : 0);
               return (
                 <div key={slot}>
-                  <Label htmlFor={`gallery-${slot}`}>{slot}</Label>
+                  <p className="mb-1.5 text-sm font-medium">{slot}</p>
+                  <label
+                    htmlFor={`gallery-${slot}`}
+                    className="relative flex aspect-[4/3] w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-secondary to-accent"
+                  >
+                    {previewUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                      <span aria-hidden className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">🏢</span>
+                    )}
+                    <span className="absolute inset-0 bg-black/10" aria-hidden />
+                    <span className="relative flex flex-col items-center gap-1 rounded-full bg-white px-4 py-2 shadow-md">
+                      <svg aria-hidden viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2d6c4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 8a2 2 0 0 1 2-2h1.2l.8-1.5A1 1 0 0 1 8.9 4h6.2a1 1 0 0 1 .9.55L16.8 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" />
+                        <circle cx="12" cy="13" r="3.2" />
+                      </svg>
+                      <span className="text-xs font-semibold text-[#2d6c4f]">Upload</span>
+                    </span>
+                    {extraCount > 0 && (
+                      <span className="absolute right-1.5 top-1.5 rounded-full bg-[#2d6c4f] px-1.5 py-0.5 text-[10px] font-bold text-white">+{extraCount}</span>
+                    )}
+                  </label>
+                  <input
+                    id={`gallery-${slot}`}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/avif"
+                    multiple
+                    onChange={onGalleryChange(slot)}
+                    className="sr-only"
+                  />
+                  {picked.length > 0 && <p className="mt-1 text-xs text-brand-green">✓ {picked.length} new photo{picked.length > 1 ? 's' : ''} selected</p>}
                   {existing.length > 0 && (
-                    <div className="mb-1 flex flex-wrap gap-1">
+                    <div className="mt-1 flex flex-wrap gap-1">
                       {existing.map((g) => (
-                        <div key={g.id} className="relative h-12 w-12">
+                        <div key={g.id} className="relative h-8 w-8">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={g.url} alt="" className="h-full w-full rounded object-cover" />
                           <DeletePhotoButton imageId={g.id} />
@@ -571,23 +605,12 @@ export function ListingWizard(props: Props) {
                       ))}
                     </div>
                   )}
-                  <input
-                    id={`gallery-${slot}`}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/avif"
-                    multiple
-                    onChange={onGalleryChange(slot)}
-                    className="mt-1 block w-full text-xs"
-                  />
-                  {galleryFiles[slot]?.length ? (
-                    <p className="mt-1 text-xs text-brand-green">✓ {galleryFiles[slot]!.length} photo{galleryFiles[slot]!.length > 1 ? 's' : ''} selected</p>
-                  ) : null}
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-4 border-t pt-4">
+          <div className="mt-5 border-t pt-4">
             <Label htmlFor="extra-photos">Additional Photos</Label>
             {props.mode === 'edit' && props.photos.gallery.filter((g) => !g.category || !GALLERY_SLOTS.includes(g.category)).length > 0 && (
               <div className="mb-2 flex flex-wrap gap-1.5">
