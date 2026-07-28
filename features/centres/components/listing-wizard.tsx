@@ -96,7 +96,7 @@ export function ListingWizard(props: Props) {
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CentreUpsert>({
     resolver: zodResolver(centreUpsertSchema),
-    defaultValues: { spaceType: 'study_hall', seats: 10, amenityIds: [], country: 'India', ...props.defaults },
+    defaultValues: { spaceType: 'study_hall', seats: 10, amenityIds: [], tags: [], country: 'India', ...props.defaults },
   });
 
   const busy = phase !== 'idle';
