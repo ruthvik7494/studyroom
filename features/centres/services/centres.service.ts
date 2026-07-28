@@ -178,7 +178,7 @@ export async function getCentreBySlug(db: DB, slug: string): Promise<CentreDetai
   const { data: centre, error } = await db
     .from('centres')
     .select(
-      'id, owner_id, name, slug, space_type, area, address, lat, lng, capacity, cover_url, emoji, rating, reviews_count, is_verified, women_safe_verified, is_published, status, rejection_reason, admin_notes, location_id, updated_at, created_at, reviewed_by, reviewed_at, google_place_id, social, website, phone, description, logo_url, city, state, country, postcode, alt_phone, business_email',
+      'id, owner_id, name, slug, space_type, area, address, lat, lng, capacity, cover_url, emoji, rating, reviews_count, is_verified, women_safe_verified, is_published, status, rejection_reason, admin_notes, location_id, updated_at, created_at, reviewed_by, reviewed_at, google_place_id, social, website, phone, description, logo_url, city, state, country, postcode, alt_phone, business_email, tags',
     )
     .eq('slug', slug)
     .maybeSingle();

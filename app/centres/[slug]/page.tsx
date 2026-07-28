@@ -399,6 +399,16 @@ export default async function CentreDetailPage({ params }: PageProps) {
               </DetailSectionCard>
             )}
 
+            {centre.tags && centre.tags.length > 0 && (
+              <DetailSectionCard icon="🏷" title="Business Tags">
+                <div className="flex flex-wrap gap-2">
+                  {centre.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{tag}</span>
+                  ))}
+                </div>
+              </DetailSectionCard>
+            )}
+
             {(centre.phone || centre.alt_phone || centre.business_email || centre.website) && (
               <DetailSectionCard icon="📞" title="Contact Detail">
                 <div className="space-y-1.5 text-sm">

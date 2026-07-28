@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requireRole } from '@/lib/auth/rbac';
 import { noindex } from '@/lib/seo';
 import { ListingWizard } from '@/features/centres/components/listing-wizard';
+import type { CentreUpsert } from '@/features/centres/schema';
 
 export const metadata: Metadata = { title: 'Edit listing', ...noindex };
 
@@ -18,7 +19,7 @@ export default async function EditListingPage({ params }: PageProps) {
   const db = await createClient();
 
   const [{ data: centre }, { data: resource }, { data: selectedAmenities }, { data: amenities }, { data: images }, { data: hoursRows }] = await Promise.all([
-    db.from('centres').select('id, owner_id, name, address, city, state, country, postcode, space_type, lat, lng, description, women_safe_verified, cover_url, logo_url, phone, alt_phone, business_email, website, social').eq('id', id).maybeSingle(),
+    db.from('centres').select('id, owner_id, name, address, city, state, country, postcode, space_type, lat, lng, description, women_safe_verified, cover_url, logo_url, phone, alt_phone, business_email, website, social, tags').eq('id', id).maybeSingle(),
     db.from('resources').select('unit_count, pricing').eq('centre_id', id).limit(1).maybeSingle(),
     db.from('centre_amenities').select('amenity_id').eq('centre_id', id),
     db.from('amenities').select('id, label, icon').order('sort_order'),
@@ -79,6 +80,7 @@ export default async function EditListingPage({ params }: PageProps) {
           seats: resource?.unit_count ?? 10,
           womenSafeClaim: centre.women_safe_verified ?? false,
           amenityIds: (selectedAmenities ?? []).map((a) => a.amenity_id),
+          tags: (centre.tags ?? []) as CentreUpsert['tags'],
           hours,
           facebook: social.facebook ?? '',
           instagram: social.instagram ?? '',

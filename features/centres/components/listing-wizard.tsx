@@ -18,6 +18,16 @@ interface Amenity { id: string; label: string; icon: string | null }
 const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // display Monday..Sunday, matching the reference design
 
+const SEATING_TIERS: { label: string; sub: string; icon: string; value: number }[] = [
+  { label: '1 – 20', sub: 'Seats', icon: '👤', value: 20 },
+  { label: '21 – 50', sub: 'Seats', icon: '👥', value: 50 },
+  { label: '51 – 100', sub: 'Seats', icon: '👥', value: 100 },
+  { label: '101 – 200', sub: 'Seats', icon: '👥', value: 200 },
+  { label: '200+', sub: 'Seats', icon: '👥', value: 250 },
+];
+
+const BUSINESS_TAGS = ['Quiet', 'Premium', 'Affordable', 'AC', 'Library', '24x7', 'Students', 'Professionals'] as const;
+
 const SPACE_TYPES: { value: CentreUpsert['spaceType']; label: string; icon: string }[] = [
   { value: 'study_hall', label: 'Study Centre', icon: '🎓' },
   { value: 'reading_room', label: 'Reading Room', icon: '📖' },
@@ -42,7 +52,7 @@ const STEPS = ['Profile & Category', 'Address & Contact', 'Operating Hours', 'Fa
 
 /** Which step each field lives on — used to jump to the first step with a validation error, since errors on a hidden step are otherwise invisible. */
 const FIELD_STEP: Partial<Record<keyof CentreUpsert, number>> = {
-  name: 0, seats: 0, about: 0, spaceType: 0,
+  name: 0, seats: 0, about: 0, spaceType: 0, tags: 0,
   address: 1, city: 1, state: 1, country: 1, postcode: 1, lat: 1, lng: 1, phone: 1, altPhone: 1, businessEmail: 1, website: 1,
   priceHourly: 2, priceDaily: 2, priceWeekly: 2, priceFortnightly: 2, priceMonthly: 2, priceQuarterly: 2, priceHalfYearly: 2, priceYearly: 2, hours: 2,
   amenityIds: 3, womenSafeClaim: 3,
@@ -84,7 +94,7 @@ export function ListingWizard(props: Props) {
   /** Which button was actually clicked — 'draft' (stays a draft) or 'publish' (also submits for admin review). A ref, not state: the submit handler runs synchronously right after the click, before a state update would be guaranteed to have flushed. */
   const submitIntent = useRef<'draft' | 'publish'>('draft');
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<CentreUpsert>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CentreUpsert>({
     resolver: zodResolver(centreUpsertSchema),
     defaultValues: { spaceType: 'study_hall', seats: 10, amenityIds: [], country: 'India', ...props.defaults },
   });
@@ -231,28 +241,49 @@ export function ListingWizard(props: Props) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="logo">Business Logo</Label>
-              {props.mode === 'edit' && props.photos.logoUrl && !logoFile && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={props.photos.logoUrl} alt="" className="mt-1 mb-2 h-16 w-16 rounded-lg border object-cover" />
-              )}
-              <input id="logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={onLogoChange} className="mt-1 block text-sm" />
-              <p className="mt-1 text-xs text-muted-foreground">
-                {logoFile ? `Selected: ${logoFile.name}` : props.mode === 'edit' && props.photos.logoUrl ? 'Choose a new file to replace the current logo.' : 'PNG, JPG (max 5MB)'}
-              </p>
+              <label
+                htmlFor="logo"
+                className="mt-1 flex h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[#2d6c4f]/30 bg-[#2d6c4f]/5 text-center transition-colors hover:bg-[#2d6c4f]/10"
+              >
+                {props.mode === 'edit' && props.photos.logoUrl && !logoFile ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={props.photos.logoUrl} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                ) : (
+                  <span aria-hidden className="text-2xl text-[#2d6c4f]">⬆</span>
+                )}
+                <span className="text-xs font-semibold text-[#2d6c4f]">
+                  {logoFile ? logoFile.name : props.mode === 'edit' && props.photos.logoUrl ? 'Replace Logo' : 'Upload Logo'}
+                </span>
+                <span className="text-[10px] text-muted-foreground">PNG, JPG (Max 5MB)</span>
+              </label>
+              <input id="logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={onLogoChange} className="sr-only" />
             </div>
             <div>
               <Label htmlFor="cover">Cover Image</Label>
-              {props.mode === 'edit' && props.photos.coverUrl && !coverFile && (
-                <div className="relative mt-1 mb-2 h-20 w-full max-w-[160px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={props.photos.coverUrl} alt="" className="h-full w-full rounded-lg border object-cover" />
-                  {props.photos.coverImageId && <DeletePhotoButton imageId={props.photos.coverImageId} />}
+              <label
+                htmlFor="cover"
+                className="relative mt-1 flex h-28 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border-2 border-dashed border-[#2d6c4f]/30 bg-[#2d6c4f]/5 text-center transition-colors hover:bg-[#2d6c4f]/10"
+              >
+                {props.mode === 'edit' && props.photos.coverUrl && !coverFile ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={props.photos.coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+                    <span className="relative text-xs font-semibold text-[#2d6c4f]">Replace Cover Image</span>
+                  </>
+                ) : (
+                  <>
+                    <span aria-hidden className="text-2xl text-[#2d6c4f]">⬆</span>
+                    <span className="text-xs font-semibold text-[#2d6c4f]">{coverFile ? coverFile.name : 'Upload Cover Image'}</span>
+                    <span className="text-[10px] text-muted-foreground">PNG, JPG (Max 5MB)</span>
+                  </>
+                )}
+              </label>
+              <input id="cover" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={onCoverChange} className="sr-only" />
+              {props.mode === 'edit' && props.photos.coverImageId && props.photos.coverUrl && !coverFile && (
+                <div className="mt-1 flex justify-end">
+                  <DeletePhotoButton imageId={props.photos.coverImageId} />
                 </div>
               )}
-              <input id="cover" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={onCoverChange} className="mt-1 block text-sm" />
-              <p className="mt-1 text-xs text-muted-foreground">
-                {coverFile ? `Selected: ${coverFile.name}` : props.mode === 'edit' && props.photos.coverUrl ? 'Choose a new file to replace the current cover.' : 'PNG, JPG (max 5MB)'}
-              </p>
             </div>
           </div>
 
@@ -270,9 +301,51 @@ export function ListingWizard(props: Props) {
           </div>
 
           <div>
-            <Label htmlFor="seats">Seating Capacity</Label>
-            <Input id="seats" type="number" min={1} aria-invalid={!!errors.seats} {...register('seats')} />
-            {errors.seats && <p className="mt-1 text-xs text-destructive">{errors.seats.message}</p>}
+            <p className="mb-2 text-sm font-medium">Seating Capacity</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {SEATING_TIERS.map((t) => {
+                const active = values.seats === t.value;
+                return (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => setValue('seats', t.value, { shouldValidate: true })}
+                    className={cn('flex flex-col items-center gap-1 rounded-lg border p-3 text-center text-xs font-medium', active && 'border-[#2d6c4f] bg-[#2d6c4f]/5')}
+                  >
+                    <span className="text-lg" aria-hidden>{t.icon}</span>
+                    <span>{t.label}</span>
+                    <span className="text-[10px] text-muted-foreground">{t.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2">
+              <Label htmlFor="seats">Exact seat count</Label>
+              <Input id="seats" type="number" min={1} className="max-w-[140px]" aria-invalid={!!errors.seats} {...register('seats')} />
+              {errors.seats && <p className="mt-1 text-xs text-destructive">{errors.seats.message}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">This exact number is what controls real booking availability — pick a tier above, then fine-tune here.</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-sm font-medium">Business Tags</p>
+            <div className="flex flex-wrap gap-2">
+              {BUSINESS_TAGS.map((tag) => {
+                const checked = values.tags?.includes(tag);
+                return (
+                  <label
+                    key={tag}
+                    className={cn(
+                      'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold',
+                      checked ? 'border-[#2d6c4f] bg-[#2d6c4f]/10 text-[#2d6c4f]' : 'text-muted-foreground',
+                    )}
+                  >
+                    <input type="checkbox" value={tag} className="sr-only" {...register('tags')} />
+                    {tag}
+                  </label>
+                );
+              })}
+            </div>
           </div>
 
           <div>
@@ -518,7 +591,7 @@ export function ListingWizard(props: Props) {
         <div className="space-y-3">
           <p className="mb-2 text-sm text-muted-foreground">Review your details before publishing your listing</p>
           {[
-            { title: 'Profile & Category', i: 0, lines: [values.name, SPACE_TYPES.find((t) => t.value === values.spaceType)?.label, `${values.seats} seats`, logoFile ? `Logo: ${logoFile.name}` : null, coverFile ? `Cover: ${coverFile.name}` : null] },
+            { title: 'Profile & Category', i: 0, lines: [values.name, SPACE_TYPES.find((t) => t.value === values.spaceType)?.label, `${values.seats} seats`, values.tags?.length ? `Tags: ${values.tags.join(', ')}` : null, logoFile ? `Logo: ${logoFile.name}` : null, coverFile ? `Cover: ${coverFile.name}` : null] },
             { title: 'Address & Contact', i: 1, lines: [values.address, [values.city, values.state, values.postcode].filter(Boolean).join(', '), values.phone] },
             { title: 'Operating Hours', i: 2, lines: [PRICE_FIELDS.filter((p) => values[p.key]).map((p) => `${p.label}: ₹${values[p.key]}`).join(' · ') || 'No prices set'] },
             { title: 'Facilities & Amenities', i: 3, lines: [`${values.amenityIds?.length ?? 0} facilities selected`] },

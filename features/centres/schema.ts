@@ -112,6 +112,7 @@ export const centreUpsertSchema = z.object({
   seats: z.coerce.number().int().positive().max(1000).default(10),
   about: z.string().trim().max(2000).optional().or(z.literal('')),
   amenityIds: z.array(z.string().uuid()).max(40).default([]),
+  tags: z.array(z.enum(['Quiet', 'Premium', 'Affordable', 'AC', 'Library', '24x7', 'Students', 'Professionals'])).max(20).default([]),
   womenSafeClaim: z.coerce.boolean().default(false),
   /** Exactly 7 entries, index 0 = Sunday .. 6 = Saturday. */
   hours: z.array(dayHoursSchema).length(7).default(DEFAULT_WEEKLY_HOURS),

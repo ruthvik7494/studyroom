@@ -52,6 +52,7 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       // attestation, reviewed alongside the listing during approval, not
       // something an owner can claim for themselves.
       women_safe_verified: input.womenSafeClaim ?? false,
+      tags: input.tags ?? [],
       social: {
         facebook: input.facebook || undefined,
         instagram: input.instagram || undefined,
@@ -140,6 +141,7 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
     if (fields.website !== undefined) patch.website = fields.website || null;
     if (fields.about !== undefined) patch.description = fields.about || null;
     if (fields.womenSafeClaim !== undefined) patch.women_safe_verified = fields.womenSafeClaim;
+    if (fields.tags !== undefined) patch.tags = fields.tags;
     if (
       fields.facebook !== undefined || fields.instagram !== undefined || fields.youtube !== undefined ||
       fields.linkedin !== undefined || fields.twitter !== undefined || fields.whatsapp !== undefined ||
