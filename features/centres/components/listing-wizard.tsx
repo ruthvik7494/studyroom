@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { centreUpsertSchema, type CentreUpsert } from '../schema';
 import { createCentre, updateCentre, uploadCentreImage, uploadCentreLogo, submitForReview } from '../actions';
+import { DeletePhotoButton } from './delete-photo-button';
 
 interface Amenity { id: string; label: string; icon: string | null }
 
@@ -48,9 +49,12 @@ const FIELD_STEP: Partial<Record<keyof CentreUpsert, number>> = {
   facebook: 4, instagram: 4, youtube: 4, linkedin: 4, twitter: 4, whatsapp: 4, googleBusiness: 4,
 };
 
+interface ExistingPhoto { id: string; url: string; category: string | null }
+interface ExistingPhotos { logoUrl: string | null; coverUrl: string | null; coverImageId: string | null; gallery: ExistingPhoto[] }
+
 type Props =
-  | { mode: 'create'; centreId?: undefined; defaults?: undefined; amenities: Amenity[]; intro?: string }
-  | { mode: 'edit'; centreId: string; defaults: Partial<CentreUpsert>; amenities: Amenity[]; intro?: string };
+  | { mode: 'create'; centreId?: undefined; defaults?: undefined; amenities: Amenity[]; intro?: string; photos?: undefined }
+  | { mode: 'edit'; centreId: string; defaults: Partial<CentreUpsert>; amenities: Amenity[]; intro?: string; photos: ExistingPhotos };
 
 /**
  * 7-step listing wizard. Everything lives in ONE react-hook-form instance —
@@ -184,7 +188,7 @@ export function ListingWizard(props: Props) {
   const onExtraChange = (e: React.ChangeEvent<HTMLInputElement>) => setExtraFiles(Array.from(e.target.files ?? []));
 
   return (
-    <form onSubmit={handleSubmit(doSubmit, onInvalid)} noValidate>
+    <form onSubmit={(e) => e.preventDefault()} noValidate>
       <Card className="rounded-2xl p-5 sm:p-6">
         {props.intro && <p className="mb-5 text-sm text-muted-foreground">{props.intro}</p>}
 
@@ -227,13 +231,28 @@ export function ListingWizard(props: Props) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="logo">Business Logo</Label>
+              {props.mode === 'edit' && props.photos.logoUrl && !logoFile && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={props.photos.logoUrl} alt="" className="mt-1 mb-2 h-16 w-16 rounded-lg border object-cover" />
+              )}
               <input id="logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={onLogoChange} className="mt-1 block text-sm" />
-              <p className="mt-1 text-xs text-muted-foreground">{logoFile ? `Selected: ${logoFile.name}` : 'PNG, JPG (max 5MB)'}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {logoFile ? `Selected: ${logoFile.name}` : props.mode === 'edit' && props.photos.logoUrl ? 'Choose a new file to replace the current logo.' : 'PNG, JPG (max 5MB)'}
+              </p>
             </div>
             <div>
               <Label htmlFor="cover">Cover Image</Label>
+              {props.mode === 'edit' && props.photos.coverUrl && !coverFile && (
+                <div className="relative mt-1 mb-2 h-20 w-full max-w-[160px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={props.photos.coverUrl} alt="" className="h-full w-full rounded-lg border object-cover" />
+                  {props.photos.coverImageId && <DeletePhotoButton imageId={props.photos.coverImageId} />}
+                </div>
+              )}
               <input id="cover" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={onCoverChange} className="mt-1 block text-sm" />
-              <p className="mt-1 text-xs text-muted-foreground">{coverFile ? `Selected: ${coverFile.name}` : 'PNG, JPG (max 5MB)'}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {coverFile ? `Selected: ${coverFile.name}` : props.mode === 'edit' && props.photos.coverUrl ? 'Choose a new file to replace the current cover.' : 'PNG, JPG (max 5MB)'}
+              </p>
             </div>
           </div>
 
@@ -434,26 +453,51 @@ export function ListingWizard(props: Props) {
         <div>
           <p className="mb-3 text-sm text-muted-foreground">Upload photos of your study centre — select several per category if you like, plus any extras below</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {GALLERY_SLOTS.map((slot) => (
-              <div key={slot}>
-                <Label htmlFor={`gallery-${slot}`}>{slot}</Label>
-                <input
-                  id={`gallery-${slot}`}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/avif"
-                  multiple
-                  onChange={onGalleryChange(slot)}
-                  className="mt-1 block w-full text-xs"
-                />
-                {galleryFiles[slot]?.length ? (
-                  <p className="mt-1 text-xs text-brand-green">✓ {galleryFiles[slot]!.length} photo{galleryFiles[slot]!.length > 1 ? 's' : ''} selected</p>
-                ) : null}
-              </div>
-            ))}
+            {GALLERY_SLOTS.map((slot) => {
+              const existing = props.mode === 'edit' ? props.photos.gallery.filter((g) => g.category === slot) : [];
+              return (
+                <div key={slot}>
+                  <Label htmlFor={`gallery-${slot}`}>{slot}</Label>
+                  {existing.length > 0 && (
+                    <div className="mb-1 flex flex-wrap gap-1">
+                      {existing.map((g) => (
+                        <div key={g.id} className="relative h-12 w-12">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={g.url} alt="" className="h-full w-full rounded object-cover" />
+                          <DeletePhotoButton imageId={g.id} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    id={`gallery-${slot}`}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/avif"
+                    multiple
+                    onChange={onGalleryChange(slot)}
+                    className="mt-1 block w-full text-xs"
+                  />
+                  {galleryFiles[slot]?.length ? (
+                    <p className="mt-1 text-xs text-brand-green">✓ {galleryFiles[slot]!.length} photo{galleryFiles[slot]!.length > 1 ? 's' : ''} selected</p>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
 
           <div className="mt-4 border-t pt-4">
             <Label htmlFor="extra-photos">Additional Photos</Label>
+            {props.mode === 'edit' && props.photos.gallery.filter((g) => !g.category || !GALLERY_SLOTS.includes(g.category)).length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {props.photos.gallery.filter((g) => !g.category || !GALLERY_SLOTS.includes(g.category)).map((g) => (
+                  <div key={g.id} className="relative h-14 w-14">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={g.url} alt="" className="h-full w-full rounded object-cover" />
+                    <DeletePhotoButton imageId={g.id} />
+                  </div>
+                ))}
+              </div>
+            )}
             <input
               id="extra-photos"
               type="file"
@@ -498,14 +542,14 @@ export function ListingWizard(props: Props) {
           <Button type="button" variant="outline" onClick={back} disabled={step === 0 || busy}>Back</Button>
           <div className="flex gap-2">
             {step === STEPS.length - 1 && (
-              <Button type="submit" variant="outline" disabled={busy} onClick={() => { submitIntent.current = 'draft'; }}>
+              <Button type="button" variant="outline" disabled={busy} onClick={() => { submitIntent.current = 'draft'; void handleSubmit(doSubmit, onInvalid)(); }}>
                 {phase === 'saving' ? 'Saving…' : 'Save Draft'}
               </Button>
             )}
             {step < STEPS.length - 1 ? (
               <Button type="button" onClick={next} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90">Next →</Button>
             ) : (
-              <Button type="submit" disabled={busy} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90" onClick={() => { submitIntent.current = 'publish'; }}>
+              <Button type="button" disabled={busy} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90" onClick={() => { submitIntent.current = 'publish'; void handleSubmit(doSubmit, onInvalid)(); }}>
                 {phase === 'saving' ? 'Saving…' : phase === 'uploading' ? 'Uploading photos…' : (props.mode === 'create' ? 'Preview & Publish →' : 'Save changes')}
               </Button>
             )}

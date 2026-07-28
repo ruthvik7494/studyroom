@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 import { requireRole } from '@/lib/auth/rbac';
 import { noindex } from '@/lib/seo';
 import { ListingWizard } from '@/features/centres/components/listing-wizard';
-import { DeletePhotoButton } from '@/features/centres/components/delete-photo-button';
 
 export const metadata: Metadata = { title: 'Edit listing', ...noindex };
 
@@ -32,7 +31,6 @@ export default async function EditListingPage({ params }: PageProps) {
   const pricing = (resource?.pricing ?? {}) as Record<string, number>;
   const social = (centre.social ?? {}) as Record<string, string>;
   const coverImage = images?.find((img) => img.is_cover);
-  const gallery = (images ?? []).filter((img) => !img.is_cover);
   const hours = Array.from({ length: 7 }, (_, dayOfWeek) => {
     const row = hoursRows?.find((h) => h.day_of_week === dayOfWeek);
     return {
@@ -49,6 +47,12 @@ export default async function EditListingPage({ params }: PageProps) {
         mode="edit"
         centreId={centre.id}
         amenities={amenities ?? []}
+        photos={{
+          logoUrl: centre.logo_url,
+          coverUrl: centre.cover_url,
+          coverImageId: coverImage?.id ?? null,
+          gallery: (images ?? []).filter((img) => !img.is_cover).map((img) => ({ id: img.id, url: galleryUrl(img.storage_path), category: img.category })),
+        }}
         defaults={{
           name: centre.name,
           address: centre.address ?? '',
@@ -85,48 +89,6 @@ export default async function EditListingPage({ params }: PageProps) {
           googleBusiness: social.googleBusiness ?? '',
         }}
       />
-
-      <section className="mt-8 max-w-3xl space-y-6 border-t pt-8">
-        <h2 className="font-display text-lg font-bold">Current photos</h2>
-        <p className="text-sm text-muted-foreground">
-          Manage what's already uploaded here. To add new ones, use the Profile &amp; Category / Gallery steps above and save.
-        </p>
-
-        {centre.logo_url && (
-          <div>
-            <p className="mb-1 text-sm font-medium">Logo</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={centre.logo_url} alt="" className="h-16 w-16 rounded-lg border object-cover" />
-          </div>
-        )}
-
-        {centre.cover_url && coverImage && (
-          <div>
-            <p className="mb-1 text-sm font-medium">Cover image</p>
-            <div className="relative h-40 w-full max-w-md">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={centre.cover_url} alt="" className="h-full w-full rounded-lg object-cover" />
-              <DeletePhotoButton imageId={coverImage.id} />
-            </div>
-          </div>
-        )}
-
-        {gallery.length > 0 && (
-          <div>
-            <p className="mb-1 text-sm font-medium">Gallery ({gallery.length})</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {gallery.map((img) => (
-                <div key={img.id} className="relative aspect-[4/3]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={galleryUrl(img.storage_path)} alt="" className="h-full w-full rounded-lg object-cover" />
-                  {img.category && <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">{img.category}</span>}
-                  <DeletePhotoButton imageId={img.id} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
     </main>
   );
 }
