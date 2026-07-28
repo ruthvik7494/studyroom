@@ -445,19 +445,9 @@ export function ListingWizard(props: Props) {
                   Search a location or paste a Maps link<br />to see it on the map here.
                 </div>
               )}
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="lat">Latitude <span className="text-muted-foreground">(optional)</span></Label>
-                  <Input id="lat" type="number" step="any" aria-invalid={!!errors.lat} {...register('lat', { valueAsNumber: true })} />
-                  {errors.lat && <p className="mt-1 text-xs text-destructive">{errors.lat.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="lng">Longitude <span className="text-muted-foreground">(optional)</span></Label>
-                  <Input id="lng" type="number" step="any" aria-invalid={!!errors.lng} {...register('lng', { valueAsNumber: true })} />
-                  {errors.lng && <p className="mt-1 text-xs text-destructive">{errors.lng.message}</p>}
-                </div>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">Filled in automatically above, or enter manually. Without these, this centre won't appear in "near me" search.</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {values.lat && values.lng ? 'Location set.' : 'Not set yet —'} without a location, this centre won't appear in "near me" search.
+              </p>
             </div>
           </div>
 
@@ -702,24 +692,106 @@ export function ListingWizard(props: Props) {
 
       {/* STEP 7 — Review & Publish */}
       {step === 6 && (
-        <div className="space-y-3">
-          <p className="mb-2 text-sm text-muted-foreground">Review your details before publishing your listing</p>
-          {[
-            { title: 'Profile & Category', i: 0, lines: [values.name, SPACE_TYPES.find((t) => t.value === values.spaceType)?.label, `${values.seats} seats`, values.tags?.length ? `Tags: ${values.tags.join(', ')}` : null, logoFile ? `Logo: ${logoFile.name}` : null, coverFile ? `Cover: ${coverFile.name}` : null] },
-            { title: 'Address & Contact', i: 1, lines: [values.address, [values.city, values.state, values.postcode].filter(Boolean).join(', '), values.phone] },
-            { title: 'Operating Hours', i: 2, lines: [PRICE_FIELDS.filter((p) => values[p.key]).map((p) => `${p.label}: ₹${values[p.key]}`).join(' · ') || 'No prices set'] },
-            { title: 'Facilities & Amenities', i: 3, lines: [`${values.amenityIds?.length ?? 0} facilities selected`] },
-            { title: 'Social Networks', i: 4, lines: [[values.facebook, values.instagram, values.youtube, values.linkedin, values.twitter, values.whatsapp, values.googleBusiness].filter(Boolean).length + ' links added'] },
-            { title: 'Gallery', i: 5, lines: [(() => { const n = Object.values(galleryFiles).reduce((s, f) => s + f.length, 0) + extraFiles.length; return `${n} photo${n === 1 ? '' : 's'} selected — uploads once you publish`; })()] },
-          ].map((s) => (
-            <div key={s.title} className="flex items-start justify-between rounded-lg border p-3">
-              <div>
-                <p className="text-sm font-semibold">{s.title}</p>
+        <div>
+          <p className="mb-3 text-sm text-muted-foreground">Review your details before publishing your listing</p>
+          <div className="flex flex-wrap gap-3">
+            {[
+              {
+                title: 'Profile & Category', icon: '🎓', i: 0,
+                lines: [SPACE_TYPES.find((t) => t.value === values.spaceType)?.label, `${values.seats} Seats`],
+              },
+              {
+                title: 'Address & Contact', icon: '📍', i: 1,
+                lines: [values.address, [values.state, values.postcode].filter(Boolean).join(', ')],
+              },
+              {
+                title: 'Operating Hours', icon: '🕐', i: 2,
+                lines: [
+                  values.hours?.[1]?.isOpen ? `Mon: ${values.hours[1].openingTime} – ${values.hours[1].closingTime}` : 'Mon: Closed',
+                  values.hours?.[0]?.isOpen ? `Sun: ${values.hours[0].openingTime} – ${values.hours[0].closingTime}` : 'Sun: Closed',
+                ],
+              },
+            ].map((s) => (
+              <div key={s.title} className="min-w-[190px] flex-1 rounded-xl border p-3">
+                <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><span aria-hidden>{s.icon}</span>{s.title}</div>
                 {s.lines.filter(Boolean).map((l, idx) => <p key={idx} className="text-xs text-muted-foreground">{l}</p>)}
+                <button type="button" onClick={() => goto(s.i)} className="mt-2 text-xs font-semibold text-[#2d6c4f] hover:underline">Edit</button>
               </div>
-              <button type="button" onClick={() => goto(s.i)} className="text-xs font-semibold text-[#2d6c4f] hover:underline">Edit</button>
+            ))}
+
+            <div className="min-w-[190px] flex-1 rounded-xl border p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><span aria-hidden>✓</span>Facilities &amp; Amenities</div>
+              <p className="mb-2 text-xs text-muted-foreground">{values.amenityIds?.length ?? 0} Facilities Selected</p>
+              <div className="flex items-center gap-1">
+                {props.amenities.filter((a) => values.amenityIds?.includes(a.id)).slice(0, 3).map((a) => (
+                  <span key={a.id} className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-sm" title={a.label}>{a.icon ?? '✓'}</span>
+                ))}
+                {(values.amenityIds?.length ?? 0) > 3 && (
+                  <span className="text-xs font-semibold text-muted-foreground">+{(values.amenityIds?.length ?? 0) - 3}</span>
+                )}
+              </div>
+              <button type="button" onClick={() => goto(3)} className="mt-2 text-xs font-semibold text-[#2d6c4f] hover:underline">Edit</button>
             </div>
-          ))}
+
+            <div className="min-w-[190px] flex-1 rounded-xl border p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><span aria-hidden>🔗</span>Social Networks</div>
+              {(() => {
+                const links = [values.facebook, values.instagram, values.youtube, values.linkedin, values.twitter, values.whatsapp, values.googleBusiness].filter(Boolean);
+                return (
+                  <>
+                    <p className="mb-2 text-xs text-muted-foreground">{links.length} Links Added</p>
+                    <div className="flex items-center gap-1 text-sm">
+                      {values.facebook && <span aria-hidden>📘</span>}
+                      {values.instagram && <span aria-hidden>📷</span>}
+                      {values.youtube && <span aria-hidden>▶️</span>}
+                      {links.length > 3 && <span className="text-xs font-semibold text-muted-foreground">+{links.length - 3}</span>}
+                    </div>
+                  </>
+                );
+              })()}
+              <button type="button" onClick={() => goto(4)} className="mt-2 text-xs font-semibold text-[#2d6c4f] hover:underline">Edit</button>
+            </div>
+
+            <div className="min-w-[190px] flex-1 rounded-xl border p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><span aria-hidden>🖼</span>Gallery</div>
+              {(() => {
+                const newCount = Object.values(galleryFiles).reduce((s, f) => s + f.length, 0) + extraFiles.length;
+                const existingCount = props.mode === 'edit' ? props.photos.gallery.length : 0;
+                const total = newCount + existingCount;
+                const thumbs = [
+                  ...Object.values(galleryFiles).flat().map((f) => URL.createObjectURL(f)),
+                  ...extraFiles.map((f) => URL.createObjectURL(f)),
+                  ...(props.mode === 'edit' ? props.photos.gallery.map((g) => g.url) : []),
+                ].slice(0, 4);
+                return (
+                  <>
+                    <p className="mb-2 text-xs text-muted-foreground">{total} Photo{total === 1 ? '' : 's'} {props.mode === 'create' ? 'Selected' : 'Uploaded'}</p>
+                    <div className="flex items-center gap-1">
+                      {thumbs.map((url, idx) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img key={idx} src={url} alt="" className="h-6 w-6 rounded object-cover" />
+                      ))}
+                      {total > 4 && <span className="text-xs font-semibold text-muted-foreground">+{total - 4}</span>}
+                    </div>
+                  </>
+                );
+              })()}
+              <button type="button" onClick={() => goto(5)} className="mt-2 text-xs font-semibold text-[#2d6c4f] hover:underline">Edit</button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { submitIntent.current = 'publish'; void handleSubmit(doSubmit, onInvalid)(); }}
+              disabled={busy}
+              className="flex min-w-[190px] flex-1 flex-col items-start rounded-xl bg-[#2d6c4f] p-3 text-left text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              <span className="mb-1 flex items-center gap-1.5 text-sm font-semibold"><span aria-hidden>🚀</span>{props.mode === 'create' ? 'Publish Listing' : 'Save Changes'}</span>
+              <span className="text-xs opacity-90">
+                {phase === 'saving' ? 'Saving…' : phase === 'uploading' ? 'Uploading photos…' : props.mode === 'create' ? 'Your listing will be live after verification' : 'Update this listing now'}
+              </span>
+              <span className="mt-2 self-end text-lg" aria-hidden>→</span>
+            </button>
+          </div>
         </div>
       )}
 
