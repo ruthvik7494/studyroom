@@ -11,6 +11,36 @@ const httpUrl = (msg = 'Enter a valid URL') =>
     { message: 'URL must start with http:// or https://' },
   );
 
+/** "abc.com" → "https://abc.com" — only when a scheme isn't already present. */
+export const withHttps = (v: string): string => {
+  const t = v.trim();
+  if (!t || /^https?:\/\//i.test(t)) return t;
+  return `https://${t}`;
+};
+const isValidUrl = (v: string): boolean => {
+  try { return /^https?:\/\//i.test(v) && !!new URL(v).hostname; } catch { return false; }
+};
+const hostMatches = (url: string, domain: string): boolean => {
+  try {
+    const h = new URL(url).hostname.toLowerCase().replace(/^(www|m)\./, '');
+    return h === domain || h.endsWith(`.${domain}`);
+  } catch { return false; }
+};
+
+/** Any website — auto-prepends https:// if the scheme is missing, no domain restriction. */
+const websiteUrl = () =>
+  z.string().trim().max(200).optional().or(z.literal(''))
+    .transform((v) => (v ? withHttps(v) : v))
+    .refine((v) => !v || isValidUrl(v), { message: 'Enter a valid website URL' });
+
+/** A URL that must belong to one of the given domains (e.g. Facebook link must be facebook.com) — auto-prepends https:// the same way. */
+const domainUrl = (domains: string[], label: string) =>
+  z.string().trim().max(200).optional().or(z.literal(''))
+    .transform((v) => (v ? withHttps(v) : v))
+    .refine((v) => !v || isValidUrl(v), { message: 'Enter a valid URL' })
+    .refine((v) => !v || domains.some((d) => hostMatches(v, d)), { message: `Please use a ${label} link (e.g. ${domains[0]})` });
+
+
 /** Query params for the discovery feed — validated at every entry point. */
 export const centreSearchSchema = z.object({
   q: z.string().trim().max(80).optional(),
@@ -96,7 +126,7 @@ export const centreUpsertSchema = z.object({
   phone: z.string().trim().max(20).optional(),
   altPhone: z.string().trim().max(20).optional().or(z.literal('')),
   businessEmail: z.string().trim().email('Enter a valid email').optional().or(z.literal('')),
-  website: httpUrl('Enter a valid website URL').optional().or(z.literal('')),
+  website: websiteUrl(),
   // Google Places import: the Place ID captured from the picker
   googlePlaceId: z.string().trim().max(300).optional(),
   // Pricing/capacity/content — every period is its own independent field now
@@ -117,13 +147,13 @@ export const centreUpsertSchema = z.object({
   /** Exactly 7 entries, index 0 = Sunday .. 6 = Saturday. */
   hours: z.array(dayHoursSchema).length(7).default(DEFAULT_WEEKLY_HOURS),
   // Social — folded in here so the wizard's step 5 is part of the same form.
-  facebook: httpUrl('Enter a valid URL').optional().or(z.literal('')),
-  instagram: httpUrl('Enter a valid URL').optional().or(z.literal('')),
-  youtube: httpUrl('Enter a valid URL').optional().or(z.literal('')),
-  linkedin: httpUrl('Enter a valid URL').optional().or(z.literal('')),
-  twitter: httpUrl('Enter a valid URL').optional().or(z.literal('')),
-  whatsapp: z.string().trim().max(20).optional().or(z.literal('')),
-  googleBusiness: httpUrl('Enter a valid URL').optional().or(z.literal('')),
+  facebook: domainUrl(['facebook.com', 'fb.com'], 'Facebook'),
+  instagram: domainUrl(['instagram.com'], 'Instagram'),
+  youtube: domainUrl(['youtube.com', 'youtu.be'], 'YouTube'),
+  linkedin: domainUrl(['linkedin.com'], 'LinkedIn'),
+  twitter: domainUrl(['twitter.com', 'x.com'], 'X (Twitter)'),
+  whatsapp: domainUrl(['wa.me', 'whatsapp.com'], 'WhatsApp'),
+  googleBusiness: domainUrl(['g.page', 'goo.gl', 'google.com'], 'Google Business'),
 });
 export type CentreUpsert = z.infer<typeof centreUpsertSchema>;
 

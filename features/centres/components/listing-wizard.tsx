@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { centreUpsertSchema, type CentreUpsert } from '../schema';
+import { centreUpsertSchema, withHttps, type CentreUpsert } from '../schema';
 import { createCentre, updateCentre, uploadCentreImage, uploadCentreLogo, submitForReview, resolveMapsUrl } from '../actions';
 import { DeletePhotoButton } from './delete-photo-button';
 import { PlacesPicker } from './places-picker';
@@ -100,6 +100,7 @@ export function ListingWizard(props: Props) {
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CentreUpsert>({
     resolver: zodResolver(centreUpsertSchema),
+    mode: 'onBlur',
     defaultValues: { spaceType: 'study_hall', seats: 10, amenityIds: [], tags: [], country: 'India', ...props.defaults },
   });
 
@@ -200,6 +201,13 @@ export function ListingWizard(props: Props) {
     });
   };
   const onExtraChange = (e: React.ChangeEvent<HTMLInputElement>) => setExtraFiles(Array.from(e.target.files ?? []));
+
+  /** For Website/social URL fields: on blur, visibly rewrite "abc.com" to "https://abc.com" instead of only normalizing it invisibly at submit time. */
+  const normalizeUrlOnBlur = (field: 'website' | 'facebook' | 'instagram' | 'youtube' | 'linkedin' | 'twitter' | 'whatsapp' | 'googleBusiness') =>
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const next = withHttps(e.target.value);
+      if (next !== e.target.value) setValue(field, next, { shouldValidate: true });
+    };
 
   const onResolveMapsUrl = async () => {
     setMapsUrlError(null);
@@ -469,7 +477,7 @@ export function ListingWizard(props: Props) {
               </div>
               <div>
                 <Label htmlFor="website">Website (Optional)</Label>
-                <Input id="website" placeholder="https://…" aria-invalid={!!errors.website} {...register('website')} />
+                <Input id="website" placeholder="https://…" aria-invalid={!!errors.website} {...register('website', { onBlur: normalizeUrlOnBlur('website') })} />
                 {errors.website && <p className="mt-1 text-xs text-destructive">{errors.website.message}</p>}
               </div>
             </div>
@@ -589,7 +597,7 @@ export function ListingWizard(props: Props) {
                     <Label htmlFor={key} className="mb-0">{label}</Label>
                   </div>
                   <div className="relative">
-                    <Input id={key} placeholder={placeholder} aria-invalid={!!errors[key]} className="pr-8" {...register(key)} />
+                    <Input id={key} placeholder={placeholder} aria-invalid={!!errors[key]} className="pr-8" {...register(key, { onBlur: normalizeUrlOnBlur(key) })} />
                     {filled && !errors[key] && (
                       <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-green" aria-hidden>✓</span>
                     )}
