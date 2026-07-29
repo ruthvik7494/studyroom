@@ -2,12 +2,16 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 /**
- * Google Map for the search results view. Renders a pin per centre and, as the
- * user pans/zooms, re-queries GET /api/centres/nearby (backed by the
- * search_centres_nearby RPC, migration 0016) for the new map centre + radius.
+ * Mapbox GL map for the search results view. Renders a pin per centre and, as
+ * the user pans/zooms, re-queries GET /api/centres/nearby (backed by the
+ * search_centres_nearby RPC) for the new map centre + radius.
  *
- * Requires NEXT_PUBLIC_GOOGLE_MAPS_API_KEY. Without it, the component renders a
- * short message instead of a map — the list-based search still works on its own.
+ * Requires NEXT_PUBLIC_MAPBOX_TOKEN. Without it, the component renders a
+ * short message instead of a map — the list-based search still works on its
+ * own. Mapbox GL JS is loaded from Mapbox's CDN at runtime (script + CSS),
+ * the same on-demand pattern the old Google Maps version used — no npm
+ * package needed, so this doesn't add anything to the JS bundle unless the
+ * map is actually shown.
  */
 
 export type MapCentre = {
@@ -20,54 +24,67 @@ export type MapCentre = {
   distanceKm?: number;
 };
 
-type GLatLngLiteral = { lat: number; lng: number };
-type GMap = {
-  addListener: (e: string, cb: () => void) => void;
-  getCenter: () => { lat: () => number; lng: () => number };
-  getBounds: () => { getNorthEast: () => { lat: () => number; lng: () => number }; getCenter: () => { lat: () => number; lng: () => number } } | undefined;
-  panTo: (p: GLatLngLiteral) => void;
-};
-type GMarker = { setMap: (m: GMap | null) => void; addListener: (e: string, cb: () => void) => void };
-
-// The Google Maps namespace is loaded at runtime; access it through a loose
-// local accessor so this file doesn't re-declare the global Window.google type
-// (that declaration lives in places-picker.tsx and must not conflict here).
-function gmaps(): any { // eslint-disable-line @typescript-eslint/no-explicit-any
-  return (window as unknown as { google?: { maps?: any } }).google?.maps; // eslint-disable-line @typescript-eslint/no-explicit-any
+// Minimal shape of the Mapbox GL JS pieces this component uses.
+interface MGLMap {
+  on: (event: string, cb: () => void) => void;
+  getCenter: () => { lat: number; lng: number };
+  getBounds: () => { getNorthEast: () => { lat: number; lng: number } };
+  remove: () => void;
+}
+interface MGLMarker {
+  setLngLat: (p: [number, number]) => MGLMarker;
+  addTo: (m: MGLMap) => MGLMarker;
+  remove: () => void;
+  getElement: () => HTMLElement;
+}
+interface MapboxGL {
+  accessToken: string;
+  Map: new (opts: Record<string, unknown>) => MGLMap;
+  Marker: new (opts?: Record<string, unknown>) => MGLMarker;
+  NavigationControl: new () => unknown;
+}
+declare global {
+  interface Window {
+    mapboxgl?: MapboxGL;
+    __studynookMapboxLoading?: Promise<void>;
+  }
 }
 
-const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+const MAPBOX_GL_VERSION = '3.7.0';
 
-function loadMaps(): Promise<void> {
+function loadMapboxGl(): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
-  if (gmaps()) return Promise.resolve();
-  if (window.__studynookMapsLoading) return window.__studynookMapsLoading;
-  window.__studynookMapsLoading = new Promise<void>((resolve, reject) => {
-    if (!MAPS_KEY) return reject(new Error('no key'));
+  if (window.mapboxgl) return Promise.resolve();
+  if (window.__studynookMapboxLoading) return window.__studynookMapboxLoading;
+
+  window.__studynookMapboxLoading = new Promise<void>((resolve, reject) => {
+    if (!MAPBOX_TOKEN) { reject(new Error('no token')); return; }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://api.mapbox.com/mapbox-gl-js/v${MAPBOX_GL_VERSION}/mapbox-gl.css`;
+    document.head.appendChild(link);
+
     const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=places`;
+    s.src = `https://api.mapbox.com/mapbox-gl-js/v${MAPBOX_GL_VERSION}/mapbox-gl.js`;
     s.async = true;
     s.defer = true;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error('load failed'));
+    s.onerror = () => reject(new Error('Failed to load Mapbox GL'));
     document.head.appendChild(s);
   });
-  return window.__studynookMapsLoading;
+  return window.__studynookMapboxLoading;
 }
 
 /** Haversine (km) — used to turn map bounds into a radius for the API call. */
-function radiusKmFromBounds(
-  center: GLatLngLiteral,
-  ne: GLatLngLiteral,
-): number {
+function radiusKmFromBounds(center: { lat: number; lng: number }, ne: { lat: number; lng: number }): number {
   const R = 6371;
   const dLat = ((ne.lat - center.lat) * Math.PI) / 180;
   const dLng = ((ne.lng - center.lng) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos((center.lat * Math.PI) / 180) *
-      Math.cos((ne.lat * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos((center.lat * Math.PI) / 180) * Math.cos((ne.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
   return Math.min(100, R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
@@ -83,12 +100,11 @@ export function ResultsMap({
   onSelect?: (slug: string) => void;
 }) {
   const divRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<GMap | null>(null);
-  const markersRef = useRef<GMarker[]>([]);
+  const mapRef = useRef<MGLMap | null>(null);
+  const markersRef = useRef<MGLMarker[]>([]);
   const [unavailable, setUnavailable] = useState(false);
   const [centres, setCentres] = useState<MapCentre[]>(initialCentres);
 
-  // Fetch centres near the current map centre + radius.
   const fetchNearby = useCallback(async (lat: number, lng: number, radiusKm: number) => {
     try {
       const url = `/api/centres/nearby?lat=${lat}&lng=${lng}&radiusKm=${radiusKm.toFixed(1)}`;
@@ -104,42 +120,39 @@ export function ResultsMap({
   // Draw markers whenever the centre list changes.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !gmaps()) return;
-    markersRef.current.forEach((m) => m.setMap(null));
+    const mapboxgl = window.mapboxgl;
+    if (!map || !mapboxgl) return;
+    markersRef.current.forEach((m) => m.remove());
     markersRef.current = centres.map((c) => {
-      const marker: GMarker = new (gmaps().Marker)({
-        position: { lat: c.lat, lng: c.lng },
-        map,
-        title: `${c.name} · ★ ${c.rating}`,
-      });
-      if (onSelect) marker.addListener('click', () => onSelect(c.slug));
-      return marker;
+      const el = document.createElement('div');
+      el.style.cssText = 'width:28px;height:28px;border-radius:50%;background:#2d6a4f;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:pointer;';
+      el.title = `${c.name} · ★ ${c.rating}`;
+      if (onSelect) el.addEventListener('click', () => onSelect(c.slug));
+      return new mapboxgl.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map);
     });
   }, [centres, onSelect]);
 
   // Initialise the map once.
   useEffect(() => {
     let cancelled = false;
-    loadMaps()
+    loadMapboxGl()
       .then(() => {
-        if (cancelled || !divRef.current || !gmaps()) return;
-        const map: GMap = new (gmaps().Map)(divRef.current, {
-          center: { lat: initialLat, lng: initialLng },
+        if (cancelled || !divRef.current || !window.mapboxgl) return;
+        window.mapboxgl.accessToken = MAPBOX_TOKEN!;
+        const map = new window.mapboxgl.Map({
+          container: divRef.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [initialLng, initialLat],
           zoom: 13,
-          mapTypeControl: false,
-          streetViewControl: false,
         });
+        map.on('load', () => {}); // ensures tiles begin loading immediately
         mapRef.current = map;
 
-        // Re-query on idle (after pan/zoom settles).
-        map.addListener('idle', () => {
-          const b = map.getBounds();
+        map.on('moveend', () => {
           const c = map.getCenter();
-          if (!b || !c) return;
-          const center = { lat: c.lat(), lng: c.lng() };
-          const ne = b.getNorthEast();
-          const radius = radiusKmFromBounds(center, { lat: ne.lat(), lng: ne.lng() });
-          void fetchNearby(center.lat, center.lng, radius);
+          const ne = map.getBounds().getNorthEast();
+          const radius = radiusKmFromBounds(c, ne);
+          void fetchNearby(c.lat, c.lng, radius);
         });
       })
       .catch(() => {
@@ -147,6 +160,7 @@ export function ResultsMap({
       });
     return () => {
       cancelled = true;
+      mapRef.current?.remove();
     };
   }, [initialLat, initialLng, fetchNearby]);
 

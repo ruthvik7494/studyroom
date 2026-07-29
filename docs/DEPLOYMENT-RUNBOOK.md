@@ -46,7 +46,7 @@ All 20 current migrations are additive/idempotent, so today's baseline is safe. 
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Payments | secret |
 | `RAZORPAY_WEBHOOK_SECRET` | Webhook HMAC verification | secret |
 | `RESEND_API_KEY` | Transactional email | secret |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Maps/Places | yes (restrict by HTTP referrer) |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Maps/location search | yes (restrict by URL in Mapbox's token settings) |
 | `CRON_SECRET` | Bearer token for `/api/cron/*` | secret |
 
 **Validation:** `lib/env.ts` throws on any missing required variable, so a misconfigured environment **fails at startup rather than silently misbehaving**. That is intentional — a failed deploy is better than a half-working one.

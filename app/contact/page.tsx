@@ -32,6 +32,7 @@ const SOCIAL_LINKS = [
 // the service area rather than a fabricated street address.
 const MAP_LAT = 17.9689;
 const MAP_LNG = 79.5941;
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 export default function ContactPage() {
   return (
@@ -75,17 +76,22 @@ export default function ContactPage() {
         </div>
       </div>
 
-      {/* Map — our Warangal service area (no API key needed for a basic embed) */}
+      {/* Map — our Warangal service area (Mapbox static image, no JS needed) */}
       <section className="mt-12" aria-labelledby="map-heading">
         <h2 id="map-heading" className="mb-3 font-display text-lg font-bold">Find us in Warangal</h2>
         <div className="overflow-hidden rounded-2xl border">
-          <iframe
-            title="StudyNook service area — Warangal"
-            src={`https://www.google.com/maps?q=${MAP_LAT},${MAP_LNG}&z=12&output=embed`}
-            className="h-80 w-full"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
+          {MAPBOX_TOKEN ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${MAP_LNG},${MAP_LAT})/${MAP_LNG},${MAP_LAT},11,0/1200x320@2x?access_token=${MAPBOX_TOKEN}`}
+              alt="Map of StudyNook's Warangal service area"
+              className="h-80 w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-80 items-center justify-center bg-secondary/40 text-sm text-muted-foreground">
+              Map unavailable right now.
+            </div>
+          )}
         </div>
       </section>
     </main>

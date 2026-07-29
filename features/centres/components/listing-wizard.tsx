@@ -29,6 +29,8 @@ const SEATING_TIERS: { label: string; sub: string; icon: string; value: number }
 
 const BUSINESS_TAGS = ['Quiet', 'Premium', 'Affordable', 'AC', 'Library', '24x7', 'Students', 'Professionals'] as const;
 
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
 const SPACE_TYPES: { value: CentreUpsert['spaceType']; label: string; icon: string }[] = [
   { value: 'study_hall', label: 'Study Centre', icon: '🎓' },
   { value: 'reading_room', label: 'Reading Room', icon: '📖' },
@@ -438,14 +440,13 @@ export function ListingWizard(props: Props) {
 
             <div>
               <p className="mb-2 text-sm font-medium">Location on Map</p>
-              {values.lat && values.lng ? (
+              {values.lat && values.lng && MAPBOX_TOKEN ? (
                 <div className="overflow-hidden rounded-xl border">
-                  <iframe
-                    title="Centre location"
-                    src={`https://www.google.com/maps?q=${values.lat},${values.lng}&z=15&output=embed`}
-                    className="h-64 w-full"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${values.lng},${values.lat})/${values.lng},${values.lat},14,0/640x300@2x?access_token=${MAPBOX_TOKEN}`}
+                    alt="Map preview of the selected location"
+                    className="h-64 w-full object-cover"
                   />
                 </div>
               ) : (

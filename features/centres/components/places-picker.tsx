@@ -1,17 +1,19 @@
 'use client';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
- * Google Places autocomplete picker for centre onboarding.
+ * Mapbox-powered location search for centre onboarding (search-as-you-type,
+ * via the Mapbox Geocoding API — plain REST, no SDK needed for this piece).
  *
- * On selection it emits the fields the onboarding form + DB expect (added in
- * migration 0015): name, address, lat, lng, and googlePlaceId. The owner can
- * still edit any field afterwards — this just pre-fills from Google so they
- * don't type the address and coordinates by hand.
+ * On selection it emits the fields the onboarding form + DB expect: name,
+ * address, lat, lng, and googlePlaceId (Mapbox's feature id — the DB column
+ * is generically named for "an external place reference", so it didn't need
+ * a migration to switch providers). The owner can still edit any field
+ * afterwards — this just pre-fills so they don't type the address and
+ * coordinates by hand.
  *
- * Requires NEXT_PUBLIC_GOOGLE_MAPS_API_KEY with the Places API enabled.
- * If the key is absent the component degrades to a plain text input so the
- * form still works — geo is then entered manually.
+ * Requires NEXT_PUBLIC_MAPBOX_TOKEN. If absent, degrades to a plain text
+ * input so the form still works — geo is then entered manually.
  */
 
 export type PlaceResult = {
@@ -22,57 +24,14 @@ export type PlaceResult = {
   googlePlaceId: string;
 };
 
-// Minimal shape of the pieces of the Google Maps JS API we use.
-type GLatLng = { lat: () => number; lng: () => number };
-type GPlace = {
-  name?: string;
-  formatted_address?: string;
-  place_id?: string;
-  geometry?: { location?: GLatLng };
-};
-type GAutocomplete = {
-  addListener: (event: string, cb: () => void) => void;
-  getPlace: () => GPlace;
-};
-declare global {
-  interface Window {
-    google?: {
-      maps?: {
-        places?: {
-          Autocomplete: new (
-            input: HTMLInputElement,
-            opts?: Record<string, unknown>,
-          ) => GAutocomplete;
-        };
-      };
-    };
-    __studynookMapsLoading?: Promise<void>;
-  }
+interface MapboxFeature {
+  id: string;
+  place_name: string;
+  text: string;
+  center: [number, number]; // [lng, lat]
 }
 
-const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-/** Load the Maps JS API once, shared across every component that needs it. */
-function loadMaps(): Promise<void> {
-  if (typeof window === 'undefined') return Promise.resolve();
-  if (window.google?.maps?.places) return Promise.resolve();
-  if (window.__studynookMapsLoading) return window.__studynookMapsLoading;
-
-  window.__studynookMapsLoading = new Promise<void>((resolve, reject) => {
-    if (!MAPS_KEY) {
-      reject(new Error('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not set'));
-      return;
-    }
-    const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=places`;
-    s.async = true;
-    s.defer = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Failed to load Google Maps'));
-    document.head.appendChild(s);
-  });
-  return window.__studynookMapsLoading;
-}
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 export function PlacesPicker({
   onSelect,
@@ -81,69 +40,90 @@ export function PlacesPicker({
   onSelect: (place: PlaceResult) => void;
   defaultValue?: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [ready, setReady] = useState(false);
-  const [unavailable, setUnavailable] = useState(false);
-
-  const handleSelect = useCallback(
-    (ac: GAutocomplete) => {
-      const p = ac.getPlace();
-      const loc = p.geometry?.location;
-      if (!loc || !p.place_id) return; // user typed but didn't pick a suggestion
-      onSelect({
-        name: p.name ?? '',
-        address: p.formatted_address ?? '',
-        lat: loc.lat(),
-        lng: loc.lng(),
-        googlePlaceId: p.place_id,
-      });
-    },
-    [onSelect],
-  );
+  const [query, setQuery] = useState(defaultValue);
+  const [suggestions, setSuggestions] = useState<MapboxFeature[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    loadMaps()
-      .then(() => {
-        if (cancelled || !inputRef.current || !window.google?.maps?.places) return;
-        const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
-          fields: ['name', 'formatted_address', 'geometry', 'place_id'],
-          // Bias toward India; adjust or remove for other markets.
-          componentRestrictions: { country: 'in' },
-        });
-        ac.addListener('place_changed', () => handleSelect(ac));
-        setReady(true);
-      })
-      .catch(() => {
-        if (!cancelled) setUnavailable(true);
-      });
-    return () => {
-      cancelled = true;
+    if (!MAPBOX_TOKEN || query.trim().length < 3) { setSuggestions([]); return; }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&country=in&limit=5&types=poi,address,place`;
+        const res = await fetch(url);
+        const json = await res.json();
+        setSuggestions(json.features ?? []);
+        setOpen(true);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query]);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
     };
-  }, [handleSelect]);
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  const pick = (f: MapboxFeature) => {
+    onSelect({
+      name: f.text,
+      address: f.place_name,
+      lat: f.center[1],
+      lng: f.center[0],
+      googlePlaceId: f.id,
+    });
+    setQuery(f.place_name);
+    setOpen(false);
+  };
 
   return (
-    <div className="space-y-1">
+    <div ref={containerRef} className="relative space-y-1">
       <label htmlFor="places-input" className="block text-sm font-medium">
-        Find your centre on Google
+        Search Your Location
       </label>
       <input
         id="places-input"
-        ref={inputRef}
         type="text"
-        defaultValue={defaultValue}
-        placeholder={
-          unavailable ? 'Type your address' : 'Start typing your centre name or address…'
-        }
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onFocus={() => suggestions.length > 0 && setOpen(true)}
+        placeholder={MAPBOX_TOKEN ? 'Search by business name…' : 'Type your address'}
         autoComplete="off"
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
       />
+      {open && suggestions.length > 0 && (
+        <ul className="absolute z-10 mt-1 w-full rounded-lg border bg-background shadow-lg">
+          {suggestions.map((f) => (
+            <li key={f.id}>
+              <button
+                type="button"
+                onClick={() => pick(f)}
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-secondary"
+              >
+                <span className="font-medium">{f.text}</span>
+                <span className="block truncate text-xs text-muted-foreground">{f.place_name}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <p className="text-xs text-muted-foreground">
-        {unavailable
+        {!MAPBOX_TOKEN
           ? 'Address search is unavailable right now — enter your address and location manually.'
-          : ready
-            ? 'Pick your place to auto-fill the address and map location.'
-            : 'Loading address search…'}
+          : loading
+            ? 'Searching…'
+            : 'Pick your place to auto-fill the address and map location.'}
       </p>
     </div>
   );

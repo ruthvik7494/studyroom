@@ -5,15 +5,15 @@ const nextConfig = {
     // Security headers applied to every route (OWASP A05 hardening).
     // CSP is intentionally report-friendly but strict on framing/objects; tune
     // connect-src/img-src if you add third-party embeds. Supabase + Razorpay +
-    // Google Maps origins are allowed for XHR/images/scripts where needed.
+    // Mapbox origins are allowed for XHR/images/scripts where needed.
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://maps.googleapis.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data: blob: https://*.supabase.co https://picsum.photos https://fastly.picsum.photos https://maps.gstatic.com https://*.googleapis.com https://*.google.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.mapbox.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com",
+      "img-src 'self' data: blob: https://*.supabase.co https://picsum.photos https://fastly.picsum.photos https://api.mapbox.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com https://maps.googleapis.com",
-      "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://www.google.com",
+      "connect-src 'self' https://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com https://api.mapbox.com https://events.mapbox.com",
+      "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
