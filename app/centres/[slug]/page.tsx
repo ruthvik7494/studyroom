@@ -14,9 +14,9 @@ import { EnquiryForm } from '@/features/enquiries/components/enquiry-form';
 import { ReviewForm } from '@/features/reviews/components/review-form';
 import { ReportReviewButton } from '@/features/reviews/components/report-review-button';
 import { SaveButton } from '@/features/saved/components/save-button';
-import { CheckInButton } from '@/features/checkins/components/check-in-button';
 import { ClaimForm } from '@/features/claims/components/claim-form';
 import { ShareButton } from '@/features/centres/components/share-button';
+import { GalleryLightbox } from '@/features/centres/components/gallery-lightbox';
 import { CentreCard, STATUS_STYLE } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
 import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
@@ -79,17 +79,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
   ]);
   const saved = viewer ? await isSaved(db, viewer.id, centre.id) : false;
 
-  // Open check-in state for the check-in button (one open check-in per user).
-  let inHere = false, busyElsewhere = false;
-  if (viewer) {
-    const { data: openCheckIn } = await db
-      .from('check_ins')
-      .select('centre_id')
-      .eq('user_id', viewer.id)
-      .is('checked_out_at', null)
-      .maybeSingle();
-    if (openCheckIn) { inHere = openCheckIn.centre_id === centre.id; busyElsewhere = !inHere; }
-  }
   const isPublic = centre.status === 'approved';
   const canPreview = !isPublic && (viewer?.id === centre.owner_id || viewer?.role === 'admin');
 
@@ -161,9 +150,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
     ['Google Business', social.googleBusiness, '📍'],
   ].filter(([, url]) => !!url) as [string, string, string][];
 
-  const galleryPreview = centre.gallery.slice(0, 6);
-  const galleryOverflow = centre.gallery.length - galleryPreview.length;
-
   const jsonLd = [
     centreJsonLd(centre),
     breadcrumbJsonLd([
@@ -179,13 +165,18 @@ export default async function CentreDetailPage({ params }: PageProps) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}
 
-      {/* Full-width header/cover image, with the logo overlapping the bottom-left corner */}
-      <div className="relative h-[260px] w-full overflow-hidden bg-gradient-to-br from-secondary to-accent sm:h-[320px]">
-        {centre.cover_url ? (
-          <Image src={centre.cover_url} alt={`${centre.name} study space`} fill priority sizes="100vw" className="object-cover" />
-        ) : (
-          <span className="flex h-full w-full items-center justify-center text-8xl" aria-hidden>{centre.emoji}</span>
-        )}
+      {/* Full-width header/cover image, with the logo overlapping the bottom-left corner.
+          The logo sits in an outer wrapper WITHOUT overflow-hidden — it was previously
+          inside the same clipped container as the cover image, so the half of it meant
+          to hang below the image was being cut off instead of showing in full. */}
+      <div className="relative h-[260px] w-full sm:h-[320px]">
+        <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-secondary to-accent">
+          {centre.cover_url ? (
+            <Image src={centre.cover_url} alt={`${centre.name} study space`} fill priority sizes="100vw" className="object-contain" />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-8xl" aria-hidden>{centre.emoji}</span>
+          )}
+        </div>
         {centre.logo_url && (
           <div className="absolute -bottom-8 left-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -267,7 +258,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
               <span aria-hidden>🏷</span> Claim listing
             </a>
           )}
-          {isPublic && viewer && <CheckInButton centreId={centre.id} inHere={inHere} busyElsewhere={busyElsewhere} />}
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -356,23 +346,10 @@ export default async function CentreDetailPage({ params }: PageProps) {
 
             {centre.gallery.length > 0 && (
               <DetailSectionCard icon="🖼" title="Gallery" headingId="gallery-heading">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {galleryPreview.map((img, idx) => {
-                    const isLast = idx === galleryPreview.length - 1 && galleryOverflow > 0;
-                    return (
-                      <div key={img.id} className="relative aspect-[4/3] overflow-hidden rounded-lg">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={galleryUrl(img.storage_path)} alt={img.alt ?? `${centre.name} photo`} loading="lazy" className="h-full w-full object-cover" />
-                        {isLast && (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/60 text-white">
-                            <span className="text-lg font-bold">+{galleryOverflow}</span>
-                            <span className="text-xs font-semibold">VIEW MORE</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <GalleryLightbox
+                  images={centre.gallery.map((img) => ({ id: img.id, url: galleryUrl(img.storage_path), alt: img.alt ?? `${centre.name} photo` }))}
+                  previewCount={6}
+                />
               </DetailSectionCard>
             )}
 
@@ -464,21 +441,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
                 </div>
               )}
             </DetailSectionCard>
-
-            {isPublic && (
-              <DetailSectionCard icon="▦" title="Scan Now">
-                <div className="flex flex-col items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pageUrl)}`}
-                    alt={`QR code linking to ${centre.name}'s page`}
-                    width={160} height={160}
-                    className="rounded-md border"
-                  />
-                  <p className="text-center text-xs text-muted-foreground">Scan to open this listing on a phone</p>
-                </div>
-              </DetailSectionCard>
-            )}
 
             {centre.status === 'approved' && (
               <DetailSectionCard icon="✉" title="Contact Form" headingId="contact-heading">
