@@ -16,7 +16,7 @@ import { ReportReviewButton } from '@/features/reviews/components/report-review-
 import { SaveButton } from '@/features/saved/components/save-button';
 import { CheckInButton } from '@/features/checkins/components/check-in-button';
 import { ClaimForm } from '@/features/claims/components/claim-form';
-import { ResultsMap } from '@/features/centres/components/results-map';
+import { ShareButton } from '@/features/centres/components/share-button';
 import { CentreCard, STATUS_STYLE } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
 import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
@@ -29,6 +29,9 @@ const galleryUrl = (path: string) => {
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listing-images/${path}`;
 };
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://studynook.app';
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 const SPACE_TYPE_LABEL: Record<string, { label: string; icon: string }> = {
   study_hall: { label: 'Study Hall', icon: '📖' },
@@ -148,6 +151,18 @@ export default async function CentreDetailPage({ params }: PageProps) {
   });
 
   const spaceType = SPACE_TYPE_LABEL[centre.space_type] ?? SPACE_TYPE_LABEL.study_hall!;
+  const fullAddress = [centre.address, centre.city, centre.state, centre.postcode, centre.country].filter(Boolean).join(', ');
+  const pageUrl = `${SITE_URL}/centres/${centre.slug}`;
+
+  const social = (centre.social ?? {}) as Record<string, string>;
+  const socialLinks: [string, string, string][] = [
+    ['Facebook', social.facebook, '📘'], ['Instagram', social.instagram, '📷'], ['YouTube', social.youtube, '▶️'],
+    ['LinkedIn', social.linkedin, '💼'], ['X (Twitter)', social.twitter, '𝕏'], ['WhatsApp', social.whatsapp, '💬'],
+    ['Google Business', social.googleBusiness, '📍'],
+  ].filter(([, url]) => !!url) as [string, string, string][];
+
+  const galleryPreview = centre.gallery.slice(0, 6);
+  const galleryOverflow = centre.gallery.length - galleryPreview.length;
 
   const jsonLd = [
     centreJsonLd(centre),
@@ -164,12 +179,18 @@ export default async function CentreDetailPage({ params }: PageProps) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}
 
-      {/* Full-width header/cover image */}
-      <div className="relative h-[375px] w-full overflow-hidden bg-gradient-to-br from-secondary to-accent">
+      {/* Full-width header/cover image, with the logo overlapping the bottom-left corner */}
+      <div className="relative h-[260px] w-full overflow-hidden bg-gradient-to-br from-secondary to-accent sm:h-[320px]">
         {centre.cover_url ? (
           <Image src={centre.cover_url} alt={`${centre.name} study space`} fill priority sizes="100vw" className="object-cover" />
         ) : (
           <span className="flex h-full w-full items-center justify-center text-8xl" aria-hidden>{centre.emoji}</span>
+        )}
+        {centre.logo_url && (
+          <div className="absolute -bottom-8 left-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={centre.logo_url} alt="" className="h-20 w-20 rounded-full border-4 border-background object-cover shadow-md" />
+          </div>
         )}
       </div>
 
@@ -182,74 +203,89 @@ export default async function CentreDetailPage({ params }: PageProps) {
           </div>
         )}
 
-        <header className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                {centre.logo_url && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={centre.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-full border object-cover" />
-                )}
-                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{centre.name}</h1>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-brand-gold2/10 px-3 py-1 text-sm font-bold text-brand-gold2">
-                  <span aria-hidden>★</span>{centre.rating.toFixed(1)}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {centre.reviews_count} review{centre.reviews_count === 1 ? '' : 's'}
-                </span>
-                <span aria-hidden className="text-muted-foreground/30">•</span>
-                <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                  <span aria-hidden>📍</span>{centre.area}
-                </span>
-              </div>
-
-              {(centre.address || centre.city) && (
-                <p className="mt-2 text-sm text-foreground/60">
-                  {[centre.address, centre.city, centre.state, centre.postcode, centre.country].filter(Boolean).join(', ')}
-                </p>
-              )}
-
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {centre.is_verified && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">✓ Verified</span>
-                )}
-                {centre.women_safe_verified && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-plum/10 px-3 py-1 text-xs font-semibold text-brand-plum">🛡 Women-safe</span>
-                )}
-                {centre.occupancy && (() => {
-                  const status = STATUS_STYLE[centre.occupancy.status] ?? STATUS_STYLE.unknown!;
-                  return (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-green/10 px-3 py-1 text-xs font-semibold text-brand-green">
-                      <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
-                      {centre.occupancy.seatsFree} seats free
-                    </span>
-                  );
-                })()}
-              </div>
+        {/* Name + rating + "See Open Hours" shortcut */}
+        <div className={cn('flex flex-wrap items-start justify-between gap-4', centre.logo_url ? 'mt-10' : '')}>
+          <div className="min-w-0">
+            <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{centre.name}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-gold2/10 px-3 py-1 text-sm font-bold text-brand-gold2">
+                <span aria-hidden>★</span>{centre.rating.toFixed(1)}
+              </span>
+              <span className="text-sm text-muted-foreground">{centre.reviews_count} review{centre.reviews_count === 1 ? '' : 's'}</span>
+              <span aria-hidden className="text-muted-foreground/30">•</span>
+              <span className="inline-flex items-center gap-1 text-sm text-muted-foreground"><span aria-hidden>📍</span>{centre.area}</span>
             </div>
-
-            {/* Save + Check-in — kept, and given more room/prominence on the right */}
-            {isPublic && viewer && (
-              <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-stretch">
-                <SaveButton centreId={centre.id} initialSaved={saved} />
-                <CheckInButton centreId={centre.id} inHere={inHere} busyElsewhere={busyElsewhere} />
-              </div>
-            )}
+            {fullAddress && <p className="mt-1 text-sm text-foreground/60">{fullAddress}</p>}
           </div>
-        </header>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          {schedule && (
+            <a href="#hours-heading" className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-plum/10 px-4 py-2 text-sm font-semibold text-brand-plum hover:bg-brand-plum/20">
+              <span aria-hidden>🕐</span> See Open Hours
+            </a>
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {centre.is_verified && <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">✓ Verified</span>}
+          {centre.women_safe_verified && <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-plum/10 px-3 py-1 text-xs font-semibold text-brand-plum">🛡 Women-safe</span>}
+          {centre.occupancy && (() => {
+            const status = STATUS_STYLE[centre.occupancy.status] ?? STATUS_STYLE.unknown!;
+            return (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-green/10 px-3 py-1 text-xs font-semibold text-brand-green">
+                <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
+                {centre.occupancy.seatsFree} seats free
+              </span>
+            );
+          })()}
+        </div>
+
+        {/* Action row — matches the reference's pill-button bar */}
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-b pb-5">
+          {centre.lat != null && centre.lng != null && (
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${centre.lat},${centre.lng}`}
+              target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <span aria-hidden>🧭</span> Get directions
+            </a>
+          )}
+          {centre.phone && (
+            <a href={`tel:${centre.phone}`} className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold hover:bg-secondary">
+              <span aria-hidden>📞</span> Call now
+            </a>
+          )}
+          {centre.website && (
+            <a href={centre.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold hover:bg-secondary">
+              <span aria-hidden>🌐</span> Website
+            </a>
+          )}
+          {isPublic && viewer && <SaveButton centreId={centre.id} initialSaved={saved} />}
+          <ShareButton title={centre.name} url={pageUrl} />
+          {isPublic && !centre.owner_id && viewer && (
+            <a href="#claim-heading" className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold hover:bg-secondary">
+              <span aria-hidden>🏷</span> Claim listing
+            </a>
+          )}
+          {isPublic && viewer && <CheckInButton centreId={centre.id} inHere={inHere} busyElsewhere={busyElsewhere} />}
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
           {/* Left column — main content */}
           <div className="space-y-6 lg:col-span-2">
-            <DetailSectionCard icon="☰" title="Description" headingId="description-heading">
+            <DetailSectionCard icon="☰" title="About" headingId="description-heading">
               {centre.description ? (
                 <p className="whitespace-pre-line text-sm text-foreground/80">{centre.description}</p>
               ) : (
                 <p className="text-sm text-muted-foreground">No description yet.</p>
               )}
+              <div className="mt-4 inline-flex items-center gap-3 rounded-lg bg-primary/5 px-3 py-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>{spaceType.icon}</span>
+                <div>
+                  <p className="text-xs text-muted-foreground">Category</p>
+                  <p className="text-sm font-semibold">{spaceType.label}</p>
+                </div>
+              </div>
             </DetailSectionCard>
 
             <DetailSectionCard
@@ -257,10 +293,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
               title="Seats & pricing"
               headingId="pricing-heading"
               action={isPublic && centre.resources.length > 0 && (
-                <Link
-                  href={`/centres/${centre.slug}/book`}
-                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-                >
+                <Link href={`/centres/${centre.slug}/book`} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
                   Book a seat
                 </Link>
               )}
@@ -295,33 +328,51 @@ export default async function CentreDetailPage({ params }: PageProps) {
               )}
             </DetailSectionCard>
 
-            {centre.gallery.length > 0 && (
-              <DetailSectionCard icon="🖼" title="Gallery" headingId="gallery-heading">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {centre.gallery.map((img) => (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      key={img.id}
-                      src={galleryUrl(img.storage_path)}
-                      alt={img.alt ?? `${centre.name} photo`}
-                      loading="lazy"
-                      className="aspect-[4/3] w-full rounded-lg object-cover"
-                    />
+            {centre.tags && centre.tags.length > 0 && (
+              <DetailSectionCard icon="✨" title="Highlights">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {centre.tags.map((tag) => (
+                    <div key={tag} className="flex items-center gap-2 text-sm text-foreground/80">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm" aria-hidden>✨</span>
+                      {tag}
+                    </div>
                   ))}
                 </div>
               </DetailSectionCard>
             )}
 
-            {centre.lat != null && centre.lng != null && (
-              <DetailSectionCard icon="📍" title="Location" headingId="map-heading">
-                <div className="h-72 overflow-hidden rounded-md">
-                  <ResultsMap
-                    initialLat={centre.lat}
-                    initialLng={centre.lng}
-                    initialCentres={[{ id: centre.id, slug: centre.slug, name: centre.name, lat: centre.lat, lng: centre.lng, rating: centre.rating }]}
-                  />
+            {centre.amenities.length > 0 && (
+              <DetailSectionCard icon="🏛" title="Facilities">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {centre.amenities.map((a) => (
+                    <div key={a.slug} className="flex items-center gap-2 text-sm text-foreground/80">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm" aria-hidden>{a.icon ?? '•'}</span>
+                      {a.label}
+                    </div>
+                  ))}
                 </div>
-                {centre.address && <p className="mt-2 text-sm text-muted-foreground">{centre.address}</p>}
+              </DetailSectionCard>
+            )}
+
+            {centre.gallery.length > 0 && (
+              <DetailSectionCard icon="🖼" title="Gallery" headingId="gallery-heading">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {galleryPreview.map((img, idx) => {
+                    const isLast = idx === galleryPreview.length - 1 && galleryOverflow > 0;
+                    return (
+                      <div key={img.id} className="relative aspect-[4/3] overflow-hidden rounded-lg">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={galleryUrl(img.storage_path)} alt={img.alt ?? `${centre.name} photo`} loading="lazy" className="h-full w-full object-cover" />
+                        {isLast && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/60 text-white">
+                            <span className="text-lg font-bold">+{galleryOverflow}</span>
+                            <span className="text-xs font-semibold">VIEW MORE</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </DetailSectionCard>
             )}
 
@@ -367,7 +418,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
 
           {/* Right column — sidebar */}
           <div className="space-y-6">
-            <Card className="p-4">
+            <Card className="p-4" id="hours-heading">
               {schedule ? (
                 <OpeningHoursCard todayOpen={todayOpen} todayText={todayText} days={schedule} nowLabel={nowLabel} />
               ) : (
@@ -379,69 +430,58 @@ export default async function CentreDetailPage({ params }: PageProps) {
               )}
             </Card>
 
-            <DetailSectionCard icon="▦" title="Category">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg" aria-hidden>{spaceType.icon}</span>
-                <span className="text-sm">{spaceType.label}</span>
+            {/* Location — map, address, contact & social all together, matching the reference's single "Location" card */}
+            <DetailSectionCard icon="📍" title="Location" headingId="map-heading">
+              {centre.lat != null && centre.lng != null && MAPBOX_TOKEN && (
+                <div className="relative -mx-1 -mt-1 mb-3 overflow-hidden rounded-lg">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${centre.lng},${centre.lat})/${centre.lng},${centre.lat},14,0/500x220@2x?access_token=${MAPBOX_TOKEN}`}
+                    alt={`Map showing ${centre.name}'s location`}
+                    className="h-40 w-full object-cover"
+                  />
+                  {centre.is_verified && (
+                    <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-1 text-[11px] font-semibold">
+                      <span className="h-1.5 w-1.5 rounded-full bg-brand-green" aria-hidden />VERIFIED LOCATION
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="space-y-1.5 text-sm">
+                {fullAddress && <p className="flex items-start gap-2"><span aria-hidden>📍</span>{fullAddress}</p>}
+                {centre.phone && <p>📱 <a href={`tel:${centre.phone}`} className="hover:underline">{centre.phone}</a></p>}
+                {centre.alt_phone && <p>📱 <a href={`tel:${centre.alt_phone}`} className="hover:underline">{centre.alt_phone}</a> <span className="text-xs text-muted-foreground">(alternate)</span></p>}
+                {centre.business_email && <p>✉ <a href={`mailto:${centre.business_email}`} className="hover:underline">{centre.business_email}</a></p>}
+                {centre.website && <p>🌐 <a href={centre.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{centre.website}</a></p>}
               </div>
+              {socialLinks.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
+                  {socialLinks.map(([label, url, icon]) => (
+                    <a key={label} href={url} target="_blank" rel="noopener noreferrer" title={label} className="flex h-8 w-8 items-center justify-center rounded-full border hover:bg-secondary">
+                      <span aria-hidden>{icon}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </DetailSectionCard>
 
-            {centre.amenities.length > 0 && (
-              <DetailSectionCard icon="✓" title="Popular Facilities">
-                <div className="space-y-2">
-                  {centre.amenities.map((a) => (
-                    <div key={a.slug} className="flex items-center gap-2 text-sm text-foreground/80">
-                      <span aria-hidden className="text-base">{a.icon ?? '•'}</span>
-                      {a.label}
-                    </div>
-                  ))}
+            {isPublic && (
+              <DetailSectionCard icon="▦" title="Scan Now">
+                <div className="flex flex-col items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pageUrl)}`}
+                    alt={`QR code linking to ${centre.name}'s page`}
+                    width={160} height={160}
+                    className="rounded-md border"
+                  />
+                  <p className="text-center text-xs text-muted-foreground">Scan to open this listing on a phone</p>
                 </div>
               </DetailSectionCard>
             )}
-
-            {centre.tags && centre.tags.length > 0 && (
-              <DetailSectionCard icon="🏷" title="Business Tags">
-                <div className="flex flex-wrap gap-2">
-                  {centre.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{tag}</span>
-                  ))}
-                </div>
-              </DetailSectionCard>
-            )}
-
-            {(centre.phone || centre.alt_phone || centre.business_email || centre.website) && (
-              <DetailSectionCard icon="📞" title="Contact Detail">
-                <div className="space-y-1.5 text-sm">
-                  {centre.phone && <p>📱 <a href={`tel:${centre.phone}`} className="hover:underline">{centre.phone}</a></p>}
-                  {centre.alt_phone && <p>📱 <a href={`tel:${centre.alt_phone}`} className="hover:underline">{centre.alt_phone}</a> <span className="text-xs text-muted-foreground">(alternate)</span></p>}
-                  {centre.business_email && <p>✉ <a href={`mailto:${centre.business_email}`} className="hover:underline">{centre.business_email}</a></p>}
-                  {centre.website && <p>🌐 <a href={centre.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{centre.website}</a></p>}
-                </div>
-              </DetailSectionCard>
-            )}
-
-            {(() => {
-              const social = (centre.social ?? {}) as Record<string, string>;
-              const links: [string, string, string][] = [
-                ['Facebook', social.facebook, '📘'], ['Instagram', social.instagram, '📷'], ['YouTube', social.youtube, '▶️'],
-                ['LinkedIn', social.linkedin, '💼'], ['X (Twitter)', social.twitter, '𝕏'], ['WhatsApp', social.whatsapp, '💬'],
-                ['Google Business', social.googleBusiness, '📍'],
-              ].filter(([, url]) => !!url) as [string, string, string][];
-              return links.length > 0 ? (
-                <DetailSectionCard icon="🔗" title="Social Networks">
-                  <div className="flex flex-wrap gap-2">
-                    {links.map(([label, url, icon]) => (
-                      <a key={label} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold hover:bg-secondary">
-                        <span aria-hidden>{icon}</span>{label}
-                      </a>
-                    ))}
-                  </div>
-                </DetailSectionCard>
-              ) : null;
-            })()}
 
             {centre.status === 'approved' && (
-              <DetailSectionCard icon="✉" title="Contact business" headingId="contact-heading">
+              <DetailSectionCard icon="✉" title="Contact Form" headingId="contact-heading">
                 <EnquiryForm centreId={centre.id} />
               </DetailSectionCard>
             )}
@@ -450,7 +490,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
 
         {centre.similar.length > 0 && (
           <section aria-labelledby="similar-heading" className="mt-8">
-            <h2 id="similar-heading" className="mb-3 font-display text-lg font-bold">Similar study spaces nearby</h2>
+            <h2 id="similar-heading" className="mb-3 font-display text-lg font-bold">You may also be interested in</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {centre.similar.map((s) => (
                 <CentreCard key={s.id} centre={s} />
