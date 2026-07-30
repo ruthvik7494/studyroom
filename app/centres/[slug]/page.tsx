@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getCentreBySlug, getCentreReviews } from '@/features/centres/services/centres.service';
@@ -166,17 +165,21 @@ export default async function CentreDetailPage({ params }: PageProps) {
       )}
 
       {/* Full-width header/cover image, with the logo overlapping the bottom-left corner.
-          The logo sits in an outer wrapper WITHOUT overflow-hidden — it was previously
-          inside the same clipped container as the cover image, so the half of it meant
-          to hang below the image was being cut off instead of showing in full. */}
-      <div className="relative h-[260px] w-full sm:h-[320px]">
-        <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-secondary to-accent">
-          {centre.cover_url ? (
-            <Image src={centre.cover_url} alt={`${centre.name} study space`} fill priority sizes="100vw" className="object-contain" />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-8xl" aria-hidden>{centre.emoji}</span>
-          )}
-        </div>
+          No fixed height here on purpose — a fixed box forces a choice between
+          cropping the photo (object-cover) or letterboxing it (object-contain),
+          and owner-uploaded photos can be any aspect ratio. A plain full-width
+          image with auto height renders at the photo's own real proportions,
+          so it's always full width AND never cropped, whatever shape it is.
+          The logo sits in an outer wrapper WITHOUT overflow-hidden — it was
+          previously inside the same clipped container as the cover image, so
+          the half of it meant to hang below the image was being cut off. */}
+      <div className="relative w-full bg-gradient-to-br from-secondary to-accent">
+        {centre.cover_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={centre.cover_url} alt={`${centre.name} study space`} className="block h-auto w-full" />
+        ) : (
+          <span className="flex h-[260px] w-full items-center justify-center text-8xl sm:h-[320px]" aria-hidden>{centre.emoji}</span>
+        )}
         {centre.logo_url && (
           <div className="absolute -bottom-8 left-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
