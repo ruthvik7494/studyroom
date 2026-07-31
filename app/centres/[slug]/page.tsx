@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server';
 import { getCentreBySlug, getCentreReviews } from '@/features/centres/services/centres.service';
 import { getSessionUser } from '@/lib/auth/rbac';
 import { centreJsonLd, breadcrumbJsonLd, safeJsonLd } from '@/lib/seo';
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatINR, cn } from '@/lib/utils';
@@ -16,6 +15,7 @@ import { SaveButton } from '@/features/saved/components/save-button';
 import { ClaimForm } from '@/features/claims/components/claim-form';
 import { ShareButton } from '@/features/centres/components/share-button';
 import { GalleryLightbox } from '@/features/centres/components/gallery-lightbox';
+import { SocialIcon, type SocialPlatform } from '@/features/centres/components/social-icon';
 import { CentreCard, STATUS_STYLE } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
 import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
@@ -143,11 +143,11 @@ export default async function CentreDetailPage({ params }: PageProps) {
   const pageUrl = `${SITE_URL}/centres/${centre.slug}`;
 
   const social = (centre.social ?? {}) as Record<string, string>;
-  const socialLinks: [string, string, string][] = [
-    ['Facebook', social.facebook, '📘'], ['Instagram', social.instagram, '📷'], ['YouTube', social.youtube, '▶️'],
-    ['LinkedIn', social.linkedin, '💼'], ['X (Twitter)', social.twitter, '𝕏'], ['WhatsApp', social.whatsapp, '💬'],
-    ['Google Business', social.googleBusiness, '📍'],
-  ].filter(([, url]) => !!url) as [string, string, string][];
+  const socialLinks: [string, string, SocialPlatform][] = [
+    ['Facebook', social.facebook, 'facebook'], ['Instagram', social.instagram, 'instagram'], ['YouTube', social.youtube, 'youtube'],
+    ['LinkedIn', social.linkedin, 'linkedin'], ['X (Twitter)', social.twitter, 'twitter'], ['WhatsApp', social.whatsapp, 'whatsapp'],
+    ['Google Business', social.googleBusiness, 'googleBusiness'],
+  ].filter(([, url]) => !!url) as [string, string, SocialPlatform][];
 
   const jsonLd = [
     centreJsonLd(centre),
@@ -176,7 +176,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
       <div className="relative w-full bg-gradient-to-br from-secondary to-accent">
         {centre.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={centre.cover_url} alt={`${centre.name} study space`} className="block h-auto w-full" />
+          <img src={centre.cover_url} alt={`${centre.name} study space`} className="mx-auto block h-auto max-h-[169px] w-full sm:max-h-[208px]" />
         ) : (
           <span className="flex h-[260px] w-full items-center justify-center text-8xl sm:h-[320px]" aria-hidden>{centre.emoji}</span>
         )}
@@ -189,8 +189,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
       </div>
 
       <div className="mx-auto max-w-6xl px-6 py-6">
-        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Study spaces', href: '/centres' }, { label: centre.name }]} />
-
         {canPreview && (
           <div className="mb-4 rounded-md border border-brand-gold/40 bg-accent px-4 py-2 text-sm text-accent-foreground" role="status">
             Preview — this listing is <strong>{centre.status.replace('_', ' ')}</strong> and not visible to the public.
@@ -460,9 +458,9 @@ export default async function CentreDetailPage({ params }: PageProps) {
               </div>
               {socialLinks.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
-                  {socialLinks.map(([label, url, icon]) => (
-                    <a key={label} href={url} target="_blank" rel="noopener noreferrer" title={label} className="flex h-9 w-9 items-center justify-center rounded-full border hover:bg-secondary">
-                      <span aria-hidden>{icon}</span>
+                  {socialLinks.map(([label, url, platform]) => (
+                    <a key={label} href={url} target="_blank" rel="noopener noreferrer" title={label} className="group flex h-9 w-9 items-center justify-center rounded-full border hover:bg-secondary">
+                      <SocialIcon platform={platform} />
                     </a>
                   ))}
                 </div>
