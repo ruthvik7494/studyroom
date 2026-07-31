@@ -80,17 +80,23 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
 
             {bookings.length > 1 && (
               <div className="mt-4 divide-y border-t">
-                {bookings.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between py-2.5 text-sm">
-                    <span>
-                      {new Date(b.starts_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
-                      {' '}— {formatINR(Number(b.amount))}
-                    </span>
-                    <span className={b.payment === 'paid' ? 'text-xs font-semibold text-[#2d6c4f]' : 'rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700'}>
-                      {b.payment === 'paid' ? 'Paid' : 'Pending'}
-                    </span>
-                  </div>
-                ))}
+                {bookings.map((b) => {
+                  const canReschedule = ['pending', 'confirmed'].includes(b.status);
+                  return (
+                    <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                      <span>
+                        {new Date(b.starts_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
+                        {' '}— {formatINR(Number(b.amount))}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={b.payment === 'paid' ? 'text-xs font-semibold text-[#2d6c4f]' : 'rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700'}>
+                          {b.payment === 'paid' ? 'Paid' : 'Pending'}
+                        </span>
+                        {canReschedule && <RescheduleButton bookingId={b.id} />}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </Card>

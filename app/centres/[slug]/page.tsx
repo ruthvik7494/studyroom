@@ -197,7 +197,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
           </div>
         )}
 
-        {/* Name + rating + "See Open Hours" shortcut */}
+        {/* Name + rating */}
         <div className={cn('flex flex-wrap items-start justify-between gap-4', centre.logo_url ? 'mt-10' : '')}>
           <div className="min-w-0">
             <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{centre.name}</h1>
@@ -211,12 +211,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
             </div>
             {fullAddress && <p className="mt-1 text-sm text-foreground/60">{fullAddress}</p>}
           </div>
-
-          {schedule && (
-            <a href="#hours-heading" className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-plum/10 px-4 py-2 text-sm font-semibold text-brand-plum hover:bg-brand-plum/20">
-              <span aria-hidden>🕐</span> See Open Hours
-            </a>
-          )}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -411,9 +405,13 @@ export default async function CentreDetailPage({ params }: PageProps) {
             </Card>
 
             {/* Location — map, address, contact & social all together, matching the reference's single "Location" card */}
-            <DetailSectionCard icon="📍" title="Location" headingId="map-heading">
+            <Card className="p-5" id="map-heading">
+              <div className="mb-4 flex items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg text-primary" aria-hidden>📍</span>
+                <h2 className="font-display text-base font-bold">Location</h2>
+              </div>
               {centre.lat != null && centre.lng != null && MAPBOX_TOKEN && (
-                <div className="relative -mx-1 -mt-1 mb-3 overflow-hidden rounded-lg">
+                <div className="relative mb-4 overflow-hidden rounded-xl">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${centre.lng},${centre.lat})/${centre.lng},${centre.lat},14,0/500x220@2x?access_token=${MAPBOX_TOKEN}`}
@@ -421,29 +419,55 @@ export default async function CentreDetailPage({ params }: PageProps) {
                     className="h-40 w-full object-cover"
                   />
                   {centre.is_verified && (
-                    <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-1 text-[11px] font-semibold">
-                      <span className="h-1.5 w-1.5 rounded-full bg-brand-green" aria-hidden />VERIFIED LOCATION
+                    <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-[11px] font-semibold">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />VERIFIED LOCATION
                     </span>
                   )}
                 </div>
               )}
-              <div className="space-y-1.5 text-sm">
-                {fullAddress && <p className="flex items-start gap-2"><span aria-hidden>📍</span>{fullAddress}</p>}
-                {centre.phone && <p>📱 <a href={`tel:${centre.phone}`} className="hover:underline">{centre.phone}</a></p>}
-                {centre.alt_phone && <p>📱 <a href={`tel:${centre.alt_phone}`} className="hover:underline">{centre.alt_phone}</a> <span className="text-xs text-muted-foreground">(alternate)</span></p>}
-                {centre.business_email && <p>✉ <a href={`mailto:${centre.business_email}`} className="hover:underline">{centre.business_email}</a></p>}
-                {centre.website && <p>🌐 <a href={centre.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{centre.website}</a></p>}
+              <div className="space-y-3 text-sm">
+                {fullAddress && (
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>📍</span>
+                    <span>{fullAddress}</span>
+                  </div>
+                )}
+                {centre.phone && (
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>📞</span>
+                    <a href={`tel:${centre.phone}`} className="text-primary hover:underline">{centre.phone}</a>
+                  </div>
+                )}
+                {centre.alt_phone && (
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>📞</span>
+                    <a href={`tel:${centre.alt_phone}`} className="text-primary hover:underline">{centre.alt_phone}</a>
+                    <span className="text-xs text-muted-foreground">(alternate)</span>
+                  </div>
+                )}
+                {centre.business_email && (
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>✉️</span>
+                    <a href={`mailto:${centre.business_email}`} className="text-primary hover:underline">{centre.business_email}</a>
+                  </div>
+                )}
+                {centre.website && (
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>🌐</span>
+                    <a href={centre.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{centre.website}</a>
+                  </div>
+                )}
               </div>
               {socialLinks.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
+                <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
                   {socialLinks.map(([label, url, icon]) => (
-                    <a key={label} href={url} target="_blank" rel="noopener noreferrer" title={label} className="flex h-8 w-8 items-center justify-center rounded-full border hover:bg-secondary">
+                    <a key={label} href={url} target="_blank" rel="noopener noreferrer" title={label} className="flex h-9 w-9 items-center justify-center rounded-full border hover:bg-secondary">
                       <span aria-hidden>{icon}</span>
                     </a>
                   ))}
                 </div>
               )}
-            </DetailSectionCard>
+            </Card>
 
             {centre.status === 'approved' && (
               <DetailSectionCard icon="✉" title="Contact Form" headingId="contact-heading">
