@@ -176,7 +176,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
       <div className="relative w-full bg-gradient-to-br from-secondary to-accent">
         {centre.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={centre.cover_url} alt={`${centre.name} study space`} className="mx-auto block h-auto max-h-[169px] w-full sm:max-h-[208px]" />
+          <img src={centre.cover_url} alt={`${centre.name} study space`} className="mx-auto block h-auto max-h-[169px] w-full sm:max-h-[300px]" />
         ) : (
           <span className="flex h-[260px] w-full items-center justify-center text-8xl sm:h-[320px]" aria-hidden>{centre.emoji}</span>
         )}
