@@ -8,7 +8,6 @@ import { Card } from '@/components/ui/card';
 import { listAllLocations } from '@/features/taxonomy/taxonomy.service';
 import { listCentres } from '@/features/centres/services/centres.service';
 import { CentreCard } from '@/features/centres/components/centre-card';
-import { NewsletterForm } from '@/features/newsletter/components/newsletter-form';
 import { TestimonialCarousel, type Testimonial } from '@/components/testimonial-carousel';
 import { organizationJsonLd, websiteJsonLd, safeJsonLd } from '@/lib/seo';
 
@@ -61,6 +60,14 @@ export default async function HomePage() {
     savedIds = new Set((savedRows ?? []).map((r) => r.centre_id));
   }
 
+  let heroAmenities: string[] = [];
+  if (featured[0]) {
+    const { data: amenityRows } = await db.from('centre_amenities').select('amenities(label)').eq('centre_id', featured[0].id);
+    heroAmenities = ((amenityRows ?? []) as unknown as Array<{ amenities: { label: string } | null }>)
+      .map((r) => r.amenities?.label)
+      .filter((l): l is string => !!l);
+  }
+
   return (
     <>
       <script
@@ -80,25 +87,33 @@ export default async function HomePage() {
             </p>
 
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">✓ Verified Centres</span>
-              <span className="inline-flex items-center gap-1.5">✓ Live Availability</span>
-              <span className="inline-flex items-center gap-1.5">✓ Instant Booking</span>
-              <span className="inline-flex items-center gap-1.5">✓ Affordable Prices</span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg aria-hidden viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2d6a4f" strokeWidth="2"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5l-8-3Z" /></svg>
+                Verified Centres
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg aria-hidden viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563eb" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-6" /></svg>
+                Live Availability
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg aria-hidden viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ea580c" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /></svg>
+                Instant Booking
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg aria-hidden viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0d9488" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
+                Affordable Prices
+              </span>
             </div>
 
-            {/* Search bar — Location + name search are real, wired filters.
-                Date is shown for visual parity with the reference but isn't
-                wired to anything: there's no "search centres available on a
-                given date" feature built, so it's not a functional filter. */}
+            {/* Search bar — Location + name search are real, wired filters. */}
             <form action="/centres" method="get" className="mt-6 rounded-2xl border bg-card p-3 shadow-sm">
-              <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto]">
+              <div className="grid gap-3 sm:grid-cols-[2fr_auto]">
                 <input name="q" type="text" placeholder="Search by name, area or landmark" className="h-11 rounded-lg border border-input bg-background px-3 text-sm" />
-                <input type="date" aria-label="Select date (not yet a working filter)" className="h-11 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground" />
                 <button type="submit" className="h-11 rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90">Search</button>
               </div>
               {locations.length > 0 && (
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  Popular:
+                  Popular searches:
                   {locations.slice(0, 5).map((loc) => (
                     <Link key={loc.slug} href={`/centres?area=${encodeURIComponent(loc.name)}`} className="rounded-full border bg-background px-2.5 py-1 hover:bg-secondary">
                       {loc.name}
@@ -115,19 +130,37 @@ export default async function HomePage() {
               <Image src="/images/hero-office.png" alt="A modern, well-lit study space" width={900} height={600} className="h-[280px] w-full object-cover sm:h-[360px]" priority />
             </div>
             {avgRating && (
-              <span className="absolute right-4 top-4 flex h-14 w-14 flex-col items-center justify-center rounded-full bg-background text-center shadow-md">
-                <span className="font-display text-sm font-bold text-brand-gold2">★ {avgRating}</span>
+              <span className="absolute right-4 top-4 flex h-14 w-14 flex-col items-center justify-center rounded-full bg-gradient-to-br from-brand-gold2 to-primary text-center shadow-md">
+                <span className="rounded-full bg-background px-1.5 py-1 text-xs font-bold text-brand-gold2">★ {avgRating}</span>
               </span>
             )}
             {featured[0] && (
-              <Link href={`/centres/${featured[0].slug}`} className="absolute bottom-4 left-4 right-4 flex items-center gap-3 rounded-xl bg-background/95 p-3 shadow-md backdrop-blur">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-secondary text-xl" aria-hidden>{featured[0].emoji}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-display text-sm font-bold">{featured[0].name}</span>
-                  <span className="block truncate text-xs text-muted-foreground">📍 {featured[0].area}</span>
-                </span>
-                <span className="shrink-0 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">View Details</span>
-              </Link>
+              <div className="absolute bottom-4 left-4 right-4 rounded-xl bg-background/95 p-3 shadow-md backdrop-blur">
+                <Link href={`/centres/${featured[0].slug}`} className="flex items-center gap-3">
+                  <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-secondary">
+                    {featured[0].cover_url ? (
+                      <Image src={featured[0].cover_url} alt="" fill className="object-cover" />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center text-xl" aria-hidden>{featured[0].emoji}</span>
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-display text-sm font-bold">{featured[0].name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">📍 {featured[0].area}</span>
+                  </span>
+                </Link>
+                {heroAmenities.length > 0 && (
+                  <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                    {heroAmenities.slice(0, 4).map((a) => <span key={a}>• {a}</span>)}
+                  </p>
+                )}
+                <div className="mt-2 flex items-center justify-between border-t pt-2">
+                  <span className="font-display text-sm font-bold text-primary">
+                    {featured[0].fromMonthly ? `₹${featured[0].fromMonthly}` : '—'}<span className="text-[10px] font-medium text-muted-foreground">/mo</span>
+                  </span>
+                  <Link href={`/centres/${featured[0].slug}`} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">View Details</Link>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -248,19 +281,6 @@ export default async function HomePage() {
             </Link>
           </div>
         </div>
-      </section>
-
-      {/* Newsletter — real, working subscription */}
-      <section className="mx-auto max-w-6xl px-6 py-6">
-        <Card className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-semibold">Stay updated with new centres &amp; offers</p>
-            <p className="text-sm text-muted-foreground">Subscribe to our newsletter.</p>
-          </div>
-          <div className="w-full sm:w-auto">
-            <NewsletterForm />
-          </div>
-        </Card>
       </section>
     </>
   );
