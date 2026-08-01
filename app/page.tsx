@@ -16,11 +16,12 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const db = await createClient();
   const [{ data: featured }, locations, { count: centresCount }, { count: studentsCount }] = await Promise.all([
-    db.from('centres').select('slug, name, area, emoji, rating, reviews_count').eq('status', 'approved').order('rating', { ascending: false }).limit(3),
+    db.from('centres').select('slug, name, area, emoji, rating, reviews_count, cover_url, is_verified').eq('status', 'approved').order('rating', { ascending: false }).limit(3),
     listAllLocations(db),
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
     admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
   ]);
+  const heroCentre = featured?.find((c) => c.cover_url);
 
   return (
     <>
@@ -32,54 +33,82 @@ export default async function HomePage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-brand-gold/5">
-        <div className="mx-auto max-w-5xl px-6 py-14 text-center sm:py-20">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-            <span aria-hidden>●</span> #1 Study Room Platform in Warangal
-          </span>
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-14 sm:py-20 lg:grid-cols-2 lg:gap-14">
+          {/* Left — text + search */}
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+              <span aria-hidden>●</span> #1 Study Room Platform in Warangal
+            </span>
 
-          <h1 className="mt-4 font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-            Find the Perfect <span className="text-primary">Study Room</span> Near You
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Search from {centresCount ?? 0}+ verified study centres with real-time seat availability and instant booking.
-          </p>
+            <h1 className="mt-4 font-display text-4xl font-extrabold leading-tight sm:text-5xl">
+              Find the Perfect <span className="text-primary">Study Room</span> Near You
+            </h1>
+            <p className="mt-4 max-w-md text-lg text-muted-foreground">
+              Search from {centresCount ?? 0}+ verified study centres with real-time seat availability and instant booking.
+            </p>
 
-          {/* Search bar — real fields wired to /centres' actual search/filter params */}
-          <form action="/centres" method="get" className="mx-auto mt-8 max-w-3xl rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
-            <div className="grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
-              <div className="text-left">
-                <label htmlFor="hero-area" className="mb-1 block text-xs font-semibold text-muted-foreground">📍 Location</label>
-                <select id="hero-area" name="area" className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm">
-                  <option value="">All areas</option>
-                  {locations.map((loc) => (
-                    <option key={loc.slug} value={loc.name}>{loc.name}</option>
-                  ))}
-                </select>
+            {/* Search bar — real fields wired to /centres' actual search/filter params */}
+            <form action="/centres" method="get" className="mt-8 rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="text-left">
+                  <label htmlFor="hero-area" className="mb-1 block text-xs font-semibold text-muted-foreground">📍 Location</label>
+                  <select id="hero-area" name="area" className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm">
+                    <option value="">All areas</option>
+                    {locations.map((loc) => (
+                      <option key={loc.slug} value={loc.name}>{loc.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-left">
+                  <label htmlFor="hero-q" className="mb-1 block text-xs font-semibold text-muted-foreground">🔍 Search Study Centre</label>
+                  <input
+                    id="hero-q"
+                    name="q"
+                    type="text"
+                    placeholder="Search by centre name or address…"
+                    className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                  />
+                </div>
               </div>
-              <div className="text-left">
-                <label htmlFor="hero-q" className="mb-1 block text-xs font-semibold text-muted-foreground">🔍 Search Study Centre</label>
-                <input
-                  id="hero-q"
-                  name="q"
-                  type="text"
-                  placeholder="Search by centre name or address…"
-                  className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                />
-              </div>
-              <div className="flex items-end">
-                <button type="submit" className="h-11 w-full rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90 sm:w-auto">
-                  Search Now →
-                </button>
-              </div>
+              <button type="submit" className="mt-3 h-11 w-full rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90">
+                Search Now →
+              </button>
+            </form>
+
+            {/* Stats — real counts where we have them; the other two are genuine platform capabilities, not invented numbers */}
+            <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5"><span aria-hidden>🏢</span><strong className="text-foreground">{centresCount ?? 0}+</strong> Study Centres</span>
+              <span className="inline-flex items-center gap-1.5"><span aria-hidden>🎓</span><strong className="text-foreground">{studentsCount ?? 0}+</strong> Students</span>
+              <span className="inline-flex items-center gap-1.5"><span aria-hidden>📡</span>Live Seat Availability</span>
+              <span className="inline-flex items-center gap-1.5"><span aria-hidden>⚡</span>Instant Booking Confirmation</span>
             </div>
-          </form>
+          </div>
 
-          {/* Stats — real counts where we have them; the other two are genuine platform capabilities, not invented numbers */}
-          <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5"><span aria-hidden>🏢</span><strong className="text-foreground">{centresCount ?? 0}+</strong> Study Centres</span>
-            <span className="inline-flex items-center gap-1.5"><span aria-hidden>🎓</span><strong className="text-foreground">{studentsCount ?? 0}+</strong> Students</span>
-            <span className="inline-flex items-center gap-1.5"><span aria-hidden>📡</span>Live Seat Availability</span>
-            <span className="inline-flex items-center gap-1.5"><span aria-hidden>⚡</span>Instant Booking Confirmation</span>
+          {/* Right — a real photo from one of the platform's own centres, not a generic stock image */}
+          <div className="relative">
+            {heroCentre?.cover_url ? (
+              <div className="relative overflow-hidden rounded-2xl shadow-lg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={heroCentre.cover_url} alt={`${heroCentre.name}, a study space on StudyNook`} className="h-[280px] w-full object-cover sm:h-[380px]" />
+                {heroCentre.is_verified && (
+                  <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-md">
+                    <svg aria-hidden viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5l-8-3Zm-1.2 13.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z" /></svg>
+                    Verified Centre
+                  </span>
+                )}
+                <Link
+                  href={`/centres/${heroCentre.slug}`}
+                  className="absolute bottom-4 left-4 right-4 rounded-xl bg-background/95 p-3 backdrop-blur"
+                >
+                  <p className="font-display text-sm font-bold">{heroCentre.name}</p>
+                  <p className="text-xs text-muted-foreground">{heroCentre.area} · ★ {heroCentre.rating.toFixed(1)} ({heroCentre.reviews_count} reviews)</p>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex h-[280px] items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-brand-gold/10 text-7xl shadow-lg sm:h-[380px]" aria-hidden>
+                📚
+              </div>
+            )}
           </div>
         </div>
       </section>
