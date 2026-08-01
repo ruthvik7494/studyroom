@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { listAllLocations } from '@/features/taxonomy/taxonomy.service';
 import { StudyHeroIllustration } from '@/components/study-hero-illustration';
+import { ReadingCornerIllustration } from '@/components/reading-corner-illustration';
 import { organizationJsonLd, websiteJsonLd, safeJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
@@ -103,18 +104,58 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 py-6">
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            { t: 'Live availability', d: 'See seats free right now — never show up to a full hall.' },
-            { t: 'Verified reviews', d: 'Ratings from students who actually checked in.' },
-            { t: 'Transparent prices', d: 'Daily and monthly rates up front, no surprises.' },
-          ].map((f) => (
-            <Card key={f.t} className="p-5">
-              <p className="font-display font-bold">{f.t}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{f.d}</p>
-            </Card>
-          ))}
+      <section className="mx-auto max-w-5xl px-6 py-16">
+        <div className="text-center">
+          <h2 className="font-display text-3xl font-extrabold">Why Choose StudyNook</h2>
+          <span className="mx-auto mt-3 block h-1 w-14 rounded-full bg-primary" aria-hidden />
+          <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">
+            Everything you need to find, compare and book a study space — built around what actually matters when you're picking where to study.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,340px)_1fr] lg:items-start">
+          <div className="overflow-hidden rounded-2xl shadow-lg">
+            <ReadingCornerIllustration className="h-[380px] w-full object-cover lg:h-full" />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            {[
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M4 11 12 4l8 7" /><path d="M6 10v9h12v-9" /><path d="M10 19v-5h4v5" /></svg>
+                ),
+                title: 'Verified Centres',
+                body: 'Every "Verified" badge means our team has actually confirmed the listing is genuine.',
+              },
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 6 8 7 8-7" /></svg>
+                ),
+                title: 'Easy to Connect',
+                body: 'Message any centre directly with your questions and get a quick reply, right from their page.',
+              },
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M8 9h8M8 13h5" /></svg>
+                ),
+                title: 'Live Seat Availability',
+                body: 'See real seat counts before you go — never show up expecting a spot that isn\'t there.',
+              },
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" /></svg>
+                ),
+                title: 'Instant Booking',
+                body: 'Bookings confirm immediately — no waiting for the centre to approve your request.',
+              },
+            ].map((f) => (
+              <Card key={f.title} className="p-5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">{f.icon}</div>
+                <p className="mt-3 font-display font-bold">{f.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground">{f.body}</p>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 
