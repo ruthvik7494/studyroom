@@ -28,6 +28,13 @@ const SEATING_TIERS: { label: string; sub: string; icon: string; value: number }
 
 const BUSINESS_TAGS = ['Quiet', 'Premium', 'Affordable', 'AC', 'Library', '24x7', 'Students', 'Professionals'] as const;
 
+/** "08:40" -> "09:40" — wraps past midnight ("23:40" -> "00:40"). */
+function addOneHour(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const next = ((h ?? 0) + 1) % 24;
+  return `${String(next).padStart(2, '0')}:${String(m ?? 0).padStart(2, '0')}`;
+}
+
 const SPACE_TYPES: { value: CentreUpsert['spaceType']; label: string; icon: string }[] = [
   { value: 'study_hall', label: 'Study Centre', icon: '🎓' },
   { value: 'reading_room', label: 'Reading Room', icon: '📖' },
@@ -513,6 +520,7 @@ export function ListingWizard(props: Props) {
 
           <div>
             <p className="mb-2 text-sm font-medium">Weekly Timings</p>
+            <p className="-mt-1 mb-2 text-xs text-muted-foreground">Each open day is a 1-hour window — closing time is set automatically to exactly one hour after opening time.</p>
             <div className="space-y-2 rounded-md border p-3">
               {DAY_ORDER.map((dayIdx) => {
                 const isOpen = watch(`hours.${dayIdx}.isOpen`);
@@ -524,9 +532,20 @@ export function ListingWizard(props: Props) {
                     </label>
                     {isOpen ? (
                       <div className="flex items-center gap-2 text-sm">
-                        <input type="time" className="h-9 rounded-md border border-input bg-background px-2 text-sm" {...register(`hours.${dayIdx}.openingTime`)} />
+                        <input
+                          type="time"
+                          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                          {...register(`hours.${dayIdx}.openingTime`, {
+                            onChange: (e) => setValue(`hours.${dayIdx}.closingTime`, addOneHour(e.target.value), { shouldValidate: true }),
+                          })}
+                        />
                         <span className="text-muted-foreground">to</span>
-                        <input type="time" className="h-9 rounded-md border border-input bg-background px-2 text-sm" {...register(`hours.${dayIdx}.closingTime`)} />
+                        <input
+                          type="time"
+                          readOnly
+                          className="h-9 cursor-not-allowed rounded-md border border-input bg-secondary/40 px-2 text-sm text-muted-foreground"
+                          {...register(`hours.${dayIdx}.closingTime`)}
+                        />
                       </div>
                     ) : (
                       <span className="text-sm text-muted-foreground">Closed</span>

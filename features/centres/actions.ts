@@ -66,14 +66,14 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
     if (error) throw error;
 
     const pricing: Record<string, number> = {};
-    if (input.priceHourly !== undefined) pricing.hour = input.priceHourly;
-    if (input.priceDaily !== undefined) pricing.day = input.priceDaily;
-    if (input.priceWeekly !== undefined) pricing.week = input.priceWeekly;
-    if (input.priceFortnightly !== undefined) pricing.fortnight = input.priceFortnightly;
-    if (input.priceMonthly !== undefined) pricing.month = input.priceMonthly;
-    if (input.priceQuarterly !== undefined) pricing.quarter = input.priceQuarterly;
-    if (input.priceHalfYearly !== undefined) pricing.half_year = input.priceHalfYearly;
-    if (input.priceYearly !== undefined) pricing.year = input.priceYearly;
+    if (input.priceHourly !== undefined) pricing.hour = input.priceHourly as number;
+    if (input.priceDaily !== undefined) pricing.day = input.priceDaily as number;
+    if (input.priceWeekly !== undefined) pricing.week = input.priceWeekly as number;
+    if (input.priceFortnightly !== undefined) pricing.fortnight = input.priceFortnightly as number;
+    if (input.priceMonthly !== undefined) pricing.month = input.priceMonthly as number;
+    if (input.priceQuarterly !== undefined) pricing.quarter = input.priceQuarterly as number;
+    if (input.priceHalfYearly !== undefined) pricing.half_year = input.priceHalfYearly as number;
+    if (input.priceYearly !== undefined) pricing.year = input.priceYearly as number;
 
     const { error: resourceErr } = await supabase.from('resources').insert({
       centre_id: centre.id,
@@ -175,14 +175,14 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
         if (fields.seats !== undefined) resourcePatch.unit_count = fields.seats;
         if (priceFields.some((v) => v !== undefined)) {
           const pricing: Record<string, number> = {};
-          if (fields.priceHourly !== undefined) pricing.hour = fields.priceHourly;
-          if (fields.priceDaily !== undefined) pricing.day = fields.priceDaily;
-          if (fields.priceWeekly !== undefined) pricing.week = fields.priceWeekly;
-          if (fields.priceFortnightly !== undefined) pricing.fortnight = fields.priceFortnightly;
-          if (fields.priceMonthly !== undefined) pricing.month = fields.priceMonthly;
-          if (fields.priceQuarterly !== undefined) pricing.quarter = fields.priceQuarterly;
-          if (fields.priceHalfYearly !== undefined) pricing.half_year = fields.priceHalfYearly;
-          if (fields.priceYearly !== undefined) pricing.year = fields.priceYearly;
+          if (fields.priceHourly !== undefined) pricing.hour = fields.priceHourly as number;
+          if (fields.priceDaily !== undefined) pricing.day = fields.priceDaily as number;
+          if (fields.priceWeekly !== undefined) pricing.week = fields.priceWeekly as number;
+          if (fields.priceFortnightly !== undefined) pricing.fortnight = fields.priceFortnightly as number;
+          if (fields.priceMonthly !== undefined) pricing.month = fields.priceMonthly as number;
+          if (fields.priceQuarterly !== undefined) pricing.quarter = fields.priceQuarterly as number;
+          if (fields.priceHalfYearly !== undefined) pricing.half_year = fields.priceHalfYearly as number;
+          if (fields.priceYearly !== undefined) pricing.year = fields.priceYearly as number;
           resourcePatch.pricing = pricing;
         }
         const { error: resourceErr } = await db.from('resources').update(resourcePatch as never).eq('id', resource.id);

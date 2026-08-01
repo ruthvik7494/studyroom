@@ -100,17 +100,25 @@ const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 /** One weekday's hours. day 0 = Sunday .. 6 = Saturday — matches JS Date.getDay() and Postgres EXTRACT(DOW). */
 const dayHoursSchema = z.object({
   isOpen: z.coerce.boolean().default(true),
-  openingTime: z.string().regex(TIME_RE, 'Invalid time').default('06:00'),
-  closingTime: z.string().regex(TIME_RE, 'Invalid time').default('22:00'),
-});
-const DEFAULT_WEEKLY_HOURS = Array.from({ length: 7 }, () => ({ isOpen: true, openingTime: '06:00', closingTime: '22:00' }));
+  openingTime: z.string().regex(TIME_RE, 'Invalid time').default('09:00'),
+  closingTime: z.string().regex(TIME_RE, 'Invalid time').default('10:00'),
+}).refine((d) => {
+  if (!d.isOpen) return true;
+  const [oh, om] = d.openingTime.split(':').map(Number);
+  const [ch, cm] = d.closingTime.split(':').map(Number);
+  const openMin = oh! * 60 + om!;
+  let closeMin = ch! * 60 + cm!;
+  if (closeMin <= openMin) closeMin += 24 * 60; // past-midnight wraparound (e.g. 23:40 -> 00:40)
+  return closeMin - openMin === 60;
+}, { message: 'Closing time must be exactly 1 hour after opening time', path: ['closingTime'] });
+const DEFAULT_WEEKLY_HOURS = Array.from({ length: 7 }, () => ({ isOpen: true, openingTime: '09:00', closingTime: '10:00' }));
 
 export const centreUpsertSchema = z.object({
   name: z.string().trim().min(2, 'Name is too short').max(120),
   address: z.string().trim().min(2, 'Address is too short').max(240),
-  city: z.string().trim().min(1, 'City is required').max(100),
-  state: z.string().trim().min(1, 'State is required').max(100),
-  country: z.string().trim().min(1, 'Country is required').max(100).default('India'),
+  city: z.string().trim().min(1, 'City is required').max(100).regex(/^[A-Za-z\s.'-]+$/, 'City can only contain letters'),
+  state: z.string().trim().min(1, 'State is required').max(100).regex(/^[A-Za-z\s.'-]+$/, 'State can only contain letters'),
+  country: z.string().trim().min(1, 'Country is required').max(100).regex(/^[A-Za-z\s.'-]+$/, 'Country can only contain letters').default('India'),
   postcode: z.string().trim().regex(/^[1-9][0-9]{5}$/, 'Enter a valid 6-digit postcode'),
   spaceType: z.enum(['study_hall', 'reading_room', 'coworking', 'both']),
   lat: z.preprocess(
@@ -131,14 +139,14 @@ export const centreUpsertSchema = z.object({
   googlePlaceId: z.string().trim().max(300).optional(),
   // Pricing/capacity/content — every period is its own independent field now
   // (not derived from Daily/Monthly); an owner fills in whichever they offer.
-  priceHourly: z.coerce.number().int().positive('Price must be a positive number').max(1_000_000).optional(),
-  priceDaily: z.coerce.number().int().positive('Price must be a positive number').max(1_000_000).optional(),
-  priceWeekly: z.coerce.number().int().positive('Price must be a positive number').max(1_000_000).optional(),
-  priceFortnightly: z.coerce.number().int().positive('Price must be a positive number').max(1_000_000).optional(),
-  priceMonthly: z.coerce.number().int().positive('Price must be a positive number').max(1_000_000).optional(),
-  priceQuarterly: z.coerce.number().int().positive('Price must be a positive number').max(1_000_000).optional(),
-  priceHalfYearly: z.coerce.number().int().positive('Price must be a positive number').max(1_000_000).optional(),
-  priceYearly: z.coerce.number().int().positive('Price must be a positive number').max(1_000_000).optional(),
+  priceHourly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
+  priceDaily: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
+  priceWeekly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
+  priceFortnightly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
+  priceMonthly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
+  priceQuarterly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
+  priceHalfYearly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
+  priceYearly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
   seats: z.coerce.number().int().positive().max(1000).default(10),
   about: z.string().trim().min(10, 'Please write a short description (at least 10 characters)').max(2000),
   amenityIds: z.array(z.string().uuid()).max(40).default([]),
