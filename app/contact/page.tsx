@@ -43,7 +43,7 @@ export default function ContactPage() {
 
         {/* Right — the form */}
         <div>
-          <h1 className="font-display text-3xl font-extrabold">Let's Connect!</h1>
+          <h1 className="font-display text-3xl font-extrabold">Let&apos;s Connect!</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Have questions, need help finding a study space, or just want to say hello?
             Fill out the form below, or email{' '}

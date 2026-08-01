@@ -156,7 +156,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
   // for a quick-glance view (not a separate, invented data source).
   const todayISODate = nowIst.toISOString().slice(0, 10);
   const primaryResource = centre.resources[0];
-  let todayBlocks: { label: string; seatsFree: number; capacity: number; isPast: boolean }[] = [];
+  const todayBlocks: { label: string; seatsFree: number; capacity: number; isPast: boolean }[] = [];
   if (primaryResource) {
     const { data: todaySlots } = await db.rpc('resource_hour_slots', { p_resource_id: primaryResource.id, p_date: todayISODate, p_period: 'hour' });
     const fmtH = (h: number) => { const p = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 === 0 ? 12 : h % 12; return `${h12} ${p}`; };

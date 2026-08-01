@@ -133,7 +133,7 @@ export default async function HomePage() {
           <h2 className="font-display text-3xl font-extrabold">Why Choose StudyNook</h2>
           <span className="mx-auto mt-3 block h-1 w-14 rounded-full bg-primary" aria-hidden />
           <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">
-            Everything you need to find, compare and book a study space — built around what actually matters when you're picking where to study.
+            Everything you need to find, compare and book a study space — built around what actually matters when you&apos;re picking where to study.
           </p>
         </div>
 
@@ -206,7 +206,7 @@ export default async function HomePage() {
           <div className="text-center">
             <h2 className="font-display text-2xl font-extrabold sm:text-3xl">What Students Are Saying</h2>
             <span className="mx-auto mt-3 block h-1 w-14 rounded-full bg-primary" aria-hidden />
-            <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">Real reviews from students who've actually studied at these centres.</p>
+            <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">Real reviews from students who&apos;ve actually studied at these centres.</p>
           </div>
           <div className="mt-10">
             <TestimonialCarousel items={testimonials} />

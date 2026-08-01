@@ -31,7 +31,6 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
   if (!bookings || bookings.length === 0) notFound(); // RLS also scopes to owner
 
   const centre = bookings[0]!.centres as unknown as { name: string } | null;
-  const totalAmount = bookings.reduce((sum, b) => sum + Number(b.amount), 0);
   const unpaidAmount = bookings.filter((b) => b.payment !== 'paid').reduce((sum, b) => sum + Number(b.amount), 0);
   const allPaid = bookings.every((b) => b.payment === 'paid');
   const isGroupBooking = group === '1' && bookings.length > 1;
@@ -105,7 +104,7 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-display text-base font-bold">Need our help?</h2>
-                <p className="mt-0.5 text-sm text-muted-foreground">Call or write to us if something's not right.</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">Call or write to us if something&apos;s not right.</p>
               </div>
               <a href="mailto:support@studynook.app" className="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold hover:bg-secondary">
                 ✉ support@studynook.app
