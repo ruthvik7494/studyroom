@@ -5,6 +5,7 @@ import { admin } from '@/lib/supabase/admin';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { listAllLocations } from '@/features/taxonomy/taxonomy.service';
+import { StudyHeroIllustration } from '@/components/study-hero-illustration';
 import { organizationJsonLd, websiteJsonLd, safeJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
@@ -16,12 +17,11 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const db = await createClient();
   const [{ data: featured }, locations, { count: centresCount }, { count: studentsCount }] = await Promise.all([
-    db.from('centres').select('slug, name, area, emoji, rating, reviews_count, cover_url, is_verified').eq('status', 'approved').order('rating', { ascending: false }).limit(3),
+    db.from('centres').select('slug, name, area, emoji, rating, reviews_count').eq('status', 'approved').order('rating', { ascending: false }).limit(3),
     listAllLocations(db),
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
     admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
   ]);
-  const heroCentre = featured?.find((c) => c.cover_url);
 
   return (
     <>
@@ -31,9 +31,16 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd([organizationJsonLd(), websiteJsonLd()]) }}
       />
 
-      {/* Hero */}
+      {/* Hero — illustration is a full-bleed background layer (not a boxed card),
+          faded into the section's own background on its left edge so the two
+          halves read as one continuous piece, matching the reference. */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-brand-gold/5">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-14 sm:py-20 lg:grid-cols-2 lg:gap-14">
+        <div aria-hidden className="absolute inset-y-0 right-0 hidden w-[56%] lg:block">
+          <StudyHeroIllustration className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/50 to-transparent" />
+        </div>
+
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-6 py-14 sm:py-20 lg:grid-cols-2 lg:gap-14">
           {/* Left — text + search */}
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
@@ -84,31 +91,14 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Right — a real photo from one of the platform's own centres, not a generic stock image */}
-          <div className="relative">
-            {heroCentre?.cover_url ? (
-              <div className="relative overflow-hidden rounded-2xl shadow-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={heroCentre.cover_url} alt={`${heroCentre.name}, a study space on StudyNook`} className="h-[280px] w-full object-cover sm:h-[380px]" />
-                {heroCentre.is_verified && (
-                  <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-md">
-                    <svg aria-hidden viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5l-8-3Zm-1.2 13.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z" /></svg>
-                    Verified Centre
-                  </span>
-                )}
-                <Link
-                  href={`/centres/${heroCentre.slug}`}
-                  className="absolute bottom-4 left-4 right-4 rounded-xl bg-background/95 p-3 backdrop-blur"
-                >
-                  <p className="font-display text-sm font-bold">{heroCentre.name}</p>
-                  <p className="text-xs text-muted-foreground">{heroCentre.area} · ★ {heroCentre.rating.toFixed(1)} ({heroCentre.reviews_count} reviews)</p>
-                </Link>
-              </div>
-            ) : (
-              <div className="flex h-[280px] items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-brand-gold/10 text-7xl shadow-lg sm:h-[380px]" aria-hidden>
-                📚
-              </div>
-            )}
+          {/* Right column is a spacer on large screens — the illustration itself
+              is the absolutely-positioned full-bleed layer above, behind this
+              content, so it reaches the true edge of the viewport. On mobile,
+              where that layer is hidden, show it inline instead. */}
+          <div className="lg:hidden">
+            <div className="overflow-hidden rounded-2xl shadow-lg">
+              <StudyHeroIllustration className="h-[240px] w-full object-cover" />
+            </div>
           </div>
         </div>
       </section>
