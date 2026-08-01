@@ -22,12 +22,14 @@ export function BrandPanel({ className = '', stats }: { className?: string; stat
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
 
       <div className="relative flex h-full flex-col justify-end p-10">
-        <h2 className="max-w-md font-display text-3xl font-bold leading-tight text-foreground">
-          Find your perfect<br />study space in <span className="text-primary">Warangal</span>
-        </h2>
-        <p className="mt-3 max-w-sm text-sm text-foreground/70">
-          Compare study halls, reading rooms and coworking desks — with real-time seats, verified reviews and transparent pricing.
-        </p>
+        <div className="rounded-xl bg-background/90 p-4 shadow-sm backdrop-blur">
+          <h2 className="max-w-md font-display text-3xl font-bold leading-tight text-foreground">
+            Find your perfect<br />study space in <span className="text-primary">Warangal</span>
+          </h2>
+          <p className="mt-3 max-w-sm text-sm text-foreground/70">
+            Compare study halls, reading rooms and coworking desks — with real-time seats, verified reviews and transparent pricing.
+          </p>
+        </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
           {FEATURES.map((f) => (
