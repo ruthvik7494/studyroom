@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { admin } from '@/lib/supabase/admin';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { listAllLocations } from '@/features/taxonomy/taxonomy.service';
 import { organizationJsonLd, websiteJsonLd, safeJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
@@ -13,12 +15,12 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const db = await createClient();
-  const { data: featured } = await db
-    .from('centres')
-    .select('slug, name, area, emoji, rating, reviews_count')
-    .eq('status', 'approved')
-    .order('rating', { ascending: false })
-    .limit(3);
+  const [{ data: featured }, locations, { count: centresCount }, { count: studentsCount }] = await Promise.all([
+    db.from('centres').select('slug, name, area, emoji, rating, reviews_count').eq('status', 'approved').order('rating', { ascending: false }).limit(3),
+    listAllLocations(db),
+    db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
+    admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+  ]);
 
   return (
     <>
@@ -27,17 +29,58 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd([organizationJsonLd(), websiteJsonLd()]) }}
       />
-      <section className="mx-auto max-w-4xl px-6 py-16 text-center">
-        <p className="font-display text-xs font-bold uppercase tracking-wider text-brand-gold">Warangal · Telangana</p>
-        <h1 className="mt-2 font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-          Find your perfect <span className="text-brand-green">study space</span>
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-          Compare study halls, reading rooms and coworking spaces near you — with live seat availability, verified reviews and transparent prices.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href="/centres" className="rounded-md bg-primary px-6 py-3 font-display font-bold text-primary-foreground">Browse centres</Link>
-          <Link href="/login" className="rounded-md border px-6 py-3 font-display font-bold">List your centre</Link>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-brand-gold/5">
+        <div className="mx-auto max-w-5xl px-6 py-14 text-center sm:py-20">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+            <span aria-hidden>●</span> #1 Study Room Platform in Warangal
+          </span>
+
+          <h1 className="mt-4 font-display text-4xl font-extrabold leading-tight sm:text-5xl">
+            Find the Perfect <span className="text-primary">Study Room</span> Near You
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
+            Search from {centresCount ?? 0}+ verified study centres with real-time seat availability and instant booking.
+          </p>
+
+          {/* Search bar — real fields wired to /centres' actual search/filter params */}
+          <form action="/centres" method="get" className="mx-auto mt-8 max-w-3xl rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
+            <div className="grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
+              <div className="text-left">
+                <label htmlFor="hero-area" className="mb-1 block text-xs font-semibold text-muted-foreground">📍 Location</label>
+                <select id="hero-area" name="area" className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm">
+                  <option value="">All areas</option>
+                  {locations.map((loc) => (
+                    <option key={loc.slug} value={loc.name}>{loc.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="text-left">
+                <label htmlFor="hero-q" className="mb-1 block text-xs font-semibold text-muted-foreground">🔍 Search Study Centre</label>
+                <input
+                  id="hero-q"
+                  name="q"
+                  type="text"
+                  placeholder="Search by centre name or address…"
+                  className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                />
+              </div>
+              <div className="flex items-end">
+                <button type="submit" className="h-11 w-full rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90 sm:w-auto">
+                  Search Now →
+                </button>
+              </div>
+            </div>
+          </form>
+
+          {/* Stats — real counts where we have them; the other two are genuine platform capabilities, not invented numbers */}
+          <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5"><span aria-hidden>🏢</span><strong className="text-foreground">{centresCount ?? 0}+</strong> Study Centres</span>
+            <span className="inline-flex items-center gap-1.5"><span aria-hidden>🎓</span><strong className="text-foreground">{studentsCount ?? 0}+</strong> Students</span>
+            <span className="inline-flex items-center gap-1.5"><span aria-hidden>📡</span>Live Seat Availability</span>
+            <span className="inline-flex items-center gap-1.5"><span aria-hidden>⚡</span>Instant Booking Confirmation</span>
+          </div>
         </div>
       </section>
 
