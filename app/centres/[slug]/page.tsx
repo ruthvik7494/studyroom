@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { admin } from '@/lib/supabase/admin';
+import { BookingSidebar } from '@/features/centres/components/booking-sidebar';
 import { getCentreBySlug, getCentreReviews } from '@/features/centres/services/centres.service';
 import { getSessionUser } from '@/lib/auth/rbac';
 import { centreJsonLd, breadcrumbJsonLd, safeJsonLd } from '@/lib/seo';
@@ -72,15 +74,20 @@ export default async function CentreDetailPage({ params }: PageProps) {
   if (!centre) notFound();
 
   const db = await createClient();
-  const [reviews, viewer, { data: weeklyHours }] = await Promise.all([
+  const [reviews, viewer, { data: weeklyHours }, { count: studentsCountRaw }] = await Promise.all([
     getCentreReviews(db, centre.id),
     getSessionUser(),
     db.from('centre_hours').select('day_of_week, is_open, opening_time, closing_time').eq('centre_id', centre.id),
+    admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
   ]);
+  const studentsCount = studentsCountRaw ?? 0;
   const saved = viewer ? await isSaved(db, viewer.id, centre.id) : false;
 
   const isPublic = centre.status === 'approved';
   const canPreview = !isPublic && (viewer?.id === centre.owner_id || viewer?.role === 'admin');
+  const { data: ownerProfile } = centre.owner_id
+    ? await admin.from('profiles').select('full_name, avatar_url').eq('id', centre.owner_id).maybeSingle()
+    : { data: null };
 
   // Weekly opening hours — built from the real per-day schedule the owner
   // set while creating/editing their listing (features/centres/schema.ts's
@@ -247,6 +254,11 @@ export default async function CentreDetailPage({ params }: PageProps) {
               <span aria-hidden>📞</span> Call now
             </a>
           )}
+          {social.whatsapp && (
+            <a href={social.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-[#25D366]/40 px-4 py-2 text-sm font-semibold text-[#128C36] hover:bg-[#25D366]/5">
+              <span aria-hidden>💬</span> WhatsApp
+            </a>
+          )}
           {centre.website && (
             <a href={centre.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold hover:bg-secondary">
               <span aria-hidden>🌐</span> Website
@@ -401,6 +413,33 @@ export default async function CentreDetailPage({ params }: PageProps) {
 
           {/* Right column — sidebar */}
           <div className="space-y-6">
+            <BookingSidebar
+              slug={centre.slug}
+              isPublic={isPublic}
+              pricing={centre.resources[0] ? ((centre.resources[0].pricing ?? {}) as Record<string, number>) : null}
+              seatsFree={centre.occupancy?.seatsFree ?? null}
+              phone={centre.phone}
+              whatsapp={social.whatsapp || null}
+              studentsCount={studentsCount}
+            />
+
+            {ownerProfile?.full_name && (
+              <Card className="p-4">
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">Centre Owner</p>
+                <div className="flex items-center gap-3">
+                  {ownerProfile.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={ownerProfile.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      {ownerProfile.full_name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <p className="font-semibold">{ownerProfile.full_name}</p>
+                </div>
+              </Card>
+            )}
+
             <Card className="p-4" id="hours-heading">
               {schedule ? (
                 <OpeningHoursCard todayOpen={todayOpen} todayText={todayText} days={schedule} nowLabel={nowLabel} />
