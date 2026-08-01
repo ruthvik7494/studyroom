@@ -9,9 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { centreUpsertSchema, withHttps, type CentreUpsert } from '../schema';
-import { createCentre, updateCentre, uploadCentreImage, uploadCentreLogo, submitForReview, resolveMapsUrl } from '../actions';
+import { createCentre, updateCentre, uploadCentreImage, uploadCentreLogo, submitForReview } from '../actions';
 import { DeletePhotoButton } from './delete-photo-button';
-import { PlacesPicker } from './places-picker';
 
 interface Amenity { id: string; label: string; icon: string | null }
 
@@ -28,8 +27,6 @@ const SEATING_TIERS: { label: string; sub: string; icon: string; value: number }
 ];
 
 const BUSINESS_TAGS = ['Quiet', 'Premium', 'Affordable', 'AC', 'Library', '24x7', 'Students', 'Professionals'] as const;
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 const SPACE_TYPES: { value: CentreUpsert['spaceType']; label: string; icon: string }[] = [
   { value: 'study_hall', label: 'Study Centre', icon: '🎓' },
@@ -87,6 +84,7 @@ type Props =
 export function ListingWizard(props: Props) {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [maxUnlocked, setMaxUnlocked] = useState(props.mode === 'edit' ? 6 : 0);
   const [serverError, setServerError] = useState<string | null>(null);
   const [phase, setPhase] = useState<'idle' | 'saving' | 'uploading'>('idle');
 
@@ -94,13 +92,10 @@ export function ListingWizard(props: Props) {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [galleryFiles, setGalleryFiles] = useState<Record<string, File[]>>({});
   const [extraFiles, setExtraFiles] = useState<File[]>([]);
-  const [mapsUrl, setMapsUrl] = useState('');
-  const [resolvingUrl, setResolvingUrl] = useState(false);
-  const [mapsUrlError, setMapsUrlError] = useState<string | null>(null);
   /** Which button was actually clicked — 'draft' (stays a draft) or 'publish' (also submits for admin review). A ref, not state: the submit handler runs synchronously right after the click, before a state update would be guaranteed to have flushed. */
   const submitIntent = useRef<'draft' | 'publish'>('draft');
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CentreUpsert>({
+  const { register, handleSubmit, watch, setValue, trigger, formState: { errors } } = useForm<CentreUpsert>({
     resolver: zodResolver(centreUpsertSchema),
     mode: 'onBlur',
     defaultValues: { spaceType: 'study_hall', seats: 10, amenityIds: [], tags: [], country: 'India', ...props.defaults },
@@ -188,9 +183,72 @@ export function ListingWizard(props: Props) {
     setServerError('Please check the highlighted fields — some steps need attention before this can be saved.');
   };
 
-  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  /**
+   * Per-step gating: Next only advances if the CURRENT step's mandatory
+   * requirements are met. Two kinds of checks: schema-validated fields (via
+   * RHF's trigger, which runs the same Zod rules as final submit) and things
+   * that live outside the form's own values entirely — selected files, and
+   * "at least one of these" conditions across an array field.
+   */
+  const validateStep = async (idx: number): Promise<boolean> => {
+    setServerError(null);
+    if (idx === 0) {
+      const ok = await trigger(['name', 'spaceType', 'seats', 'tags', 'about']);
+      if (!ok) { setServerError('Please complete all required fields on this step.'); return false; }
+      const hasCover = !!coverFile || (props.mode === 'edit' && !!props.photos.coverUrl);
+      if (!hasCover) { setServerError('Please upload a cover image before continuing.'); return false; }
+      return true;
+    }
+    if (idx === 1) {
+      const ok = await trigger(['address', 'city', 'state', 'country', 'postcode', 'phone', 'altPhone', 'businessEmail', 'website']);
+      if (!ok) setServerError('Please complete all required fields on this step.');
+      return ok;
+    }
+    if (idx === 2) {
+      const vals = watch();
+      const hasPrice = PRICE_FIELDS.some((p) => vals[p.key] !== undefined && vals[p.key] !== null && vals[p.key] !== '' as unknown);
+      if (!hasPrice) { setServerError('Enter at least one price before continuing.'); return false; }
+      const priceOk = await trigger(PRICE_FIELDS.map((p) => p.key));
+      if (!priceOk) { setServerError('Prices must be positive numbers.'); return false; }
+      const hasOpenDay = vals.hours?.some((d) => d.isOpen) ?? false;
+      if (!hasOpenDay) { setServerError('Mark at least one day as open, with a time.'); return false; }
+      return true;
+    }
+    if (idx === 3) {
+      const ok = (watch('amenityIds')?.length ?? 0) > 0;
+      if (!ok) setServerError('Select at least one facility before continuing.');
+      return ok;
+    }
+    if (idx === 4) {
+      const fieldsOk = await trigger(['facebook', 'instagram', 'youtube', 'linkedin', 'twitter', 'whatsapp', 'googleBusiness']);
+      if (!fieldsOk) { setServerError('Please fix the highlighted link(s) before continuing.'); return false; }
+      const vals = watch();
+      const anyFilled = [vals.facebook, vals.instagram, vals.youtube, vals.linkedin, vals.twitter, vals.whatsapp, vals.googleBusiness].some(Boolean);
+      if (!anyFilled) { setServerError('Add at least one social link before continuing.'); return false; }
+      return true;
+    }
+    if (idx === 5) {
+      const newPhotoCount = Object.values(galleryFiles).reduce((s, f) => s + f.length, 0) + extraFiles.length + (coverFile ? 1 : 0);
+      const existingCount = props.mode === 'edit' ? props.photos.gallery.length : 0;
+      if (newPhotoCount + existingCount === 0) { setServerError('Upload at least one photo before continuing.'); return false; }
+      return true;
+    }
+    return true;
+  };
+
+  const next = async () => {
+    const ok = await validateStep(step);
+    if (!ok) return;
+    setMaxUnlocked((m) => Math.max(m, step + 1));
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  };
   const back = () => setStep((s) => Math.max(s - 1, 0));
-  const goto = (i: number) => setStep(i);
+  /** Jumping backward (to an already-reached step) is always fine; jumping
+   * ahead past what's been validated is blocked — clicking a locked step
+   * number just does nothing, rather than silently skipping requirements. */
+  const goto = (i: number) => {
+    if (i <= maxUnlocked) setStep(i);
+  };
 
   const onLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => setLogoFile(e.target.files?.[0] ?? null);
   const onCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => setCoverFile(e.target.files?.[0] ?? null);
@@ -211,16 +269,6 @@ export function ListingWizard(props: Props) {
       if (next !== e.target.value) setValue(field, next, { shouldValidate: true });
     };
 
-  const onResolveMapsUrl = async () => {
-    setMapsUrlError(null);
-    setResolvingUrl(true);
-    const res = await resolveMapsUrl({ url: mapsUrl });
-    setResolvingUrl(false);
-    if (!res.ok) { setMapsUrlError(res.error.message); return; }
-    setValue('lat', res.data.lat, { shouldValidate: true });
-    setValue('lng', res.data.lng, { shouldValidate: true });
-  };
-
   return (
     <form onSubmit={(e) => e.preventDefault()} noValidate>
       <Card className="rounded-2xl p-5 sm:p-6">
@@ -233,16 +281,18 @@ export function ListingWizard(props: Props) {
               key={label}
               type="button"
               onClick={() => goto(i)}
-              className="flex shrink-0 items-center gap-1.5"
+              disabled={i > maxUnlocked}
+              title={i > maxUnlocked ? 'Complete the earlier steps first' : label}
+              className={cn('flex shrink-0 items-center gap-1.5', i > maxUnlocked && 'cursor-not-allowed')}
               aria-current={step === i ? 'step' : undefined}
             >
               <span
                 className={cn(
                   'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
-                  i === step ? 'bg-[#2d6c4f] text-white' : i < step ? 'bg-[#2d6c4f]/20 text-[#2d6c4f]' : 'bg-secondary text-muted-foreground',
+                  i === step ? 'bg-[#2d6c4f] text-white' : i < step ? 'bg-[#2d6c4f]/20 text-[#2d6c4f]' : i > maxUnlocked ? 'bg-secondary/50 text-muted-foreground/50' : 'bg-secondary text-muted-foreground',
                 )}
               >
-                {i + 1}
+                {i > maxUnlocked ? '🔒' : i + 1}
               </span>
               {i < STEPS.length - 1 && <span className="h-px w-4 bg-border" aria-hidden />}
             </button>
@@ -384,79 +434,34 @@ export function ListingWizard(props: Props) {
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">Add your study centre location and contact details</p>
 
-          <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
-            <div>
-              <PlacesPicker
-                onSelect={(place) => {
-                  setValue('address', place.address, { shouldValidate: true });
-                  setValue('lat', place.lat, { shouldValidate: true });
-                  setValue('lng', place.lng, { shouldValidate: true });
-                  setValue('googlePlaceId', place.googlePlaceId);
-                }}
-              />
-            </div>
-            <p className="hidden pb-2.5 text-sm font-semibold text-muted-foreground sm:block">OR</p>
-            <div>
-              <Label htmlFor="mapsUrl">Paste Google Maps URL</Label>
-              <div className="flex gap-2">
-                <Input id="mapsUrl" placeholder="https://maps.google.com/…" value={mapsUrl} onChange={(e) => setMapsUrl(e.target.value)} />
-                <Button type="button" variant="outline" disabled={!mapsUrl || resolvingUrl} onClick={onResolveMapsUrl}>
-                  {resolvingUrl ? '…' : '🔗'}
-                </Button>
+          <div>
+            <p className="mb-2 text-sm font-medium">Address Details</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" placeholder="123, MG Road, Near City Library" aria-invalid={!!errors.address} {...register('address')} />
+                {errors.address && <p className="mt-1 text-xs text-destructive">{errors.address.message}</p>}
               </div>
-              {mapsUrlError && <p className="mt-1 text-xs text-destructive">{mapsUrlError}</p>}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <p className="mb-2 text-sm font-medium">Address Details</p>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="address">Address</Label>
-                  <Input id="address" placeholder="123, MG Road, Near City Library" aria-invalid={!!errors.address} {...register('address')} />
-                  {errors.address && <p className="mt-1 text-xs text-destructive">{errors.address.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="city">City</Label>
-                  <Input id="city" {...register('city')} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="state">State</Label>
-                    <Input id="state" {...register('state')} />
-                  </div>
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input id="country" {...register('country')} />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="postcode">Postcode</Label>
-                  <Input id="postcode" className="max-w-[160px]" {...register('postcode')} />
-                </div>
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input id="city" aria-invalid={!!errors.city} {...register('city')} />
+                {errors.city && <p className="mt-1 text-xs text-destructive">{errors.city.message}</p>}
               </div>
-            </div>
-
-            <div>
-              <p className="mb-2 text-sm font-medium">Location on Map</p>
-              {values.lat && values.lng && MAPBOX_TOKEN ? (
-                <div className="overflow-hidden rounded-xl border">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${values.lng},${values.lat})/${values.lng},${values.lat},14,0/640x300@2x?access_token=${MAPBOX_TOKEN}`}
-                    alt="Map preview of the selected location"
-                    className="h-64 w-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex h-64 items-center justify-center rounded-xl border bg-secondary/40 text-center text-sm text-muted-foreground">
-                  Search a location or paste a Maps link<br />to see it on the map here.
-                </div>
-              )}
-              <p className="mt-2 text-xs text-muted-foreground">
-                {values.lat && values.lng ? 'Location set.' : 'Not set yet —'} without a location, this centre won't appear in "near me" search.
-              </p>
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Input id="state" aria-invalid={!!errors.state} {...register('state')} />
+                {errors.state && <p className="mt-1 text-xs text-destructive">{errors.state.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Input id="country" aria-invalid={!!errors.country} {...register('country')} />
+                {errors.country && <p className="mt-1 text-xs text-destructive">{errors.country.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="postcode">Postcode</Label>
+                <Input id="postcode" placeholder="506001" inputMode="numeric" maxLength={6} className="max-w-[160px]" aria-invalid={!!errors.postcode} {...register('postcode')} />
+                {errors.postcode && <p className="mt-1 text-xs text-destructive">{errors.postcode.message}</p>}
+              </div>
             </div>
           </div>
 
@@ -465,19 +470,21 @@ export function ListingWizard(props: Props) {
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="phone">Mobile Number</Label>
-                <Input id="phone" placeholder="+91 98765 43210" {...register('phone')} />
+                <Input id="phone" placeholder="9876543210" inputMode="numeric" maxLength={10} aria-invalid={!!errors.phone} {...register('phone')} />
+                {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>}
               </div>
               <div>
-                <Label htmlFor="altPhone">Alternate Number</Label>
-                <Input id="altPhone" placeholder="+91 91234 56789" {...register('altPhone')} />
+                <Label htmlFor="altPhone">Alternate Number <span className="text-muted-foreground">(optional)</span></Label>
+                <Input id="altPhone" placeholder="9123456789" inputMode="numeric" maxLength={10} aria-invalid={!!errors.altPhone} {...register('altPhone')} />
+                {errors.altPhone && <p className="mt-1 text-xs text-destructive">{errors.altPhone.message}</p>}
               </div>
               <div>
-                <Label htmlFor="businessEmail">Email Address</Label>
+                <Label htmlFor="businessEmail">Email Address <span className="text-muted-foreground">(optional)</span></Label>
                 <Input id="businessEmail" type="email" aria-invalid={!!errors.businessEmail} {...register('businessEmail')} />
                 {errors.businessEmail && <p className="mt-1 text-xs text-destructive">{errors.businessEmail.message}</p>}
               </div>
               <div>
-                <Label htmlFor="website">Website (Optional)</Label>
+                <Label htmlFor="website">Website <span className="text-muted-foreground">(optional)</span></Label>
                 <Input id="website" placeholder="https://…" aria-invalid={!!errors.website} {...register('website', { onBlur: normalizeUrlOnBlur('website') })} />
                 {errors.website && <p className="mt-1 text-xs text-destructive">{errors.website.message}</p>}
               </div>
