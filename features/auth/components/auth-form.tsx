@@ -118,19 +118,23 @@ export function AuthForm({
   };
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full max-w-md">
       {/* Brand mark */}
-      <div className="mb-5 flex justify-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground shadow-sm">
+      <div className="mb-6 flex items-center gap-2.5">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground shadow-sm">
           S
+        </div>
+        <div>
+          <p className="font-display text-lg font-extrabold leading-tight">Study<span className="text-brand-gold">Nook</span></p>
+          <p className="text-xs leading-tight text-muted-foreground">Find. Book. Study.</p>
         </div>
       </div>
 
-      <h1 className="text-center font-display text-2xl font-bold">
-        {mode === 'signin' ? 'Welcome back!' : 'Create your account'}
+      <h1 className="font-display text-2xl font-bold">
+        {mode === 'signin' ? 'Welcome back! 👋' : 'Create your account'}
       </h1>
-      <p className="mt-1.5 text-center text-sm text-muted-foreground">
-        {mode === 'signin' ? 'Enter email & password to continue.' : 'Just a few details to get started.'}
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        {mode === 'signin' ? 'Glad to see you again. Please sign in to continue.' : 'Just a few details to get started.'}
       </p>
 
       {/* Sign in / Sign up toggle — same functionality, pill styling */}
@@ -139,12 +143,21 @@ export function AuthForm({
           <button key={m} role="tab" aria-selected={mode === m} type="button"
             className={`flex-1 rounded-full py-2 text-sm font-semibold transition-colors ${mode === m ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             onClick={() => { setMode(m); setServerError(null); setNotice(null); }}>
-            {m === 'signin' ? 'Sign in' : 'Sign up'}
+            {m === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-3" noValidate>
+      <Button variant="outline" className="mt-6 h-12 w-full gap-2 rounded-xl" onClick={google} type="button">
+        <GoogleIcon />
+        Continue with Google
+      </Button>
+
+      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" /> or continue with email <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
         {mode === 'signup' && (
           <div>
             <div className="relative">
@@ -156,6 +169,7 @@ export function AuthForm({
         )}
 
         <div>
+          <label htmlFor="email" className="mb-1 block text-sm font-medium">Email address</label>
           <div className="relative">
             <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><MailIcon /></span>
             <Input id="email" type="email" autoComplete="email" placeholder="Enter your email address" aria-label="Email address" aria-invalid={!!errors.email} className="h-12 rounded-xl pl-10" {...register('email')} />
@@ -164,6 +178,7 @@ export function AuthForm({
         </div>
 
         <div>
+          <label htmlFor="password" className="mb-1 block text-sm font-medium">Password</label>
           <div className="relative">
             <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><LockIcon /></span>
             <Input
@@ -189,7 +204,11 @@ export function AuthForm({
         </div>
 
         {mode === 'signin' && (
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-input accent-primary" />
+              Remember me
+            </label>
             <a href="/auth/reset" className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline">Forgot password?</a>
           </div>
         )}
@@ -204,7 +223,7 @@ export function AuthForm({
         {notice && <p className="text-sm text-brand-green" role="status">{notice}</p>}
 
         <Button type="submit" className="h-12 w-full rounded-xl text-base" disabled={isSubmitting}>
-          {isSubmitting ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Create account'}
+          {isSubmitting ? 'Please wait…' : mode === 'signin' ? 'Sign In →' : 'Create account'}
         </Button>
       </form>
 
@@ -212,14 +231,18 @@ export function AuthForm({
         Email me a magic link instead
       </button>
 
-      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" /> Or sign in with <span className="h-px flex-1 bg-border" />
-      </div>
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        {mode === 'signin' ? (
+          <>Don&apos;t have an account? <button type="button" onClick={() => setMode('signup')} className="font-semibold text-primary hover:underline">Create account</button></>
+        ) : (
+          <>Already have an account? <button type="button" onClick={() => setMode('signin')} className="font-semibold text-primary hover:underline">Sign in</button></>
+        )}
+      </p>
 
-      <Button variant="outline" className="h-12 w-full gap-2 rounded-xl" onClick={google} type="button">
-        <GoogleIcon />
-        Google
-      </Button>
+      <div className="mt-5 flex items-center gap-2 rounded-xl bg-primary/5 p-3 text-xs text-muted-foreground">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden>🛡</span>
+        Your data is secure with us. We never share your information.
+      </div>
     </div>
   );
 }

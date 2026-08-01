@@ -1,55 +1,51 @@
+import Image from 'next/image';
+
 const FEATURES = [
-  { icon: '🪑', label: 'Live seat availability' },
-  { icon: '⭐', label: 'Verified reviews & ratings' },
-  { icon: '⚡', label: 'Instant booking, pay online or at the centre' },
-  { icon: '🛡', label: 'Women-safe verified spaces' },
+  { icon: '🪑', bg: 'bg-primary/10', label: 'Live Seat Availability', body: 'Real-time seat status before you book.' },
+  { icon: '⭐', bg: 'bg-brand-gold2/10', label: 'Verified Reviews', body: 'Honest reviews from real students.' },
+  { icon: '⚡', bg: 'bg-brand-plum/10', label: 'Instant Booking', body: 'Book your seat instantly and get confirmed.' },
+  { icon: '🛡', bg: 'bg-blue-500/10', label: 'Women-Safe Spaces', body: 'Verified safe spaces for women.' },
 ];
 
+export interface BrandPanelStats { students: number; centres: number; avgRating: string | null }
+
 /**
- * Dark branded panel (logo, tagline, feature highlights). Originally built
- * for the login page's right-side panel; there's no actual "study centre"
- * photo asset anywhere in the app, so this stands in for one — reused as-is
- * wherever the design calls for a branded visual, rather than fabricating a
- * stock photo that doesn't represent a real StudyNook centre.
+ * Branded panel for the right side of the login page — a real provided photo
+ * as the background, with the headline/feature grid/stats overlaid. Stats
+ * are passed in from the page (which has DB access) rather than fetched
+ * here, so this stays a simple, reusable presentational component.
  */
-export function BrandPanel({ className = '' }: { className?: string }) {
+export function BrandPanel({ className = '', stats }: { className?: string; stats?: BrandPanelStats }) {
   return (
-    <div className={`relative overflow-hidden bg-[#0f1713] ${className}`}>
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage: 'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 1px, transparent 40px)',
-        }}
-      />
-      <div aria-hidden className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-brand-green/30 blur-3xl" />
-      <div aria-hidden className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-brand-gold/20 blur-3xl" />
+    <div className={`relative overflow-hidden ${className}`}>
+      <Image src="/images/login-desk.png" alt="A calm, well-lit home study desk" fill priority className="object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
 
-      <div className="relative flex h-full flex-col justify-between p-12 text-[#F7F5F0]">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 font-display font-bold">S</div>
-          <span className="font-display text-sm font-bold uppercase tracking-wider">StudyNook</span>
+      <div className="relative flex h-full flex-col justify-end p-10">
+        <h2 className="max-w-md font-display text-3xl font-bold leading-tight text-foreground">
+          Find your perfect<br />study space in <span className="text-primary">Warangal</span>
+        </h2>
+        <p className="mt-3 max-w-sm text-sm text-foreground/70">
+          Compare study halls, reading rooms and coworking desks — with real-time seats, verified reviews and transparent pricing.
+        </p>
+
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          {FEATURES.map((f) => (
+            <div key={f.label} className="rounded-xl bg-background/90 p-3 shadow-sm backdrop-blur">
+              <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-base ${f.bg}`} aria-hidden>{f.icon}</span>
+              <p className="mt-2 text-sm font-bold text-foreground">{f.label}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{f.body}</p>
+            </div>
+          ))}
         </div>
 
-        <div>
-          <h2 className="max-w-md font-display text-3xl font-bold leading-tight">
-            Find your perfect study space in Warangal
-          </h2>
-          <p className="mt-3 max-w-sm text-sm text-[#F7F5F0]/70">
-            Compare study halls, reading rooms and coworking desks — with real-time seats, verified reviews and transparent pricing.
-          </p>
-
-          <ul className="mt-8 space-y-4">
-            {FEATURES.map((f) => (
-              <li key={f.label} className="flex items-center gap-3 text-sm">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-base" aria-hidden>{f.icon}</span>
-                {f.label}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <p className="text-xs text-[#F7F5F0]/40">© {new Date().getFullYear()} StudyNook · Warangal, Telangana</p>
+        {stats && (
+          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 rounded-xl bg-background/90 px-4 py-3 text-sm shadow-sm backdrop-blur">
+            <span className="inline-flex items-center gap-1.5"><span aria-hidden>👥</span><strong>{stats.students}+</strong> Happy Students</span>
+            <span className="inline-flex items-center gap-1.5"><span aria-hidden>✓</span><strong>{stats.centres}+</strong> Verified Centres</span>
+            {stats.avgRating && <span className="inline-flex items-center gap-1.5"><span aria-hidden>👍</span><strong>{stats.avgRating}/5</strong> Average Rating</span>}
+          </div>
+        )}
       </div>
     </div>
   );
