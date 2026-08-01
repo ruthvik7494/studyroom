@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { BrandPanel } from '@/components/brand-panel';
+import Image from 'next/image';
+import { Card } from '@/components/ui/card';
 import { ContactForm } from '@/features/contact/components/contact-form';
 
 export const metadata: Metadata = {
@@ -36,64 +37,138 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 export default function ContactPage() {
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-6 py-12">
-      <div className="grid gap-10 lg:grid-cols-2">
-        {/* Left — brand panel (stands in for a photo; see BrandPanel's own note) */}
-        <BrandPanel className="hidden min-h-[520px] rounded-2xl lg:block" />
-
-        {/* Right — the form */}
+    <main id="main-content" className="mx-auto max-w-6xl px-6 py-12">
+      {/* Hero */}
+      <div className="grid items-center gap-10 lg:grid-cols-2">
         <div>
-          <h1 className="font-display text-3xl font-extrabold">Let&apos;s Connect!</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Have questions, need help finding a study space, or just want to say hello?
-            Fill out the form below, or email{' '}
-            <a className="underline" href="mailto:support@studynook.app">support@studynook.app</a>.
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">💬 Get in Touch</span>
+          <h1 className="mt-4 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
+            We&apos;re here to help you find the <span className="text-primary">perfect study space</span>.
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Have questions, suggestions or need support? Reach out to us. We&apos;ll get back to you as soon as possible.
           </p>
 
-          <div className="mt-6 space-y-1 text-sm text-muted-foreground">
-            <p><span className="font-semibold text-foreground">Students —</span> booking, payment or refund questions.</p>
-            <p><span className="font-semibold text-foreground">Study space owners —</span> want to list your space? Email <a className="underline" href="mailto:owners@studynook.app">owners@studynook.app</a>.</p>
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="flex items-start gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🎓</span>
+              <div>
+                <p className="text-sm font-semibold">For Students</p>
+                <p className="text-xs text-muted-foreground">Booking, payment, refund or general queries.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🏢</span>
+              <div>
+                <p className="text-sm font-semibold">For Space Owners</p>
+                <p className="text-xs text-muted-foreground">List your space or manage your listing.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🎧</span>
+              <div>
+                <p className="text-sm font-semibold">Support</p>
+                <p className="text-xs text-muted-foreground">We&apos;re here to help between 9 AM – 9 PM everyday.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>✉️</span>
+              <div>
+                <p className="text-sm font-semibold">Quick Response</p>
+                <p className="text-xs text-muted-foreground">We usually reply within a few hours.</p>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <div className="mt-8">
-            <ContactForm />
+        <div className="relative">
+          <div className="overflow-hidden rounded-2xl shadow-lg">
+            <Image src="/images/contact-office.png" alt="A modern StudyNook study space" width={900} height={600} className="h-[280px] w-full object-cover sm:h-[320px]" priority />
           </div>
+          <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-xl bg-background/95 px-3 py-2.5 shadow-md backdrop-blur">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>💚</span>
+            <p className="max-w-[180px] text-xs font-medium">Happy to support students and space owners.</p>
+          </div>
+        </div>
+      </div>
 
-          <div className="mt-8 flex items-center gap-3 border-t pt-6">
+      {/* Green info panel + form */}
+      <div className="mt-12 grid overflow-hidden rounded-2xl border shadow-sm lg:grid-cols-[1fr_1.3fr]">
+        <div className="bg-[#1f4a37] p-8 text-white">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 font-display text-sm font-bold">S</span>
+            <span className="text-xs font-bold uppercase tracking-wider">StudyNook</span>
+          </div>
+          <h2 className="mt-6 font-display text-2xl font-bold leading-tight">
+            Find your perfect study space in <span className="text-white/70">Warangal</span>
+          </h2>
+          <p className="mt-3 text-sm text-white/80">
+            Compare study halls, reading rooms and coworking desks — with real-time seats, verified reviews and transparent pricing.
+          </p>
+          <ul className="mt-6 space-y-2.5 text-sm">
+            {['Live seat availability', 'Verified reviews & ratings', 'Instant booking & secure payments', 'Women-safe verified spaces'].map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <span aria-hidden>✓</span>{item}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-8 flex items-center gap-3 border-t border-white/10 pt-6">
+            <span className="text-xs font-semibold text-white/60">Follow us</span>
             {SOCIAL_LINKS.map((s) => (
-              <a
-                key={s.label}
-                href={s.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={s.label}
-                className="flex h-9 w-9 items-center justify-center rounded-full border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-              >
+              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/80 hover:border-white/40 hover:text-white">
                 {s.icon}
               </a>
             ))}
           </div>
         </div>
+
+        <div className="p-8">
+          <h2 className="font-display text-lg font-bold">Send us a message</h2>
+          <div className="mt-5">
+            <ContactForm />
+          </div>
+        </div>
       </div>
 
-      {/* Map — our Warangal service area (Mapbox static image, no JS needed) */}
-      <section className="mt-12" aria-labelledby="map-heading">
-        <h2 id="map-heading" className="mb-3 font-display text-lg font-bold">Find us in Warangal</h2>
-        <div className="overflow-hidden rounded-2xl border">
-          {MAPBOX_TOKEN ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${MAP_LNG},${MAP_LAT})/${MAP_LNG},${MAP_LAT},11,0/1200x320@2x?access_token=${MAPBOX_TOKEN}`}
-              alt="Map of StudyNook's Warangal service area"
-              className="h-80 w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-80 items-center justify-center bg-secondary/40 text-sm text-muted-foreground">
-              Map unavailable right now.
-            </div>
-          )}
+      {/* Map + contact details */}
+      <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div>
+          <h2 className="mb-3 font-display text-lg font-bold">Find us in Warangal</h2>
+          <div className="overflow-hidden rounded-2xl border">
+            {MAPBOX_TOKEN ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${MAP_LNG},${MAP_LAT})/${MAP_LNG},${MAP_LAT},11,0/900x320@2x?access_token=${MAPBOX_TOKEN}`}
+                alt="Map of StudyNook's Warangal service area"
+                className="h-80 w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-80 items-center justify-center bg-secondary/40 text-sm text-muted-foreground">
+                Map unavailable right now.
+              </div>
+            )}
+          </div>
         </div>
-      </section>
+
+        <Card className="h-fit p-5">
+          <div className="space-y-4 text-sm">
+            <div className="flex items-start gap-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10" aria-hidden>✉️</span>
+              <div>
+                <p className="font-semibold">Email</p>
+                <a href="mailto:support@studynook.app" className="text-muted-foreground hover:underline">support@studynook.app</a>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10" aria-hidden>📍</span>
+              <div>
+                <p className="font-semibold">Service Area</p>
+                <p className="text-muted-foreground">Warangal, Telangana</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
     </main>
   );
 }
