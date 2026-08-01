@@ -8,6 +8,7 @@ import { listCentres } from '@/features/centres/services/centres.service';
 import { CentreCard } from '@/features/centres/components/centre-card';
 import { StudyHeroIllustration } from '@/components/study-hero-illustration';
 import { ReadingCornerIllustration } from '@/components/reading-corner-illustration';
+import { TestimonialCarousel, type Testimonial } from '@/components/testimonial-carousel';
 import { organizationJsonLd, websiteJsonLd, safeJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
@@ -18,12 +19,37 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const db = await createClient();
-  const [{ items: featured }, locations, { count: centresCount }, { count: studentsCount }] = await Promise.all([
+  const [{ items: featured }, locations, { count: centresCount }, { count: studentsCount }, { data: testimonialRows }] = await Promise.all([
     listCentres(db, { limit: 6 }),
     listAllLocations(db),
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
     admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+    db.from('reviews')
+      .select('id, rating, body, author:author_id(full_name, avatar_url), centres(name, slug)')
+      .eq('status', 'published')
+      .gte('rating', 4)
+      .not('body', 'is', null)
+      .order('rating', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(6),
   ]);
+
+  const testimonials: Testimonial[] = (testimonialRows ?? [])
+    .map((r) => {
+      const author = r.author as unknown as { full_name: string | null; avatar_url: string | null } | null;
+      const centre = r.centres as unknown as { name: string; slug: string } | null;
+      if (!r.body || !centre) return null;
+      return {
+        id: r.id,
+        name: author?.full_name ?? 'Student',
+        avatarUrl: author?.avatar_url ?? null,
+        rating: r.rating,
+        body: r.body,
+        centreName: centre.name,
+        centreSlug: centre.slug,
+      };
+    })
+    .filter((t): t is Testimonial => t !== null);
 
   return (
     <>
@@ -162,19 +188,32 @@ export default async function HomePage() {
 
       {featured.length > 0 && (
         <section className="mx-auto max-w-6xl px-6 py-14">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="font-display text-2xl font-extrabold sm:text-3xl">Popular Study Spaces</h2>
-              <p className="mt-1 text-sm text-muted-foreground">A few of the highest-rated centres students are booking right now.</p>
-            </div>
-            <Link href="/centres" className="hidden shrink-0 text-sm font-semibold text-primary hover:underline sm:block">View all →</Link>
+          <div className="text-center">
+            <h2 className="font-display text-2xl font-extrabold sm:text-3xl">Popular Study Spaces</h2>
+            <span className="mx-auto mt-3 block h-1 w-14 rounded-full bg-primary" aria-hidden />
+            <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">A few of the highest-rated centres students are booking right now.</p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((c) => (
               <CentreCard key={c.slug} centre={c} />
             ))}
           </div>
-          <Link href="/centres" className="mt-4 block text-center text-sm font-semibold text-primary hover:underline sm:hidden">View all →</Link>
+          <div className="mt-6 text-center">
+            <Link href="/centres" className="text-sm font-semibold text-primary hover:underline">View all →</Link>
+          </div>
+        </section>
+      )}
+
+      {testimonials.length > 0 && (
+        <section className="mx-auto max-w-3xl px-6 py-14">
+          <div className="text-center">
+            <h2 className="font-display text-2xl font-extrabold sm:text-3xl">What Students Are Saying</h2>
+            <span className="mx-auto mt-3 block h-1 w-14 rounded-full bg-primary" aria-hidden />
+            <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">Real reviews from students who've actually studied at these centres.</p>
+          </div>
+          <div className="mt-10">
+            <TestimonialCarousel items={testimonials} />
+          </div>
         </section>
       )}
     </>
