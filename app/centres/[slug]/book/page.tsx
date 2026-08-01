@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getSessionUser } from '@/lib/auth/rbac';
 import { getCentreBySlug } from '@/features/centres/services/centres.service';
+import { isSaved } from '@/features/saved/services/saved.service';
 import { BookingPanel } from '@/features/bookings/components/booking-panel';
 import type { Period } from '@/features/bookings/pricing';
 import { noindex } from '@/lib/seo';
@@ -23,16 +24,23 @@ export default async function BookPage({ params, searchParams }: Params) {
   if (!centre || centre.status !== 'approved') notFound();
 
   const user = await getSessionUser();
+  const saved = user ? await isSaved(db, user.id, centre.id) : false;
+  const social = (centre.social ?? {}) as Record<string, string>;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-8">
+    <main className="mx-auto max-w-6xl px-6 py-8">
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted-foreground">
         <Link href="/centres" className="hover:underline">Centres</Link> ›{' '}
         <Link href={`/centres/${centre.slug}`} className="hover:underline">{centre.name}</Link> ›{' '}
         <span className="text-foreground">Book</span>
       </nav>
 
-      <h1 className="font-display text-2xl font-bold">Book a seat at {centre.name}</h1>
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="font-display text-2xl font-bold">Book a seat at {centre.name}</h1>
+        {centre.is_verified && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">✓ Verified centre</span>
+        )}
+      </div>
       <p className="mt-1 text-sm text-muted-foreground">Choose an option and how long you need it.</p>
 
       {!user ? (
@@ -55,6 +63,13 @@ export default async function BookPage({ params, searchParams }: Params) {
             tier: r.tier,
             pricing: (r.pricing ?? {}) as Record<string, number>,
           }))}
+          centreName={centre.name}
+          centreArea={centre.area}
+          coverUrl={centre.cover_url}
+          rating={centre.rating}
+          phone={centre.phone}
+          whatsapp={social.whatsapp || null}
+          initialSaved={saved}
         />
       )}
     </main>

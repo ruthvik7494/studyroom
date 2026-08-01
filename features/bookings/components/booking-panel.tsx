@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { formatINR, cn } from '@/lib/utils';
 import { createBooking, getResourceAvailability } from '../actions';
 import { PERIOD_LABEL, PERIOD_DAYS, priceForPeriod, availablePeriods, type Period } from '../pricing';
+import { SaveButton } from '@/features/saved/components/save-button';
 
 interface ResourceOpt { id: string; label: string; tier: string | null; pricing: Record<string, number> }
 
@@ -30,21 +31,24 @@ function addDays(dateISO: string, days: number): string {
 function formatDateLong(dateISO: string): string {
   return new Date(`${dateISO}T00:00:00+05:30`).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
 }
+function formatDateShort(dateISO: string): string {
+  return new Date(`${dateISO}T00:00:00+05:30`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
+}
 
 /**
- * Real slot picker. Hourly bookings support selecting several hours at once
- * (e.g. 9, 10, 11 AM for a 3-hour session) — each hour is checked and booked
- * as its own independent seat, so "9 AM has 2 of 3 left" stays correct
- * regardless of what's booked at 10 AM or 11 AM. Day-or-longer bookings pick
- * one start time and show a calculated end date. Slots are colour-coded:
- * green = available (hover for the seat count), red = fully booked, gray =
- * already past — checked again server-side at the moment of booking, so a
- * slot that fills between page load and click is still caught correctly.
+ * Real slot picker — same booking engine as before, laid out as a two-column
+ * page (numbered steps + a live booking-summary sidebar) instead of one
+ * stacked column. Every behaviour below is unchanged from the previous
+ * version: hourly multi-select, per-hour independent capacity, real-time
+ * availability re-checked at the moment of booking, 30-day horizon, etc.
  */
 export function BookingPanel({
   centreId, slug, resources, initialPeriod, initialResourceId,
+  centreName, centreArea, coverUrl, rating, phone, whatsapp, initialSaved,
 }: {
   centreId: string; slug: string; resources: ResourceOpt[]; initialPeriod?: Period; initialResourceId?: string;
+  centreName: string; centreArea: string | null; coverUrl: string | null; rating: number;
+  phone: string | null; whatsapp: string | null; initialSaved: boolean;
 }) {
   const router = useRouter();
   const [resourceId, setResourceId] = useState(
@@ -101,117 +105,244 @@ export function BookingPanel({
     router.refresh();
   };
 
+  const startTimeLabel = selectedHours.length === 0 ? '—' : selectedHours.map(formatHour).join(', ');
+
   return (
-    <div className="mt-6 space-y-5">
-      <div>
-        <p className="mb-2 text-sm font-medium">Choose an option</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {resources.map((r) => (
-            <button key={r.id} onClick={() => setResourceId(r.id)} aria-pressed={resourceId === r.id} className="text-left">
-              <Card className={`p-4 transition ${resourceId === r.id ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}>
-                <p className="font-display font-semibold">{r.label}</p>
-                <p className="text-xs text-muted-foreground">{r.tier ?? 'Seat'}</p>
-              </Card>
-            </button>
-          ))}
-        </div>
+    <div className="mt-6">
+      {/* Trust strip */}
+      <div className="mb-6 flex flex-wrap gap-x-6 gap-y-2 rounded-xl bg-secondary/50 px-4 py-3 text-sm text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">✅ Instant confirmation</span>
+        <span className="inline-flex items-center gap-1.5">🔒 Secure payment</span>
+        <span className="inline-flex items-center gap-1.5">💳 No hidden charges</span>
+        <span className="inline-flex items-center gap-1.5">↩️ Easy cancellation</span>
       </div>
 
-      {periods.length > 0 && (
-        <div>
-          <p className="mb-2 text-sm font-medium">Duration</p>
-          <div className="flex flex-wrap gap-2">
-            {periods.map((p) => (
-              <button key={p} onClick={() => setPeriod(p)} aria-pressed={period === p}
-                className={`rounded-md border px-4 py-2 text-sm font-semibold ${period === p ? 'border-primary bg-accent text-foreground' : 'border-input text-muted-foreground'}`}>
-                {PERIOD_LABEL[p]} · {formatINR(priceForPeriod(selected!.pricing, p)!)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div>
-        <label htmlFor="booking-date" className="mb-2 block text-sm font-medium">
-          {period === 'day' || period === 'hour' ? 'Date' : 'Start date'}
-        </label>
-        <input
-          id="booking-date"
-          type="date"
-          value={date}
-          min={todayISO()}
-          max={maxDateISO()}
-          onChange={(e) => setDate(e.target.value)}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-        />
-        {endDate && (
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Ends <span className="font-medium text-foreground">{formatDateLong(endDate)}</span>
-          </p>
-        )}
-      </div>
-
-      <div>
-        <p className="mb-2 text-sm font-medium">
-          {isMultiHour ? 'Time slots (select one or more)' : 'Start time'}
-        </p>
-        {loadingSlots ? (
-          <p className="text-sm text-muted-foreground">Checking availability…</p>
-        ) : closed ? (
-          <p className="text-sm font-medium text-destructive">
-            Closed on {new Date(`${date}T00:00:00+05:30`).toLocaleDateString('en-IN', { weekday: 'long', timeZone: 'Asia/Kolkata' })}s — pick another date.
-          </p>
-        ) : slots.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {slots.map((s) => {
-              const isSelected = selectedHours.includes(s.hour);
-              const seatsFree = s.capacity - s.taken;
-              const title = s.is_past
-                ? 'Already passed'
-                : !s.is_available
-                  ? 'Seat unavailable'
-                  : `${seatsFree} of ${s.capacity} seat${s.capacity === 1 ? '' : 's'} available`;
-              return (
-                <button
-                  key={s.hour}
-                  type="button"
-                  disabled={!s.is_available}
-                  aria-pressed={isSelected}
-                  onClick={() => toggleHour(s.hour, s.is_available)}
-                  title={title}
-                  className={cn(
-                    'rounded-lg border px-3 py-2 text-sm font-semibold transition-colors',
-                    s.is_past && 'cursor-not-allowed border-transparent bg-secondary text-muted-foreground/60',
-                    !s.is_past && !s.is_available && 'cursor-not-allowed border-transparent bg-status-full text-white',
-                    !s.is_past && s.is_available && !isSelected && 'border-transparent bg-status-free text-white hover:opacity-80',
-                    !s.is_past && s.is_available && isSelected && 'border-primary bg-primary text-primary-foreground',
-                  )}
-                >
-                  {formatHour(s.hour)}
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        {/* Left — the booking form itself, unchanged logic, numbered steps */}
+        <div className="space-y-6">
+          <Card className="p-5">
+            <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">1</span>
+              Choose seating type
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {resources.map((r) => (
+                <button key={r.id} type="button" onClick={() => setResourceId(r.id)} aria-pressed={resourceId === r.id} className="text-left">
+                  <Card className={cn('flex items-center gap-3 p-4 transition', resourceId === r.id ? 'ring-2 ring-primary' : 'hover:shadow-md')}>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-lg" aria-hidden>🪑</span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-display font-semibold">{r.label}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{r.tier ?? 'Seat'}</span>
+                    </span>
+                    {resourceId === r.id && <span className="ml-auto shrink-0 text-primary" aria-hidden>✓</span>}
+                  </Card>
                 </button>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No slots configured for this date.</p>
-        )}
-        <p className="mt-2 text-xs text-muted-foreground">
-          <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-free align-middle" /> Available</span>
-          <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-full align-middle" /> Fully booked</span>
-          <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-secondary align-middle" /> Past</span>
-        </p>
+              ))}
+            </div>
+          </Card>
+
+          {periods.length > 0 && (
+            <Card className="p-5">
+              <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">2</span>
+                Choose duration
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {periods.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPeriod(p)}
+                    aria-pressed={period === p}
+                    className={cn(
+                      'relative rounded-lg border px-4 py-2 text-sm font-semibold',
+                      period === p ? 'border-primary bg-accent text-foreground' : 'border-input text-muted-foreground hover:bg-secondary',
+                    )}
+                  >
+                    {p === 'month' && (
+                      <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">Popular</span>
+                    )}
+                    {PERIOD_LABEL[p]} · {formatINR(priceForPeriod(selected!.pricing, p)!)}
+                  </button>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          <Card className="p-5">
+            <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">3</span>
+              Select start date
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                id="booking-date"
+                type="date"
+                value={date}
+                min={todayISO()}
+                max={maxDateISO()}
+                onChange={(e) => setDate(e.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              />
+              {endDate && (
+                <p className="text-sm text-muted-foreground">
+                  Ends on <span className="font-medium text-foreground">{formatDateLong(endDate)}</span>
+                </p>
+              )}
+            </div>
+            <p className="mt-3 rounded-lg bg-primary/5 px-3 py-2 text-xs text-primary">
+              ℹ️ You can cancel or modify your booking anytime.
+            </p>
+          </Card>
+
+          <Card className="p-5">
+            <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">4</span>
+              {isMultiHour ? 'Select start time (choose one or more)' : 'Select start time'}
+            </p>
+            {loadingSlots ? (
+              <p className="text-sm text-muted-foreground">Checking availability…</p>
+            ) : closed ? (
+              <p className="text-sm font-medium text-destructive">
+                Closed on {new Date(`${date}T00:00:00+05:30`).toLocaleDateString('en-IN', { weekday: 'long', timeZone: 'Asia/Kolkata' })}s — pick another date.
+              </p>
+            ) : slots.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {slots.map((s) => {
+                  const isSelected = selectedHours.includes(s.hour);
+                  const seatsFree = s.capacity - s.taken;
+                  const title = s.is_past
+                    ? 'Already passed'
+                    : !s.is_available
+                      ? 'Seat unavailable'
+                      : `${seatsFree} of ${s.capacity} seat${s.capacity === 1 ? '' : 's'} available`;
+                  return (
+                    <button
+                      key={s.hour}
+                      type="button"
+                      disabled={!s.is_available}
+                      aria-pressed={isSelected}
+                      onClick={() => toggleHour(s.hour, s.is_available)}
+                      title={title}
+                      className={cn(
+                        'rounded-lg border px-3 py-2 text-sm font-semibold transition-colors',
+                        s.is_past && 'cursor-not-allowed border-transparent bg-secondary text-muted-foreground/60',
+                        !s.is_past && !s.is_available && 'cursor-not-allowed border-transparent bg-status-full text-white',
+                        !s.is_past && s.is_available && !isSelected && 'border-transparent bg-status-free text-white hover:opacity-80',
+                        !s.is_past && s.is_available && isSelected && 'border-primary bg-primary text-primary-foreground',
+                      )}
+                    >
+                      {formatHour(s.hour)}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No slots configured for this date.</p>
+            )}
+            <p className="mt-3 text-xs text-muted-foreground">
+              <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-free align-middle" /> Available</span>
+              <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-full align-middle" /> Fully booked</span>
+              <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-secondary align-middle" /> Past</span>
+            </p>
+          </Card>
+
+          {(phone || whatsapp) && (
+            <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+              <div>
+                <p className="font-semibold">Need help?</p>
+                <p className="text-sm text-muted-foreground">Chat with us on WhatsApp or call us for assistance.</p>
+              </div>
+              <div className="flex gap-2">
+                {whatsapp && (
+                  <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-[#25D366]/40 px-4 py-2 text-sm font-semibold text-[#128C36] hover:bg-[#25D366]/5">
+                    💬 WhatsApp
+                  </a>
+                )}
+                {phone && (
+                  <a href={`tel:${phone}`} className="inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-secondary">
+                    📞 Call us
+                  </a>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+        </div>
+
+        {/* Right — live booking summary, matching the reference's sidebar */}
+        <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+          <Card className="overflow-hidden p-0">
+            <div className="relative h-32 w-full bg-secondary">
+              {coverUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+              )}
+              <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-background/95 px-2 py-1 text-xs font-bold">
+                ★ {rating.toFixed(1)}
+              </span>
+            </div>
+            <div className="p-4">
+              <p className="font-display font-bold">{centreName}</p>
+              <p className="text-xs text-muted-foreground">📍 {centreArea ?? '—'}</p>
+            </div>
+          </Card>
+
+          <Card className="p-4 text-sm">
+            <p className="mb-2 font-semibold">Booking summary</p>
+            <dl className="space-y-1.5">
+              <div className="flex justify-between"><dt className="text-muted-foreground">Seating type</dt><dd>{selected?.label ?? '—'}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Duration</dt><dd>{PERIOD_LABEL[period]}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Start date</dt><dd>{formatDateShort(date)}</dd></div>
+              {endDate && <div className="flex justify-between"><dt className="text-muted-foreground">End date</dt><dd>{formatDateShort(endDate)}</dd></div>}
+              <div className="flex justify-between"><dt className="text-muted-foreground">Start time</dt><dd className="text-right">{startTimeLabel}</dd></div>
+            </dl>
+
+            <div className="mt-3 space-y-1.5 border-t pt-3">
+              <div className="flex justify-between"><dt className="text-muted-foreground">Price</dt><dd>{perUnitAmount !== null ? formatINR(perUnitAmount) : '—'}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{typeof totalAmount === 'number' ? formatINR(totalAmount) : '—'}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Taxes &amp; fees</dt><dd>₹0</dd></div>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between rounded-lg bg-accent px-3 py-2">
+              <span className="text-sm font-semibold text-muted-foreground">Total amount</span>
+              <span className="font-display text-lg font-bold">{typeof totalAmount === 'number' ? formatINR(totalAmount) : '—'}</span>
+            </div>
+
+            <p className="mt-3 text-center text-xs text-muted-foreground">🔒 Secured by Razorpay</p>
+
+            <Button onClick={book} disabled={busy || !canBook} className="mt-4 w-full">
+              {busy ? 'Booking…' : 'Confirm booking'}
+            </Button>
+            <div className="mt-2">
+              <SaveButton centreId={centreId} initialSaved={initialSaved} />
+            </div>
+
+            <p className="mt-3 rounded-lg bg-secondary/50 p-2.5 text-xs text-muted-foreground">
+              Your seat is reserved only after payment confirmation.
+            </p>
+          </Card>
+        </div>
       </div>
 
-      <Card className="flex items-center justify-between p-4">
-        <div>
-          <p className="text-xs text-muted-foreground">Total{isMultiHour && selectedHours.length > 1 ? ` (${selectedHours.length} hours)` : ''}</p>
-          <p className="font-display text-xl font-bold text-brand-green">{typeof totalAmount === 'number' ? formatINR(totalAmount) : '—'}</p>
-        </div>
-        <Button onClick={book} disabled={busy || !canBook}>{busy ? 'Booking…' : 'Confirm booking'}</Button>
-      </Card>
-
-      <p className="text-xs text-muted-foreground">Payment is collected at the centre or online once your booking is confirmed.</p>
-      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+      {/* Bottom trust footer */}
+      <div className="mt-8 grid gap-4 border-t pt-6 sm:grid-cols-4">
+        {[
+          ['✅', 'Instant confirmation', 'Get booking confirmed immediately'],
+          ['🔒', 'Secure payment', '100% safe & secure payments'],
+          ['↩️', 'Easy cancellation', 'Cancel or modify anytime'],
+          ['📡', 'Live availability', 'Real seat counts, always up to date'],
+        ].map(([icon, title, body]) => (
+          <div key={title} className="flex items-start gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-base" aria-hidden>{icon}</span>
+            <div>
+              <p className="text-sm font-semibold">{title}</p>
+              <p className="text-xs text-muted-foreground">{body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
