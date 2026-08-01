@@ -32,7 +32,7 @@ export function SiteFooter() {
   return (
     <footer className="mt-16 px-4 pb-6 sm:px-6">
       <div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-[#2d6c4f] px-8 py-10 text-[#F7F5F0] sm:px-12 sm:py-12">
-        <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr_auto]">
+        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.7fr_auto]">
           {/* Brand + tagline + newsletter */}
           <div>
             <div className="flex items-center gap-2">
@@ -50,13 +50,26 @@ export function SiteFooter() {
           </div>
 
           {/* Link columns */}
-          <div className="grid grid-cols-2 gap-6 sm:gap-10">
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 sm:gap-8">
             <nav aria-label="Explore">
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#F7F5F0]/40">Explore</h3>
               <ul className="space-y-3.5 text-sm text-[#F7F5F0]/80">
                 <li><Link href="/centres" className="hover:text-white">All study spaces</Link></li>
+                <li><Link href="/about" className="hover:text-white">How it works</Link></li>
+              </ul>
+            </nav>
+            <nav aria-label="For Students">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#F7F5F0]/40">For Students</h3>
+              <ul className="space-y-3.5 text-sm text-[#F7F5F0]/80">
                 <li><Link href="/saved" className="hover:text-white">Saved centres</Link></li>
                 <li><Link href="/login" className="hover:text-white">Sign in</Link></li>
+              </ul>
+            </nav>
+            <nav aria-label="For Owners">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#F7F5F0]/40">For Owners</h3>
+              <ul className="space-y-3.5 text-sm text-[#F7F5F0]/80">
+                <li><Link href="/owner/centres/new" className="hover:text-white">List your centre</Link></li>
+                <li><Link href="/login" className="hover:text-white">Owner login</Link></li>
               </ul>
             </nav>
             <nav aria-label="Company">

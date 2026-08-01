@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { admin } from '@/lib/supabase/admin';
+import { getSessionUser } from '@/lib/auth/rbac';
 import { Card } from '@/components/ui/card';
 import { listAllLocations } from '@/features/taxonomy/taxonomy.service';
 import { listCentres } from '@/features/centres/services/centres.service';
 import { CentreCard } from '@/features/centres/components/centre-card';
-import { StudyHeroIllustration } from '@/components/study-hero-illustration';
-import { ReadingCornerIllustration } from '@/components/reading-corner-illustration';
+import { NewsletterForm } from '@/features/newsletter/components/newsletter-form';
 import { TestimonialCarousel, type Testimonial } from '@/components/testimonial-carousel';
 import { organizationJsonLd, websiteJsonLd, safeJsonLd } from '@/lib/seo';
 
@@ -19,7 +20,8 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const db = await createClient();
-  const [{ items: featured }, locations, { count: centresCount }, { count: studentsCount }, { data: testimonialRows }] = await Promise.all([
+  const viewer = await getSessionUser();
+  const [{ items: featured }, locations, { count: centresCount }, { count: studentsCount }, { data: testimonialRows }, { data: ratingRows }] = await Promise.all([
     listCentres(db, { limit: 6 }),
     listAllLocations(db),
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
@@ -29,6 +31,7 @@ export default async function HomePage() {
       .eq('status', 'published')
       .order('created_at', { ascending: false })
       .limit(6),
+    db.from('centres').select('rating').eq('is_published', true).gt('reviews_count', 0),
   ]);
 
   const testimonials: Testimonial[] = (testimonialRows ?? [])
@@ -48,171 +51,217 @@ export default async function HomePage() {
     })
     .filter((t): t is Testimonial => t !== null);
 
+  const avgRating = ratingRows && ratingRows.length > 0
+    ? (ratingRows.reduce((s, r) => s + Number(r.rating), 0) / ratingRows.length).toFixed(1)
+    : null;
+
+  let savedIds = new Set<string>();
+  if (viewer) {
+    const { data: savedRows } = await db.from('saved_listings').select('centre_id').eq('user_id', viewer.id);
+    savedIds = new Set((savedRows ?? []).map((r) => r.centre_id));
+  }
+
   return (
     <>
-      {/* Organization + WebSite/SearchAction — brand entity and SERP search box. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd([organizationJsonLd(), websiteJsonLd()]) }}
       />
 
-      {/* Hero — illustration is a full-bleed background layer (not a boxed card),
-          faded into the section's own background on its left edge so the two
-          halves read as one continuous piece, matching the reference. */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-brand-gold/5">
-        <div aria-hidden className="absolute inset-y-0 right-0 hidden w-[56%] lg:block">
-          <StudyHeroIllustration className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/50 to-transparent" />
-        </div>
-
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-6 py-14 sm:py-20 lg:grid-cols-2 lg:gap-14">
-          {/* Left — text + search */}
+      {/* Hero */}
+      <section className="border-b bg-gradient-to-br from-primary/5 via-background to-background">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-12 lg:grid-cols-2 lg:gap-14">
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-              <span aria-hidden>●</span> #1 Study Room Platform in Warangal
-            </span>
-
-            <h1 className="mt-4 font-display text-4xl font-extrabold leading-tight sm:text-5xl">
-              Find the Perfect <span className="text-primary">Study Room</span> Near You
+            <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
+              Find the perfect <span className="text-primary">study space</span> near you.
             </h1>
-            <p className="mt-4 max-w-md text-lg text-muted-foreground">
-              Search from {centresCount ?? 0}+ verified study centres with real-time seat availability and instant booking.
+            <p className="mt-4 max-w-md text-muted-foreground">
+              Discover verified study rooms, reading halls, and coworking spaces that help you focus and achieve more.
             </p>
 
-            {/* Search bar — real fields wired to /centres' actual search/filter params */}
-            <form action="/centres" method="get" className="mt-8 rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="text-left">
-                  <label htmlFor="hero-area" className="mb-1 block text-xs font-semibold text-muted-foreground">📍 Location</label>
-                  <select id="hero-area" name="area" className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm">
-                    <option value="">All areas</option>
-                    {locations.map((loc) => (
-                      <option key={loc.slug} value={loc.name}>{loc.name}</option>
-                    ))}
-                  </select>
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">✓ Verified Centres</span>
+              <span className="inline-flex items-center gap-1.5">✓ Live Availability</span>
+              <span className="inline-flex items-center gap-1.5">✓ Instant Booking</span>
+              <span className="inline-flex items-center gap-1.5">✓ Affordable Prices</span>
+            </div>
+
+            {/* Search bar — Location + name search are real, wired filters.
+                Date is shown for visual parity with the reference but isn't
+                wired to anything: there's no "search centres available on a
+                given date" feature built, so it's not a functional filter. */}
+            <form action="/centres" method="get" className="mt-6 rounded-2xl border bg-card p-3 shadow-sm">
+              <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto]">
+                <input name="q" type="text" placeholder="Search by name, area or landmark" className="h-11 rounded-lg border border-input bg-background px-3 text-sm" />
+                <input type="date" aria-label="Select date (not yet a working filter)" className="h-11 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground" />
+                <button type="submit" className="h-11 rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90">Search</button>
+              </div>
+              {locations.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  Popular:
+                  {locations.slice(0, 5).map((loc) => (
+                    <Link key={loc.slug} href={`/centres?area=${encodeURIComponent(loc.name)}`} className="rounded-full border bg-background px-2.5 py-1 hover:bg-secondary">
+                      {loc.name}
+                    </Link>
+                  ))}
                 </div>
-                <div className="text-left">
-                  <label htmlFor="hero-q" className="mb-1 block text-xs font-semibold text-muted-foreground">🔍 Search Study Centre</label>
-                  <input
-                    id="hero-q"
-                    name="q"
-                    type="text"
-                    placeholder="Search by centre name or address…"
-                    className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                  />
+              )}
+            </form>
+          </div>
+
+          {/* Right — the real photo provided, with a floating rating badge and a card for the platform's top-rated centre */}
+          <div className="relative">
+            <div className="overflow-hidden rounded-2xl shadow-lg">
+              <Image src="/images/hero-office.png" alt="A modern, well-lit study space" width={900} height={600} className="h-[280px] w-full object-cover sm:h-[360px]" priority />
+            </div>
+            {avgRating && (
+              <span className="absolute right-4 top-4 flex h-14 w-14 flex-col items-center justify-center rounded-full bg-background text-center shadow-md">
+                <span className="font-display text-sm font-bold text-brand-gold2">★ {avgRating}</span>
+              </span>
+            )}
+            {featured[0] && (
+              <Link href={`/centres/${featured[0].slug}`} className="absolute bottom-4 left-4 right-4 flex items-center gap-3 rounded-xl bg-background/95 p-3 shadow-md backdrop-blur">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-secondary text-xl" aria-hidden>{featured[0].emoji}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-display text-sm font-bold">{featured[0].name}</span>
+                  <span className="block truncate text-xs text-muted-foreground">📍 {featured[0].area}</span>
+                </span>
+                <span className="shrink-0 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">View Details</span>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Stats — real counts where we have them; the last two are genuine
+            platform capabilities, not invented percentages we can't verify */}
+        <div className="border-t bg-secondary/30">
+          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-4 px-6 py-5 sm:grid-cols-4">
+            {[
+              ['🏢', `${centresCount ?? 0}+`, 'Verified Centres'],
+              ['🎓', `${studentsCount ?? 0}+`, 'Registered Students'],
+              ['📡', 'Live', 'Seat Availability'],
+              ['⚡', 'Instant', 'Booking Confirmation'],
+            ].map(([icon, big, label]) => (
+              <div key={label} className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-background text-base" aria-hidden>{icon}</span>
+                <div>
+                  <p className="font-display text-lg font-bold leading-tight">{big}</p>
+                  <p className="text-xs text-muted-foreground">{label}</p>
                 </div>
               </div>
-              <button type="submit" className="mt-3 h-11 w-full rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90">
-                Search Now →
-              </button>
-            </form>
-
-            {/* Stats — real counts where we have them; the other two are genuine platform capabilities, not invented numbers */}
-            <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5"><span aria-hidden>🏢</span><strong className="text-foreground">{centresCount ?? 0}+</strong> Study Centres</span>
-              <span className="inline-flex items-center gap-1.5"><span aria-hidden>🎓</span><strong className="text-foreground">{studentsCount ?? 0}+</strong> Students</span>
-              <span className="inline-flex items-center gap-1.5"><span aria-hidden>📡</span>Live Seat Availability</span>
-              <span className="inline-flex items-center gap-1.5"><span aria-hidden>⚡</span>Instant Booking Confirmation</span>
-            </div>
-          </div>
-
-          {/* Right column is a spacer on large screens — the illustration itself
-              is the absolutely-positioned full-bleed layer above, behind this
-              content, so it reaches the true edge of the viewport. On mobile,
-              where that layer is hidden, show it inline instead. */}
-          <div className="lg:hidden">
-            <div className="overflow-hidden rounded-2xl shadow-lg">
-              <StudyHeroIllustration className="h-[240px] w-full object-cover" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-5xl px-6 py-16">
-        <div className="text-center">
-          <h2 className="font-display text-3xl font-extrabold">Why Choose StudyNook</h2>
-          <span className="mx-auto mt-3 block h-1 w-14 rounded-full bg-primary" aria-hidden />
-          <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">
-            Everything you need to find, compare and book a study space — built around what actually matters when you&apos;re picking where to study.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,340px)_1fr] lg:items-start">
-          <div className="overflow-hidden rounded-2xl shadow-lg">
-            <ReadingCornerIllustration className="h-[380px] w-full object-cover lg:h-full" />
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            {[
-              {
-                icon: (
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M4 11 12 4l8 7" /><path d="M6 10v9h12v-9" /><path d="M10 19v-5h4v5" /></svg>
-                ),
-                title: 'Verified Centres',
-                body: 'Every "Verified" badge means our team has actually confirmed the listing is genuine.',
-              },
-              {
-                icon: (
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 6 8 7 8-7" /></svg>
-                ),
-                title: 'Easy to Connect',
-                body: 'Message any centre directly with your questions and get a quick reply, right from their page.',
-              },
-              {
-                icon: (
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M8 9h8M8 13h5" /></svg>
-                ),
-                title: 'Live Seat Availability',
-                body: 'See real seat counts before you go — never show up expecting a spot that isn\'t there.',
-              },
-              {
-                icon: (
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" /></svg>
-                ),
-                title: 'Instant Booking',
-                body: 'Bookings confirm immediately — no waiting for the centre to approve your request.',
-              },
-            ].map((f) => (
-              <Card key={f.title} className="p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">{f.icon}</div>
-                <p className="mt-3 font-display font-bold">{f.title}</p>
-                <p className="mt-1.5 text-sm text-muted-foreground">{f.body}</p>
-              </Card>
             ))}
           </div>
         </div>
       </section>
 
+      {/* Why Choose StudyNook — single row of 4 */}
+      <section className="mx-auto max-w-6xl px-6 py-14">
+        <div className="text-center">
+          <h2 className="font-display text-3xl font-extrabold">Why Choose StudyNook?</h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Everything you need for a productive and comfortable study experience.</p>
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ['✓', 'Verified & Trusted', 'All centres are verified for quality, safety & reliability.'],
+            ['📡', 'Real-time Availability', 'Check live seat availability before you book.'],
+            ['⚡', 'Easy & Quick Booking', 'Book your seat in just a few clicks.'],
+            ['💰', 'Affordable for Everyone', 'Choose from a wide range of prices that fit your budget.'],
+          ].map(([icon, title, body]) => (
+            <Card key={title} className="p-5">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-lg text-primary" aria-hidden>{icon}</span>
+              <p className="mt-3 font-display font-bold">{title}</p>
+              <p className="mt-1.5 text-sm text-muted-foreground">{body}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Built for Students, Designed for Focus */}
+      <section className="mx-auto max-w-6xl px-6 py-6">
+        <div className="grid items-center gap-10 lg:grid-cols-2">
+          <div className="overflow-hidden rounded-2xl shadow-lg">
+            <Image src="/images/built-for-students.png" alt="A calm, well-organised study desk" width={900} height={700} className="h-auto w-full object-cover" />
+          </div>
+          <div>
+            <h2 className="font-display text-3xl font-extrabold leading-tight">Built for Students,<br />Designed for Focus.</h2>
+            <p className="mt-4 text-muted-foreground">
+              Whether you&apos;re preparing for exams, working on projects, or just need a quiet place to read, find a study space that fits how you work.
+            </p>
+            <ul className="mt-5 space-y-2.5 text-sm">
+              {['Quiet & comfortable environments', 'High-speed WiFi at most centres', 'Power backup where listed', 'Personal lockers at select centres', 'Clean & hygienic spaces'].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs text-primary" aria-hidden>✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Link href="/centres" className="mt-6 inline-block rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90">
+              Explore Study Centres
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Popular Study Spaces */}
       {featured.length > 0 && (
         <section className="mx-auto max-w-6xl px-6 py-14">
           <div className="text-center">
             <h2 className="font-display text-2xl font-extrabold sm:text-3xl">Popular Study Spaces</h2>
-            <span className="mx-auto mt-3 block h-1 w-14 rounded-full bg-primary" aria-hidden />
-            <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">A few of the highest-rated centres students are booking right now.</p>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Top rated study spaces loved by students in and around Warangal.</p>
           </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((c) => (
-              <CentreCard key={c.slug} centre={c} />
+              <CentreCard key={c.slug} centre={c} showSave={!!viewer} isSaved={savedIds.has(c.id)} />
             ))}
           </div>
           <div className="mt-6 text-center">
-            <Link href="/centres" className="text-sm font-semibold text-primary hover:underline">View all →</Link>
+            <Link href="/centres" className="text-sm font-semibold text-primary hover:underline">View all centres →</Link>
           </div>
         </section>
       )}
 
+      {/* What Students Are Saying */}
       {testimonials.length > 0 && (
         <section className="mx-auto max-w-3xl px-6 py-14">
           <div className="text-center">
             <h2 className="font-display text-2xl font-extrabold sm:text-3xl">What Students Are Saying</h2>
-            <span className="mx-auto mt-3 block h-1 w-14 rounded-full bg-primary" aria-hidden />
-            <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">Real reviews from students who&apos;ve actually studied at these centres.</p>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Real reviews from students who&apos;ve actually studied at these centres.</p>
           </div>
           <div className="mt-10">
             <TestimonialCarousel items={testimonials} />
           </div>
         </section>
       )}
+
+      {/* CTA banner */}
+      <section className="mx-auto max-w-6xl px-6 py-6">
+        <div className="relative overflow-hidden rounded-2xl bg-[#1f4a37]">
+          <Image src="/images/study-cta.png" alt="" fill className="object-cover opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1f4a37] via-[#1f4a37]/85 to-transparent" />
+          <div className="relative flex flex-col gap-4 p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-white">
+              <p className="font-display text-2xl font-bold">Ready to find your perfect study space?</p>
+              <p className="mt-1 text-sm text-white/80">Join students who study better with StudyNook.</p>
+            </div>
+            <Link href="/centres" className="shrink-0 rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-[#1f4a37] hover:bg-white/90">
+              Explore Study Centres →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter — real, working subscription */}
+      <section className="mx-auto max-w-6xl px-6 py-6">
+        <Card className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold">Stay updated with new centres &amp; offers</p>
+            <p className="text-sm text-muted-foreground">Subscribe to our newsletter.</p>
+          </div>
+          <div className="w-full sm:w-auto">
+            <NewsletterForm />
+          </div>
+        </Card>
+      </section>
     </>
   );
 }

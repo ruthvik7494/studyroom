@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatINR } from '@/lib/utils';
 import type { CentreListItem } from '../types';
+import { SaveHeart } from './save-heart';
 
 export const STATUS_STYLE: Record<string, { dot: string; label: string }> = {
   open: { dot: 'bg-status-free', label: 'Seats free' },
@@ -12,7 +13,7 @@ export const STATUS_STYLE: Record<string, { dot: string; label: string }> = {
   unknown: { dot: 'bg-muted-foreground', label: '' },
 };
 
-export function CentreCard({ centre }: { centre: CentreListItem }) {
+export function CentreCard({ centre, showSave, isSaved }: { centre: CentreListItem; showSave?: boolean; isSaved?: boolean }) {
   const status = STATUS_STYLE[centre.occupancy?.status ?? 'unknown']!;
   return (
     <Card className="group overflow-hidden transition hover:-translate-y-1 hover:shadow-md">
@@ -30,7 +31,8 @@ export function CentreCard({ centre }: { centre: CentreListItem }) {
             <span aria-hidden>{centre.emoji}</span>
           )}
           {centre.is_verified && <Badge variant="secondary" className="absolute left-2.5 top-2.5">✓ Verified</Badge>}
-          {centre.women_safe_verified && <Badge variant="safe" className="absolute right-2.5 top-2.5">🛡 Women-safe</Badge>}
+          {centre.women_safe_verified && <Badge variant="safe" className={cn('absolute right-2.5', showSave ? 'top-11' : 'top-2.5')}>🛡 Women-safe</Badge>}
+          {showSave && <SaveHeart centreId={centre.id} initialSaved={!!isSaved} />}
         </div>
         <div className="p-4">
           <h3 className="font-display text-[15px] font-bold">{centre.name}</h3>
