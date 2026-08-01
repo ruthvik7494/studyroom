@@ -35,7 +35,7 @@ export function PricingTabs({ slug, resource }: { slug: string; resource: Resour
       <p className="mb-3 text-xs text-muted-foreground">All prices include taxes</p>
 
       {/* Tabs */}
-      <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(periods.length, 4)}, minmax(0, 1fr))` }}>
+      <div className={cn('grid gap-1.5 grid-cols-2', periods.length >= 3 && 'sm:grid-cols-3', periods.length >= 4 && 'md:grid-cols-4')}>
         {periods.map((p) => (
           <button
             key={p}

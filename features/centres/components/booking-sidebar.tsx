@@ -49,12 +49,12 @@ export function BookingSidebar({
           )}
         </div>
 
-        <div className="mt-4 space-y-2 border-t pt-4 text-sm">
-          <p className="flex items-center gap-2"><span className="text-primary" aria-hidden>✓</span>Instant confirmation — no waiting for approval</p>
-          <p className="flex items-center gap-2"><span className="text-primary" aria-hidden>✓</span>Transparent pricing, no hidden charges</p>
-          <p className="flex items-center gap-2"><span className="text-primary" aria-hidden>✓</span>Secure payments via Razorpay</p>
+        <div className="mt-4 space-y-2.5 border-t pt-4 text-sm">
+          <p className="flex items-center gap-2"><span aria-hidden>✅</span>Instant confirmation — no waiting for approval</p>
+          <p className="flex items-center gap-2"><span aria-hidden>💳</span>Transparent pricing, no hidden charges</p>
+          <p className="flex items-center gap-2"><span aria-hidden>🔒</span>Secure payments via Razorpay</p>
           {studentsCount > 0 && (
-            <p className="flex items-center gap-2"><span className="text-primary" aria-hidden>✓</span>Trusted by {studentsCount}+ students on StudyNook</p>
+            <p className="flex items-center gap-2"><span aria-hidden>🔔</span>Trusted by {studentsCount}+ students on StudyNook</p>
           )}
         </div>
       </div>

@@ -148,6 +148,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
   });
 
   const spaceType = SPACE_TYPE_LABEL[centre.space_type] ?? SPACE_TYPE_LABEL.study_hall!;
+  const totalSeats = centre.resources.reduce((sum, r) => sum + (r.unit_count ?? 0), 0);
   const fullAddress = [centre.address, centre.city, centre.state, centre.postcode, centre.country].filter(Boolean).join(', ');
   const pageUrl = `${SITE_URL}/centres/${centre.slug}`;
 
@@ -194,98 +195,112 @@ export default async function CentreDetailPage({ params }: PageProps) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}
 
-      {/* Full-width header/cover image, with the logo overlapping the bottom-left corner.
-          No fixed height here on purpose — a fixed box forces a choice between
-          cropping the photo (object-cover) or letterboxing it (object-contain),
-          and owner-uploaded photos can be any aspect ratio. A plain full-width
-          image with auto height renders at the photo's own real proportions,
-          so it's always full width AND never cropped, whatever shape it is.
-          The logo sits in an outer wrapper WITHOUT overflow-hidden — it was
-          previously inside the same clipped container as the cover image, so
-          the half of it meant to hang below the image was being cut off. */}
+      {/* Full-width header/cover image. No fixed height — a fixed box forces a
+          choice between cropping (object-cover) or letterboxing (object-contain);
+          a plain full-width image with auto height shows the photo's real
+          proportions, always full width, never cropped. */}
       <div className="relative w-full bg-gradient-to-br from-secondary to-accent">
         {centre.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={centre.cover_url} alt={`${centre.name} study space`} className="mx-auto block h-auto max-h-[169px] w-full sm:max-h-[300px]" />
+          <img src={centre.cover_url} alt={`${centre.name} study space`} className="mx-auto block h-auto max-h-[340px] w-full" />
         ) : (
-          <span className="flex h-[260px] w-full items-center justify-center text-8xl sm:h-[320px]" aria-hidden>{centre.emoji}</span>
+          <span className="flex h-[260px] w-full items-center justify-center text-8xl sm:h-[340px]" aria-hidden>{centre.emoji}</span>
         )}
-        {centre.is_verified && (
-          <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-md">
-            <svg aria-hidden viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5l-8-3Zm-1.2 13.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z" /></svg>
-            Verified Centre
-          </span>
-        )}
-        {centre.logo_url && (
-          <div className="absolute -bottom-8 left-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={centre.logo_url} alt="" className="h-20 w-20 rounded-full border-4 border-background object-cover shadow-md" />
-          </div>
+        {centre.gallery.length > 0 && (
+          <a href="#gallery-heading" className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-background">
+            <span aria-hidden>📷</span> View all {centre.gallery.length} photos
+          </a>
         )}
       </div>
 
-      <div className="mx-auto max-w-6xl px-6 py-6">
+      <div className="mx-auto max-w-6xl px-6">
+        {/* White card overlapping the bottom of the cover image, matching the reference exactly */}
+        <div className="relative z-10 -mt-14 rounded-2xl border bg-card p-4 shadow-md sm:-mt-16 sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            {centre.logo_url ? (
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-background shadow-sm sm:h-24 sm:w-24">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={centre.logo_url} alt="" className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border bg-secondary text-4xl sm:h-24 sm:w-24" aria-hidden>{centre.emoji}</span>
+            )}
+
+            <div className="min-w-0 flex-1">
+              {centre.is_verified && (
+                <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  <svg aria-hidden viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5l-8-3Zm-1.2 13.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z" /></svg>
+                  Verified Centre
+                </span>
+              )}
+              <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+                <h1 className="min-w-0 break-words font-display text-2xl font-bold tracking-tight sm:text-3xl">{centre.name}</h1>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-gold2/10 px-3 py-1 text-sm font-bold text-brand-gold2">
+                  <span aria-hidden>★</span>{centre.rating.toFixed(1)}
+                  <span className="font-medium text-muted-foreground">({centre.reviews_count} reviews)</span>
+                </span>
+              </div>
+              <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                <span aria-hidden>📍</span>{fullAddress || centre.area}
+              </p>
+
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+                {schedule && (
+                  <span className={cn('inline-flex items-center gap-1.5 font-semibold', todayOpen ? 'text-primary' : 'text-destructive')}>
+                    <span className={cn('h-1.5 w-1.5 rounded-full', todayOpen ? 'bg-primary' : 'bg-destructive')} aria-hidden />
+                    {todayOpen ? 'Open Now' : 'Closed Now'}
+                  </span>
+                )}
+                {centre.occupancy && (
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground"><span aria-hidden>👤</span>{centre.occupancy.seatsFree} Seats Available</span>
+                )}
+                {totalSeats > 0 && (
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground"><span aria-hidden>👥</span>{totalSeats} Total Seats</span>
+                )}
+                {centre.women_safe_verified && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-plum/10 px-2.5 py-0.5 text-xs font-semibold text-brand-plum">🛡 Women-safe</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Action row — 4-up grid, matching the reference; wraps to 2 columns on very small screens */}
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t pt-4 sm:grid-cols-4">
+            {centre.phone && (
+              <a href={`tel:${centre.phone}`} className="inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-sm font-semibold hover:bg-secondary">
+                <span aria-hidden>📞</span> Call
+              </a>
+            )}
+            {social.whatsapp && (
+              <a href={social.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#25D366]/40 py-2 text-sm font-semibold text-[#128C36] hover:bg-[#25D366]/5">
+                <span aria-hidden>💬</span> WhatsApp
+              </a>
+            )}
+            {centre.lat != null && centre.lng != null && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${centre.lat},${centre.lng}`}
+                target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-sm font-semibold hover:bg-secondary"
+              >
+                <span aria-hidden>🧭</span> Directions
+              </a>
+            )}
+            {centre.website && (
+              <a href={centre.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-sm font-semibold hover:bg-secondary">
+                <span aria-hidden>🌐</span> Website
+              </a>
+            )}
+          </div>
+        </div>
+
         {canPreview && (
-          <div className="mb-4 rounded-md border border-brand-gold/40 bg-accent px-4 py-2 text-sm text-accent-foreground" role="status">
+          <div className="mt-4 rounded-md border border-brand-gold/40 bg-accent px-4 py-2 text-sm text-accent-foreground" role="status">
             Preview — this listing is <strong>{centre.status.replace('_', ' ')}</strong> and not visible to the public.
           </div>
         )}
 
-        {/* Name + rating */}
-        <div className={cn('flex flex-wrap items-start justify-between gap-4', centre.logo_url ? 'mt-10' : '')}>
-          <div className="min-w-0">
-            <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{centre.name}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-brand-gold2/10 px-3 py-1 text-sm font-bold text-brand-gold2">
-                <span aria-hidden>★</span>{centre.rating.toFixed(1)}
-              </span>
-              <span className="text-sm text-muted-foreground">{centre.reviews_count} review{centre.reviews_count === 1 ? '' : 's'}</span>
-              <span aria-hidden className="text-muted-foreground/30">•</span>
-              <span className="inline-flex items-center gap-1 text-sm text-muted-foreground"><span aria-hidden>📍</span>{centre.area}</span>
-            </div>
-            {fullAddress && <p className="mt-1 text-sm text-foreground/60">{fullAddress}</p>}
-          </div>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {centre.women_safe_verified && <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-plum/10 px-3 py-1 text-xs font-semibold text-brand-plum">🛡 Women-safe</span>}
-          {centre.occupancy && (() => {
-            const status = STATUS_STYLE[centre.occupancy.status] ?? STATUS_STYLE.unknown!;
-            return (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-green/10 px-3 py-1 text-xs font-semibold text-brand-green">
-                <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
-                {centre.occupancy.seatsFree} seats free
-              </span>
-            );
-          })()}
-        </div>
-
-        {/* Action row — matches the reference's pill-button bar */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-b pb-5">
-          {centre.lat != null && centre.lng != null && (
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${centre.lat},${centre.lng}`}
-              target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-            >
-              <span aria-hidden>🧭</span> Get directions
-            </a>
-          )}
-          {centre.phone && (
-            <a href={`tel:${centre.phone}`} className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold hover:bg-secondary">
-              <span aria-hidden>📞</span> Call now
-            </a>
-          )}
-          {social.whatsapp && (
-            <a href={social.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-[#25D366]/40 px-4 py-2 text-sm font-semibold text-[#128C36] hover:bg-[#25D366]/5">
-              <span aria-hidden>💬</span> WhatsApp
-            </a>
-          )}
-          {centre.website && (
-            <a href={centre.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold hover:bg-secondary">
-              <span aria-hidden>🌐</span> Website
-            </a>
-          )}
+        {/* Secondary actions — kept as real, working functionality even though the reference doesn't show them in this exact spot */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           {isPublic && viewer && <SaveButton centreId={centre.id} initialSaved={saved} />}
           <ShareButton title={centre.name} url={pageUrl} />
           {isPublic && !centre.owner_id && viewer && (
@@ -467,10 +482,10 @@ export default async function CentreDetailPage({ params }: PageProps) {
             </DetailSectionCard>
           </div>
 
-          {/* Right column — sticky as one whole unit, not just the price card,
-              so all sidebar content stays visible together while scrolling
-              the left column. Internal scroll if it's taller than the viewport. */}
-          <div className="space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
+          {/* Right column — no longer sticky (removed per request); the top
+              card visually overlaps the cover image via a negative margin,
+              matching the reference. */}
+          <div className="space-y-6 lg:-mt-20">
             <BookingSidebar
               slug={centre.slug}
               isPublic={isPublic}
