@@ -45,7 +45,7 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
       <p className="mt-6 font-display text-lg font-bold text-brand-gold2 sm:text-xl" aria-label={`${t.rating} out of 5 stars`}>
         {'★'.repeat(t.rating)}<span className="text-muted-foreground/30">{'★'.repeat(5 - t.rating)}</span>
       </p>
-      <p className="mt-3 text-sm leading-relaxed text-foreground/80">&ldquo;{t.body}&rdquo;</p>
+      {t.body && <p className="mt-3 text-sm leading-relaxed text-foreground/80">&ldquo;{t.body}&rdquo;</p>}
 
       <a href={`/centres/${t.centreSlug}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold hover:underline">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground" aria-hidden>★</span>

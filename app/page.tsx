@@ -27,9 +27,6 @@ export default async function HomePage() {
     db.from('reviews')
       .select('id, rating, body, author:author_id(full_name, avatar_url), centres(name, slug)')
       .eq('status', 'published')
-      .gte('rating', 4)
-      .not('body', 'is', null)
-      .order('rating', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(6),
   ]);
@@ -38,13 +35,13 @@ export default async function HomePage() {
     .map((r) => {
       const author = r.author as unknown as { full_name: string | null; avatar_url: string | null } | null;
       const centre = r.centres as unknown as { name: string; slug: string } | null;
-      if (!r.body || !centre) return null;
+      if (!centre) return null;
       return {
         id: r.id,
         name: author?.full_name ?? 'Student',
         avatarUrl: author?.avatar_url ?? null,
         rating: r.rating,
-        body: r.body,
+        body: r.body ?? '',
         centreName: centre.name,
         centreSlug: centre.slug,
       };
