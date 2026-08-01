@@ -77,7 +77,9 @@ export function PayButton(props: PayButtonProps) {
 
   return (
     <div>
-      <Button onClick={pay} disabled={busy}>{busy ? 'Opening…' : 'Pay now'}</Button>
+      <Button onClick={pay} disabled={busy} className="flex w-full items-center justify-center gap-2">
+        {busy ? 'Opening…' : <>Pay now <span aria-hidden>🔒</span></>}
+      </Button>
       {error && <p className="mt-2 text-sm text-destructive" role="alert">{error}</p>}
     </div>
   );

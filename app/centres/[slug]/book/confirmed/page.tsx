@@ -186,7 +186,10 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
           <Card className="p-5">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-base font-bold">Payment Summary</h2>
-              {allPaid && <span className="text-xs font-semibold text-[#2d6c4f]">✓ Secure Payment</span>}
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#2d6c4f]">
+                <svg aria-hidden viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5l-8-3Z" /></svg>
+                Secure Payment
+              </span>
             </div>
             <div className="mt-3 space-y-2 border-b pb-3 text-sm">
               {bookings.map((b) => (
@@ -194,19 +197,25 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
                   <span className="text-muted-foreground">
                     {bookings.length > 1
                       ? fmtTime(new Date(b.starts_at))
-                      : `${PERIOD_LABEL[b.period as Period]} booking`}
+                      : `${b.period === 'hour' ? 'Hour' : PERIOD_LABEL[b.period as Period]} booking`}
                   </span>
-                  <span>{formatINR(Number(b.amount))}</span>
+                  <span>₹{Number(b.amount).toFixed(2)}</span>
                 </div>
               ))}
             </div>
             <div className="mt-3 space-y-1.5 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Sub Total</span><span>{formatINR(subtotal)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Platform Fee</span><span>₹0.00</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Sub Total</span><span>₹{subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between">
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  Platform Fee
+                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-muted-foreground/40 text-[9px]" title="StudyNook doesn't add any platform fee on top of the listed price.">i</span>
+                </span>
+                <span>₹0.00</span>
+              </div>
             </div>
-            <div className="mt-3 flex items-center justify-between border-t pt-3">
-              <span className="text-sm font-semibold text-muted-foreground">Amount to pay</span>
-              <span className="font-display text-xl font-bold">{formatINR(allPaid ? 0 : unpaidAmount)}</span>
+            <div className="mt-3 flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2.5">
+              <span className="text-sm font-semibold">Amount to pay</span>
+              <span className="font-display text-xl font-bold">₹{(allPaid ? 0 : unpaidAmount).toFixed(2)}</span>
             </div>
 
             {!allPaid ? (
@@ -218,12 +227,33 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
               <p className="mt-4 rounded-lg bg-[#2d6c4f]/10 px-3 py-2 text-center text-sm font-semibold text-[#2d6c4f]">✓ Fully paid</p>
             )}
 
-            <p className="mt-3 text-center text-xs text-muted-foreground">We accept UPI, Visa, Mastercard, RuPay &amp; more, via Razorpay</p>
+            <p className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+              We accept
+              <span className="inline-flex items-center gap-1">
+                <span className="rounded border bg-background px-1.5 py-0.5 text-[10px] font-bold text-[#097939]">UPI</span>
+                <span className="rounded border bg-background px-1.5 py-0.5 text-[10px] font-bold italic text-[#1A1F71]">VISA</span>
+                <span className="inline-flex items-center gap-[-2px]" title="Mastercard">
+                  <span className="inline-block h-3 w-3 rounded-full bg-[#EB001B]" />
+                  <span className="-ml-1.5 inline-block h-3 w-3 rounded-full bg-[#F79E1B] opacity-90" />
+                </span>
+                <span className="rounded border bg-background px-1.5 py-0.5 text-[10px] font-bold italic text-[#00396D]">RuPay</span>
+              </span>
+              &amp; more
+            </p>
 
             <div className="mt-4 grid grid-cols-3 gap-2 border-t pt-3 text-center text-[11px] text-muted-foreground">
-              <span>✅<br />Instant confirmation</span>
-              <span>🔒<br />100% Secure payment</span>
-              <span>💳<br />No hidden charges</span>
+              <span className="flex flex-col items-center gap-1">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2d6c4f] text-xs text-white" aria-hidden>✓</span>
+                Instant<br />confirmation
+              </span>
+              <span className="flex flex-col items-center gap-1">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs text-white" aria-hidden>🔒</span>
+                100% Secure<br />payment
+              </span>
+              <span className="flex flex-col items-center gap-1">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs" aria-hidden>ⓘ</span>
+                No hidden<br />charges
+              </span>
             </div>
           </Card>
 
