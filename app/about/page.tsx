@@ -6,7 +6,6 @@ import { admin } from '@/lib/supabase/admin';
 import { Card } from '@/components/ui/card';
 import { ReadingCornerIllustration } from '@/components/reading-corner-illustration';
 import { TestimonialCarousel, type Testimonial } from '@/components/testimonial-carousel';
-import { NewsletterForm } from '@/features/newsletter/components/newsletter-form';
 
 export const metadata: Metadata = {
   title: 'About StudyNook',
@@ -220,17 +219,6 @@ export default async function AboutPage() {
         <div className="flex shrink-0 gap-3">
           <Link href="/centres" className="rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-[#1f4a37] hover:bg-white/90">Explore Study Centres →</Link>
           <Link href="/owner/centres/new" className="rounded-lg border border-white/40 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/10">List Your Centre →</Link>
-        </div>
-      </Card>
-
-      {/* Newsletter */}
-      <Card className="mt-6 flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="font-semibold">Stay updated with new centres &amp; offers</p>
-          <p className="text-sm text-muted-foreground">Subscribe to our newsletter.</p>
-        </div>
-        <div className="w-full sm:w-auto">
-          <NewsletterForm />
         </div>
       </Card>
     </main>

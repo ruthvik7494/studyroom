@@ -27,6 +27,8 @@ export interface PaginatedCentreSearch {
   q?: string;
   minPrice?: number;
   maxPrice?: number;
+  spaceType?: 'study_hall' | 'reading_room' | 'coworking' | 'both';
+  womenSafe?: boolean;
   sort: 'rating' | 'price_asc' | 'price_desc';
   page: number;
   pageSize: number;
@@ -53,6 +55,8 @@ export async function searchCentresPaginated(db: DB, params: PaginatedCentreSear
     const safe = params.q.replace(/[,()%*\\]/g, ' ').trim().slice(0, 80);
     if (safe) query = query.or(`name.ilike.*${safe}*,area.ilike.*${safe}*,address.ilike.*${safe}*`);
   }
+  if (params.spaceType) query = query.eq('space_type', params.spaceType);
+  if (params.womenSafe) query = query.eq('women_safe_verified', true);
 
   const { data, error } = await query;
   if (error) throw error;
