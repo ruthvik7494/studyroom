@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth/rbac';
-import { createClient } from '@/lib/supabase/server';
 import { signOut } from '@/features/auth/actions';
 
 const navLinkClass = 'relative py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground';
@@ -8,26 +7,10 @@ const activeNavLinkClass = 'relative py-2 text-sm font-semibold text-primary aft
 
 /** App header. Server component: reads the session and shows the right links —
  * same role-based nav items as before (Saved for any signed-in user, My
- * centres for owners, Admin for admins), just restyled to match the new
- * reference layout (underlined active link, location badge, heart-icon
- * wishlist count, and a "List Your Centre" CTA). */
+ * centres for owners, Admin for admins), restyled with an underline on the
+ * active link. */
 export async function SiteHeader() {
   const user = await getSessionUser();
-
-  let savedCount = 0;
-  if (user) {
-    const db = await createClient();
-    const { count } = await db.from('saved_listings').select('centre_id', { count: 'exact', head: true }).eq('user_id', user.id);
-    savedCount = count ?? 0;
-  }
-
-  // Where "List Your Centre" should send each role — owners/admins go
-  // straight to their own create-listing flow; everyone else signs in first
-  // (creating a listing requires an owner account).
-  const listCentreHref =
-    user?.role === 'owner' ? '/owner/centres/new'
-    : user?.role === 'admin' ? '/admin/centres/new'
-    : '/login?next=/owner/centres/new';
 
   return (
     <header className="sticky top-0 z-40 border-b bg-[#fcfaf8]/90 backdrop-blur">
@@ -54,25 +37,8 @@ export async function SiteHeader() {
           {user?.role === 'admin' && <Link href="/admin" className={navLinkClass}>Admin</Link>}
         </nav>
 
-        {/* Right side — location badge, wishlist, account, CTA */}
+        {/* Right side — account only */}
         <div className="flex shrink-0 items-center gap-3">
-          <span className="hidden items-center gap-1 rounded-full border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground lg:inline-flex">
-            <span aria-hidden>📍</span> Warangal
-          </span>
-
-          {user && (
-            <Link href="/saved" aria-label={`Saved centres${savedCount ? ` (${savedCount})` : ''}`} className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-secondary">
-              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M12 20.5s-7.5-4.6-9.5-9.3C1.2 8 2.6 4.8 5.7 4C8 3.4 10.3 4.4 12 6.5c1.7-2.1 4-3.1 6.3-2.5c3.1.8 4.5 4 3.2 7.2C19.5 15.9 12 20.5 12 20.5Z" />
-              </svg>
-              {savedCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                  {savedCount > 9 ? '9+' : savedCount}
-                </span>
-              )}
-            </Link>
-          )}
-
           {user ? (
             <div className="hidden items-center gap-3 sm:flex">
               <Link href="/account" className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
@@ -94,10 +60,6 @@ export async function SiteHeader() {
               Sign In
             </Link>
           )}
-
-          <Link href={listCentreHref} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-            List Your Centre
-          </Link>
         </div>
       </div>
 
