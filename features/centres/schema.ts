@@ -89,7 +89,7 @@ export const centrePaginatedSearchSchema = z.object({
   q: z.string().trim().max(80).optional(),
   minPrice: optionalPositiveNumber(z.coerce.number().nonnegative().max(1_000_000)),
   maxPrice: optionalPositiveNumber(z.coerce.number().positive().max(1_000_000)),
-  spaceType: z.enum(['study_hall', 'reading_room', 'coworking', 'both']).optional(),
+  spaceType: z.preprocess((v) => (v === '' ? undefined : v), z.enum(['study_hall', 'reading_room', 'coworking', 'both']).optional()),
   womenSafe: z.coerce.boolean().optional(),
   sort: z.enum(['rating', 'price_asc', 'price_desc']).default('rating'),
   view: z.enum(['grid', 'list']).default('grid'),
