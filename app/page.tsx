@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { admin } from '@/lib/supabase/admin';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { listAllLocations } from '@/features/taxonomy/taxonomy.service';
+import { listCentres } from '@/features/centres/services/centres.service';
+import { CentreCard } from '@/features/centres/components/centre-card';
 import { StudyHeroIllustration } from '@/components/study-hero-illustration';
 import { ReadingCornerIllustration } from '@/components/reading-corner-illustration';
 import { organizationJsonLd, websiteJsonLd, safeJsonLd } from '@/lib/seo';
@@ -17,8 +18,8 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const db = await createClient();
-  const [{ data: featured }, locations, { count: centresCount }, { count: studentsCount }] = await Promise.all([
-    db.from('centres').select('slug, name, area, emoji, rating, reviews_count').eq('status', 'approved').order('rating', { ascending: false }).limit(3),
+  const [{ items: featured }, locations, { count: centresCount }, { count: studentsCount }] = await Promise.all([
+    listCentres(db, { limit: 6 }),
     listAllLocations(db),
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
     admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
@@ -159,30 +160,21 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {featured && featured.length > 0 && (
-        <section className="mx-auto max-w-5xl px-6 py-10">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-bold">Top-rated near you</h2>
-            <Link href="/centres" className="text-sm font-semibold text-brand-green hover:underline">View all →</Link>
+      {featured.length > 0 && (
+        <section className="mx-auto max-w-6xl px-6 py-14">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-2xl font-extrabold sm:text-3xl">Popular Study Spaces</h2>
+              <p className="mt-1 text-sm text-muted-foreground">A few of the highest-rated centres students are booking right now.</p>
+            </div>
+            <Link href="/centres" className="hidden shrink-0 text-sm font-semibold text-primary hover:underline sm:block">View all →</Link>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((c) => (
-              <Link key={c.slug} href={`/centres/${c.slug}`}>
-                <Card className="p-5 transition hover:shadow-md">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl" aria-hidden>{c.emoji}</span>
-                    <div>
-                      <p className="font-display font-semibold">{c.name}</p>
-                      <p className="text-xs text-muted-foreground">📍 {c.area}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <Badge variant="success">★ {c.rating.toFixed(1)} · {c.reviews_count} reviews</Badge>
-                  </div>
-                </Card>
-              </Link>
+              <CentreCard key={c.slug} centre={c} />
             ))}
           </div>
+          <Link href="/centres" className="mt-4 block text-center text-sm font-semibold text-primary hover:underline sm:hidden">View all →</Link>
         </section>
       )}
     </>
