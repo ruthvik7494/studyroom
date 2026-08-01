@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem; /* account for the sticky header when jumping to an anchor */
+}
+
 /* shadcn/ui design tokens, tuned to the StudyNook brand (green/gold on cream). */
 @layer base {
   :root {

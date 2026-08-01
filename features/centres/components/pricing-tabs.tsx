@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
 import Link from 'next/link';
 import { cn, formatINR } from '@/lib/utils';
 import { PERIOD_LABEL, priceForPeriod, availablePeriods, type Period } from '@/features/bookings/pricing';
+import { usePricingSelection } from './pricing-sync';
 
 interface ResourceOpt { id: string; label: string; tier: string | null; pricing: Record<string, number> }
 
@@ -23,7 +23,7 @@ const UNIT_LABEL: Record<Period, string> = {
 
 export function PricingTabs({ slug, resource }: { slug: string; resource: ResourceOpt }) {
   const periods = availablePeriods(resource.pricing);
-  const [active, setActive] = useState<Period>(periods[0] ?? 'month');
+  const { period: active, setPeriod: setActive } = usePricingSelection();
 
   if (periods.length === 0) return <p className="text-sm text-muted-foreground">Pricing details coming soon.</p>;
 

@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { formatINR } from '@/lib/utils';
-import { priceForPeriod, availablePeriods, PERIOD_LABEL, type Period } from '@/features/bookings/pricing';
+import { SidebarPrice } from './sidebar-price';
 
 export function BookingSidebar({
   slug,
@@ -19,25 +18,9 @@ export function BookingSidebar({
   whatsapp: string | null;
   studentsCount: number;
 }) {
-  const periods = pricing ? availablePeriods(pricing) : [];
-  // Prefer Monthly as the headline price (matches the reference's "Starting
-  // From ₹.../Month"); fall back to whichever period the owner actually priced.
-  const headlinePeriod: Period | null = periods.includes('month') ? 'month' : (periods[0] ?? null);
-  const headlinePrice = headlinePeriod && pricing ? priceForPeriod(pricing, headlinePeriod) : null;
-
   return (
-    <div className="sticky top-20 space-y-4">
-      <div className="rounded-2xl border bg-card p-5 shadow-sm">
-        {headlinePrice !== null && headlinePeriod ? (
-          <>
-            <p className="text-xs text-muted-foreground">Starting From</p>
-            <p className="font-display text-2xl font-bold text-primary">
-              {formatINR(headlinePrice)}<span className="text-sm font-medium text-muted-foreground">/{PERIOD_LABEL[headlinePeriod]}</span>
-            </p>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">Pricing coming soon</p>
-        )}
+    <div className="rounded-2xl border bg-card p-5 shadow-sm">
+      <SidebarPrice pricing={pricing} />
 
         {seatsFree !== null && (
           <p className="mt-1.5 flex items-center gap-1.5 text-sm font-semibold text-primary">
@@ -75,6 +58,5 @@ export function BookingSidebar({
           )}
         </div>
       </div>
-    </div>
   );
 }

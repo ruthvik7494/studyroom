@@ -19,6 +19,7 @@ import { ShareButton } from '@/features/centres/components/share-button';
 import { GalleryLightbox } from '@/features/centres/components/gallery-lightbox';
 import { SocialIcon, type SocialPlatform } from '@/features/centres/components/social-icon';
 import { PricingTabs } from '@/features/centres/components/pricing-tabs';
+import { PricingSyncProvider } from '@/features/centres/components/pricing-sync';
 import { CentreCard, STATUS_STYLE } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
 import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
@@ -150,6 +151,27 @@ export default async function CentreDetailPage({ params }: PageProps) {
   const fullAddress = [centre.address, centre.city, centre.state, centre.postcode, centre.country].filter(Boolean).join(', ');
   const pageUrl = `${SITE_URL}/centres/${centre.slug}`;
 
+  // Today's Seat Availability — real hourly capacity from the same function
+  // that powers the booking page's slot picker, grouped into 3-hour blocks
+  // for a quick-glance view (not a separate, invented data source).
+  const todayISODate = nowIst.toISOString().slice(0, 10);
+  const primaryResource = centre.resources[0];
+  let todayBlocks: { label: string; seatsFree: number; capacity: number; isPast: boolean }[] = [];
+  if (primaryResource) {
+    const { data: todaySlots } = await db.rpc('resource_hour_slots', { p_resource_id: primaryResource.id, p_date: todayISODate, p_period: 'hour' });
+    const fmtH = (h: number) => { const p = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 === 0 ? 12 : h % 12; return `${h12} ${p}`; };
+    const slots = todaySlots ?? [];
+    for (let i = 0; i < slots.length; i += 3) {
+      const chunk = slots.slice(i, i + 3);
+      if (chunk.length === 0) continue;
+      const startH = chunk[0]!.hour;
+      const endH = chunk[chunk.length - 1]!.hour + 1;
+      const capacity = chunk[0]!.capacity;
+      const seatsFree = Math.max(0, Math.min(...chunk.map((s) => s.capacity - s.taken)));
+      todayBlocks.push({ label: `${fmtH(startH)} - ${fmtH(endH === 24 ? 0 : endH)}`, seatsFree, capacity, isPast: chunk.every((s) => s.is_past) });
+    }
+  }
+
   const social = (centre.social ?? {}) as Record<string, string>;
   const socialLinks: [string, string, SocialPlatform][] = [
     ['Facebook', social.facebook, 'facebook'], ['Instagram', social.instagram, 'instagram'], ['YouTube', social.youtube, 'youtube'],
@@ -273,6 +295,18 @@ export default async function CentreDetailPage({ params }: PageProps) {
           )}
         </div>
 
+        <nav aria-label="Section links" className="mt-4 flex gap-5 overflow-x-auto border-b text-sm font-semibold text-muted-foreground">
+          {[
+            ['About', 'description-heading'], ['Amenities', 'amenities-heading'], ['Pricing', 'pricing-heading'],
+            ['Gallery', 'gallery-heading'], ['Reviews', 'reviews-heading'], ['Location', 'map-heading'],
+          ].map(([label, id]) => (
+            <a key={id} href={`#${id}`} className="shrink-0 border-b-2 border-transparent pb-2.5 hover:border-primary hover:text-foreground">
+              {label}
+            </a>
+          ))}
+        </nav>
+
+        <PricingSyncProvider pricing={centre.resources[0] ? ((centre.resources[0].pricing ?? {}) as Record<string, number>) : null}>
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           {/* Left column — main content */}
           <div className="space-y-6 lg:col-span-2">
@@ -336,6 +370,28 @@ export default async function CentreDetailPage({ params }: PageProps) {
               )}
             </DetailSectionCard>
 
+            {todayBlocks.length > 0 && (
+              <DetailSectionCard icon="🕐" title="Today's Seat Availability">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {todayBlocks.map((b) => {
+                    const pct = b.capacity > 0 ? b.seatsFree / b.capacity : 0;
+                    const style = b.isPast
+                      ? 'bg-secondary/50 text-muted-foreground/60'
+                      : pct === 0 ? 'bg-red-50 text-red-700'
+                      : pct < 0.3 ? 'bg-amber-50 text-amber-700'
+                      : 'bg-emerald-50 text-emerald-700';
+                    return (
+                      <div key={b.label} className={cn('rounded-lg p-3 text-center', style)}>
+                        <p className="text-xs font-medium opacity-80">{b.label}</p>
+                        <p className="mt-1 font-display text-lg font-bold">{b.isPast ? '—' : b.seatsFree}</p>
+                        <p className="text-[11px] opacity-70">{b.isPast ? 'Passed' : `of ${b.capacity} seats`}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </DetailSectionCard>
+            )}
+
             {centre.tags && centre.tags.length > 0 && (
               <DetailSectionCard icon="✨" title="Highlights">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -350,7 +406,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
             )}
 
             {centre.amenities.length > 0 && (
-              <DetailSectionCard icon="🏛" title="Facilities">
+              <DetailSectionCard icon="🏛" title="Facilities" headingId="amenities-heading">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {centre.amenities.map((a) => (
                     <div key={a.slug} className="flex items-center gap-2 text-sm text-foreground/80">
@@ -411,8 +467,10 @@ export default async function CentreDetailPage({ params }: PageProps) {
             </DetailSectionCard>
           </div>
 
-          {/* Right column — sidebar */}
-          <div className="space-y-6">
+          {/* Right column — sticky as one whole unit, not just the price card,
+              so all sidebar content stays visible together while scrolling
+              the left column. Internal scroll if it's taller than the viewport. */}
+          <div className="space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
             <BookingSidebar
               slug={centre.slug}
               isPublic={isPublic}
@@ -524,6 +582,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
             )}
           </div>
         </div>
+        </PricingSyncProvider>
 
         {centre.similar.length > 0 && (
           <section aria-labelledby="similar-heading" className="mt-8">
