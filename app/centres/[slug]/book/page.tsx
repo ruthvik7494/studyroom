@@ -5,14 +5,19 @@ import { createClient } from '@/lib/supabase/server';
 import { getSessionUser } from '@/lib/auth/rbac';
 import { getCentreBySlug } from '@/features/centres/services/centres.service';
 import { BookingPanel } from '@/features/bookings/components/booking-panel';
+import type { Period } from '@/features/bookings/pricing';
 import { noindex } from '@/lib/seo';
 
 export const metadata: Metadata = { title: 'Book a seat', ...noindex };
 
-type Params = { params: Promise<{ slug: string }> };
+const VALID_PERIODS: Period[] = ['hour', 'day', 'week', 'fortnight', 'month', 'quarter', 'half_year', 'year'];
 
-export default async function BookPage({ params }: Params) {
+type Params = { params: Promise<{ slug: string }>; searchParams: Promise<{ period?: string; resource?: string }> };
+
+export default async function BookPage({ params, searchParams }: Params) {
   const { slug } = await params;
+  const { period, resource } = await searchParams;
+  const initialPeriod = VALID_PERIODS.find((p) => p === period);
   const db = await createClient();
   const centre = await getCentreBySlug(db, slug);
   if (!centre || centre.status !== 'approved') notFound();
@@ -42,6 +47,8 @@ export default async function BookPage({ params }: Params) {
         <BookingPanel
           centreId={centre.id}
           slug={centre.slug}
+          initialPeriod={initialPeriod}
+          initialResourceId={resource}
           resources={centre.resources.map((r) => ({
             id: r.id,
             label: r.label,

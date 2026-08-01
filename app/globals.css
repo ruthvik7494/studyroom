@@ -5,7 +5,7 @@
 /* shadcn/ui design tokens, tuned to the StudyNook brand (green/gold on cream). */
 @layer base {
   :root {
-    --background: 40 33% 98%;        /* #FCFAF6 cream */
+    --background: 40 20% 99%;        /* near-white, warm-tinted */
     --foreground: 152 25% 12%;       /* ink */
     --card: 0 0% 100%;
     --card-foreground: 152 25% 12%;

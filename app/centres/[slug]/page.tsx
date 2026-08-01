@@ -16,6 +16,7 @@ import { ClaimForm } from '@/features/claims/components/claim-form';
 import { ShareButton } from '@/features/centres/components/share-button';
 import { GalleryLightbox } from '@/features/centres/components/gallery-lightbox';
 import { SocialIcon, type SocialPlatform } from '@/features/centres/components/social-icon';
+import { PricingTabs } from '@/features/centres/components/pricing-tabs';
 import { CentreCard, STATUS_STYLE } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
 import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
@@ -180,6 +181,12 @@ export default async function CentreDetailPage({ params }: PageProps) {
         ) : (
           <span className="flex h-[260px] w-full items-center justify-center text-8xl sm:h-[320px]" aria-hidden>{centre.emoji}</span>
         )}
+        {centre.is_verified && (
+          <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-md">
+            <svg aria-hidden viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5l-8-3Zm-1.2 13.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z" /></svg>
+            Verified Centre
+          </span>
+        )}
         {centre.logo_url && (
           <div className="absolute -bottom-8 left-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -212,7 +219,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {centre.is_verified && <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">✓ Verified</span>}
           {centre.women_safe_verified && <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-plum/10 px-3 py-1 text-xs font-semibold text-brand-plum">🛡 Women-safe</span>}
           {centre.occupancy && (() => {
             const status = STATUS_STYLE[centre.occupancy.status] ?? STATUS_STYLE.unknown!;
@@ -258,58 +264,63 @@ export default async function CentreDetailPage({ params }: PageProps) {
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           {/* Left column — main content */}
           <div className="space-y-6 lg:col-span-2">
-            <DetailSectionCard icon="☰" title="About" headingId="description-heading">
+            <DetailSectionCard
+              icon="☰"
+              title="About"
+              headingId="description-heading"
+              action={isPublic && centre.resources.length > 0 && (
+                <Link href={`/centres/${centre.slug}/book`} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                  <span aria-hidden>◈</span> Book a Seat
+                </Link>
+              )}
+            >
               {centre.description ? (
                 <p className="whitespace-pre-line text-sm text-foreground/80">{centre.description}</p>
               ) : (
                 <p className="text-sm text-muted-foreground">No description yet.</p>
               )}
-              <div className="mt-4 inline-flex items-center gap-3 rounded-lg bg-primary/5 px-3 py-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>{spaceType.icon}</span>
-                <div>
-                  <p className="text-xs text-muted-foreground">Category</p>
-                  <p className="text-sm font-semibold">{spaceType.label}</p>
-                </div>
-              </div>
+              <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                <span aria-hidden>{spaceType.icon}</span>{spaceType.label}
+              </span>
             </DetailSectionCard>
 
-            <DetailSectionCard
-              icon="🎫"
-              title="Seats & pricing"
-              headingId="pricing-heading"
-              action={isPublic && centre.resources.length > 0 && (
-                <Link href={`/centres/${centre.slug}/book`} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-                  Book a seat
-                </Link>
-              )}
-            >
+            <DetailSectionCard icon="🎫" title="Seat Pricing" headingId="pricing-heading">
               {centre.resources.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Pricing details coming soon.</p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {centre.resources.map((r) => {
-                    const pricing = (r.pricing ?? {}) as Record<string, number>;
-                    const periods = availablePeriods(pricing);
-                    return (
-                      <Card key={r.id} className="p-4">
-                        <p className="font-semibold">{r.label}</p>
-                        <p className="text-xs capitalize text-muted-foreground">{r.resource_type.replace('_', ' ')}{r.tier ? ` · ${r.tier}` : ''}</p>
-                        {periods.length === 0 ? (
-                          <p className="mt-2 text-sm text-muted-foreground">—</p>
-                        ) : (
-                          <dl className="mt-2 space-y-0.5">
-                            {periods.map((p) => (
-                              <div key={p} className="flex items-center justify-between text-sm">
-                                <dt className="text-muted-foreground">{PERIOD_LABEL[p]}</dt>
-                                <dd className="font-display font-bold text-brand-green">{formatINR(priceForPeriod(pricing, p)!)}</dd>
-                              </div>
-                            ))}
-                          </dl>
-                        )}
-                      </Card>
-                    );
-                  })}
-                </div>
+                <>
+                  <PricingTabs
+                    slug={centre.slug}
+                    resource={{ id: centre.resources[0]!.id, label: centre.resources[0]!.label, tier: centre.resources[0]!.tier, pricing: (centre.resources[0]!.pricing ?? {}) as Record<string, number> }}
+                  />
+                  {centre.resources.length > 1 && (
+                    <div className="mt-5 space-y-3 border-t pt-4">
+                      <p className="text-xs font-semibold text-muted-foreground">Other options at this centre</p>
+                      {centre.resources.slice(1).map((r) => {
+                        const pricing = (r.pricing ?? {}) as Record<string, number>;
+                        const periods = availablePeriods(pricing);
+                        return (
+                          <Card key={r.id} className="p-4">
+                            <p className="font-semibold">{r.label}</p>
+                            <p className="text-xs capitalize text-muted-foreground">{r.resource_type.replace('_', ' ')}{r.tier ? ` · ${r.tier}` : ''}</p>
+                            {periods.length === 0 ? (
+                              <p className="mt-2 text-sm text-muted-foreground">—</p>
+                            ) : (
+                              <dl className="mt-2 space-y-0.5">
+                                {periods.map((p) => (
+                                  <div key={p} className="flex items-center justify-between text-sm">
+                                    <dt className="text-muted-foreground">{PERIOD_LABEL[p]}</dt>
+                                    <dd className="font-display font-bold text-brand-green">{formatINR(priceForPeriod(pricing, p)!)}</dd>
+                                  </div>
+                                ))}
+                              </dl>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               )}
             </DetailSectionCard>
 

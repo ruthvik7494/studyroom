@@ -41,10 +41,16 @@ function formatDateLong(dateISO: string): string {
  * already past — checked again server-side at the moment of booking, so a
  * slot that fills between page load and click is still caught correctly.
  */
-export function BookingPanel({ centreId, slug, resources }: { centreId: string; slug: string; resources: ResourceOpt[] }) {
+export function BookingPanel({
+  centreId, slug, resources, initialPeriod, initialResourceId,
+}: {
+  centreId: string; slug: string; resources: ResourceOpt[]; initialPeriod?: Period; initialResourceId?: string;
+}) {
   const router = useRouter();
-  const [resourceId, setResourceId] = useState(resources[0]?.id ?? '');
-  const [period, setPeriod] = useState<Period>('month');
+  const [resourceId, setResourceId] = useState(
+    (initialResourceId && resources.some((r) => r.id === initialResourceId)) ? initialResourceId : (resources[0]?.id ?? ''),
+  );
+  const [period, setPeriod] = useState<Period>(initialPeriod ?? 'month');
   const [date, setDate] = useState(todayISO());
   const [selectedHours, setSelectedHours] = useState<number[]>([]);
   const [slots, setSlots] = useState<HourSlot[]>([]);
