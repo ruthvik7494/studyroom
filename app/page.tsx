@@ -75,10 +75,21 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd([organizationJsonLd(), websiteJsonLd()]) }}
       />
 
-      {/* Hero */}
-      <section className="border-b bg-gradient-to-br from-primary/5 via-background to-background">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-12 lg:grid-cols-2 lg:gap-14">
-          <div>
+      {/* Hero — the photo is a true full-bleed background layer behind
+          everything (text and the floating card both sit on top of it),
+          not a separate boxed image next to a separate text column. The
+          gradient is opaque where the text sits and fades to fully visible
+          photo on the right, so it reads as one section, matching the
+          reference. Hidden below `sm` so small screens get a plain readable
+          background instead of text fighting with a busy photo underneath. */}
+      <section className="relative min-h-[560px] overflow-hidden border-b bg-gradient-to-br from-primary/5 via-background to-background sm:min-h-[600px]">
+        <div className="absolute inset-0 hidden sm:block">
+          <Image src="/images/hero-office.png" alt="" fill priority className="object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/10" />
+        </div>
+
+        <div className="relative mx-auto max-w-6xl px-6 py-12 lg:py-16">
+          <div className="max-w-xl">
             <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">
               Find the perfect <span className="text-primary">study space</span> near you.
             </h1>
@@ -105,7 +116,7 @@ export default async function HomePage() {
               </span>
             </div>
 
-            {/* Search bar — Location + name search are real, wired filters. */}
+            {/* Search — one real field: name/area/landmark. No date field. */}
             <form action="/centres" method="get" className="mt-6 rounded-2xl border bg-card p-3 shadow-sm">
               <div className="grid gap-3 sm:grid-cols-[2fr_auto]">
                 <input name="q" type="text" placeholder="Search by name, area or landmark" className="h-11 rounded-lg border border-input bg-background px-3 text-sm" />
@@ -124,45 +135,42 @@ export default async function HomePage() {
             </form>
           </div>
 
-          {/* Right — the real photo provided, with a floating rating badge and a card for the platform's top-rated centre */}
-          <div className="relative">
-            <div className="overflow-hidden rounded-2xl shadow-lg">
-              <Image src="/images/hero-office.png" alt="A modern, well-lit study space" width={900} height={600} className="h-[280px] w-full object-cover sm:h-[360px]" priority />
-            </div>
-            {avgRating && (
-              <span className="absolute right-4 top-4 flex h-14 w-14 flex-col items-center justify-center rounded-full bg-gradient-to-br from-brand-gold2 to-primary text-center shadow-md">
-                <span className="rounded-full bg-background px-1.5 py-1 text-xs font-bold text-brand-gold2">★ {avgRating}</span>
-              </span>
-            )}
-            {featured[0] && (
-              <div className="absolute bottom-4 left-4 right-4 rounded-xl bg-background/95 p-3 shadow-md backdrop-blur">
-                <Link href={`/centres/${featured[0].slug}`} className="flex items-center gap-3">
-                  <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-secondary">
-                    {featured[0].cover_url ? (
-                      <Image src={featured[0].cover_url} alt="" fill className="object-cover" />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center text-xl" aria-hidden>{featured[0].emoji}</span>
-                    )}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-display text-sm font-bold">{featured[0].name}</span>
-                    <span className="block truncate text-xs text-muted-foreground">📍 {featured[0].area}</span>
-                  </span>
-                </Link>
-                {heroAmenities.length > 0 && (
-                  <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                    {heroAmenities.slice(0, 4).map((a) => <span key={a}>• {a}</span>)}
-                  </p>
-                )}
-                <div className="mt-2 flex items-center justify-between border-t pt-2">
-                  <span className="font-display text-sm font-bold text-primary">
-                    {featured[0].fromMonthly ? `₹${featured[0].fromMonthly}` : '—'}<span className="text-[10px] font-medium text-muted-foreground">/mo</span>
-                  </span>
-                  <Link href={`/centres/${featured[0].slug}`} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">View Details</Link>
-                </div>
+          {/* Rating badge + featured-centre card float on top of the photo,
+              positioned in its right-hand portion where the gradient has
+              fully cleared. */}
+          {avgRating && (
+            <span className="absolute right-6 top-8 hidden h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-brand-gold2 to-primary text-center shadow-md sm:flex lg:right-10">
+              <span className="rounded-full bg-background px-1.5 py-1 text-xs font-bold text-brand-gold2">★ {avgRating}</span>
+            </span>
+          )}
+          {featured[0] && (
+            <div className="absolute bottom-8 right-6 hidden w-full max-w-sm rounded-xl bg-background/95 p-3 shadow-md backdrop-blur sm:block lg:right-10">
+              <Link href={`/centres/${featured[0].slug}`} className="flex items-center gap-3">
+                <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-secondary">
+                  {featured[0].cover_url ? (
+                    <Image src={featured[0].cover_url} alt="" fill className="object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-xl" aria-hidden>{featured[0].emoji}</span>
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-display text-sm font-bold">{featured[0].name}</span>
+                  <span className="block truncate text-xs text-muted-foreground">📍 {featured[0].area}</span>
+                </span>
+              </Link>
+              {heroAmenities.length > 0 && (
+                <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                  {heroAmenities.slice(0, 4).map((a) => <span key={a}>• {a}</span>)}
+                </p>
+              )}
+              <div className="mt-2 flex items-center justify-between border-t pt-2">
+                <span className="font-display text-sm font-bold text-primary">
+                  {featured[0].fromMonthly ? `₹${featured[0].fromMonthly}` : '—'}<span className="text-[10px] font-medium text-muted-foreground">/mo</span>
+                </span>
+                <Link href={`/centres/${featured[0].slug}`} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">View Details</Link>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Stats — real counts where we have them; the last two are genuine
@@ -268,13 +276,13 @@ export default async function HomePage() {
 
       {/* CTA banner */}
       <section className="mx-auto max-w-6xl px-6 py-6">
-        <div className="relative overflow-hidden rounded-2xl bg-[#1f4a37]">
-          <Image src="/images/study-cta.png" alt="" fill className="object-cover opacity-90" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#1f4a37] via-[#1f4a37]/85 to-transparent" />
-          <div className="relative flex flex-col gap-4 p-8 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative min-h-[220px] overflow-hidden rounded-2xl bg-[#1f4a37]">
+          <Image src="/images/study-cta.png" alt="" fill sizes="(max-width: 1024px) 100vw, 1152px" className="object-cover" />
+          <div className="absolute inset-0 bg-[#1f4a37]/25" />
+          <div className="relative flex h-full min-h-[220px] flex-col justify-center gap-4 p-8 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-white">
-              <p className="font-display text-2xl font-bold">Ready to find your perfect study space?</p>
-              <p className="mt-1 text-sm text-white/80">Join students who study better with StudyNook.</p>
+              <p className="font-display text-2xl font-bold drop-shadow-sm">Ready to find your perfect study space?</p>
+              <p className="mt-1 text-sm text-white/90 drop-shadow-sm">Join students who study better with StudyNook.</p>
             </div>
             <Link href="/centres" className="shrink-0 rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-[#1f4a37] hover:bg-white/90">
               Explore Study Centres →
