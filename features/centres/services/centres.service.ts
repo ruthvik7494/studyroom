@@ -13,6 +13,24 @@ function cheapestMonthly(pricingList: Json[]): number | null {
 }
 
 /**
+ * Full multi-field search: name, area/locality, city, address (covers
+ * landmarks — most owners include the nearest landmark in the address),
+ * description, tags, and facilities/amenities — via search_centres_by_text()
+ * (migration 0037). Returns the matching centre ids, or null if no search
+ * term was given (meaning "don't filter by text at all").
+ */
+async function matchingCentreIds(db: DB, q: string | undefined): Promise<string[] | null> {
+  if (!q) return null;
+  // Same control-character stripping as before — % is the ILIKE wildcard and
+  // could otherwise widen the match beyond what the user typed.
+  const safe = q.replace(/[%_\\]/g, ' ').trim().slice(0, 80);
+  if (!safe) return null;
+  const { data, error } = await db.rpc('search_centres_by_text', { p_query: safe });
+  if (error) throw error;
+  return (data ?? []).map((r) => r.id);
+}
+
+/**
  * Numbered-pagination search for the /centres page redesign: name/address
  * search, price range, price sort, page N of M. Deliberately NOT keyset —
  * numbered pagination needs "jump to page N" and a total count, which a
@@ -49,11 +67,12 @@ export async function searchCentresPaginated(db: DB, params: PaginatedCentreSear
     )
     .eq('is_published', true);
 
-  if (params.q) {
-    // Same sanitisation as listCentres's search — strip PostgREST filter
-    // control characters so the query can't break or widen the `or()` filter.
-    const safe = params.q.replace(/[,()%*\\]/g, ' ').trim().slice(0, 80);
-    if (safe) query = query.or(`name.ilike.*${safe}*,area.ilike.*${safe}*,address.ilike.*${safe}*`);
+  const matchIds = await matchingCentreIds(db, params.q);
+  if (matchIds) {
+    if (matchIds.length === 0) {
+      return { items: [], total: 0, page: 1, pageSize: params.pageSize, totalPages: 1 };
+    }
+    query = query.in('id', matchIds);
   }
   if (params.spaceType) query = query.eq('space_type', params.spaceType);
   if (params.womenSafe) query = query.eq('women_safe_verified', true);
@@ -125,11 +144,10 @@ export async function listCentres(db: DB, params: CentreSearch): Promise<CentreP
   if (params.area) query = query.eq('area', params.area);
   if (params.spaceType) query = query.eq('space_type', params.spaceType);
   if (params.womenSafe) query = query.eq('women_safe_verified', true);
-  if (params.q) {
-    // Sanitize: PostgREST `or()` uses commas/parens as syntax and % as wildcard.
-    // Strip them from user input so a query can't break or widen the filter.
-    const safe = params.q.replace(/[,()%*\\]/g, ' ').trim().slice(0, 80);
-    if (safe) query = query.or(`name.ilike.*${safe}*,area.ilike.*${safe}*`);
+  const matchIds = await matchingCentreIds(db, params.q);
+  if (matchIds) {
+    if (matchIds.length === 0) return { items: [], nextCursor: null };
+    query = query.in('id', matchIds);
   }
 
   // keyset: rows strictly "after" the cursor in (rating desc, id desc) order
