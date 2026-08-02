@@ -68,6 +68,10 @@ export function BookingPanel({
   const perUnitAmount = selected ? priceForPeriod(selected.pricing, period) : null;
   const isMultiHour = period === 'hour';
   const totalAmount = isMultiHour && perUnitAmount !== null ? perUnitAmount * selectedHours.length : perUnitAmount;
+  // For day+ periods every returned row reports the same taken/capacity —
+  // the whole period lives or dies on one shared, date-level availability
+  // check, not a specific hour. Read the first row as that single flag.
+  const dayAvailable = !isMultiHour && slots.length > 0 ? slots[0]!.is_available : false;
 
   useEffect(() => {
     if (!resourceId || !date || !period) return;
@@ -87,7 +91,7 @@ export function BookingPanel({
 
   const canBook = isMultiHour
     ? selectedHours.length > 0 && perUnitAmount !== null
-    : selectedHours.length === 1 && perUnitAmount !== null && slots.find((s) => s.hour === selectedHours[0])?.is_available;
+    : perUnitAmount !== null && dayAvailable && !closed;
 
   const endDate = !isMultiHour && period !== 'day' ? addDays(date, PERIOD_DAYS[period] ?? 1) : null;
 
@@ -95,7 +99,9 @@ export function BookingPanel({
     setError(null); setBusy(true);
     const res = await createBooking({
       centreId, resourceId, period, date,
-      hour: isMultiHour ? undefined : selectedHours[0],
+      // Day+ bookings don't ask for an hour at all now — the period's real
+      // constraint is per-day, not per-hour (see resource_day_plus_count).
+      hour: isMultiHour ? selectedHours[0] : undefined,
       hours: isMultiHour ? selectedHours : undefined,
     });
     setBusy(false);
@@ -198,7 +204,7 @@ export function BookingPanel({
           <Card className="p-5">
             <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">4</span>
-              {isMultiHour ? 'Select start time (choose one or more)' : 'Select start time'}
+              {isMultiHour ? 'Select start time (choose one or more)' : 'Availability'}
             </p>
             {loadingSlots ? (
               <p className="text-sm text-muted-foreground">Checking availability…</p>
@@ -206,6 +212,20 @@ export function BookingPanel({
               <p className="text-sm font-medium text-destructive">
                 Closed on {new Date(`${date}T00:00:00+05:30`).toLocaleDateString('en-IN', { weekday: 'long', timeZone: 'Asia/Kolkata' })}s — pick another date.
               </p>
+            ) : !isMultiHour ? (
+              // Daily/Weekly/Fortnightly/Monthly/Quarterly/Half-yearly/Yearly:
+              // no time-of-day concept — a day+ booking occupies the seat for
+              // the whole day, every day in the period, so there's nothing
+              // meaningful to pick an "hour" for. Show one clear status
+              // instead of a grid of hour buttons that don't actually affect
+              // whether the booking can be made.
+              <div className={cn(
+                'flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold',
+                dayAvailable ? 'bg-status-free/10 text-status-free' : 'bg-status-full/10 text-status-full',
+              )}>
+                <span className={cn('h-2.5 w-2.5 rounded-full', dayAvailable ? 'bg-status-free' : 'bg-status-full')} aria-hidden />
+                {dayAvailable ? `Available for ${PERIOD_LABEL[period]}` : 'Fully booked for this period — try another date.'}
+              </div>
             ) : slots.length > 0 ? (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {slots.map((s) => {
@@ -240,11 +260,13 @@ export function BookingPanel({
             ) : (
               <p className="text-sm text-muted-foreground">No slots configured for this date.</p>
             )}
-            <p className="mt-3 text-xs text-muted-foreground">
-              <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-free align-middle" /> Available</span>
-              <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-full align-middle" /> Fully booked</span>
-              <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-secondary align-middle" /> Past</span>
-            </p>
+            {isMultiHour && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-free align-middle" /> Available</span>
+                <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-full align-middle" /> Fully booked</span>
+                <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-secondary align-middle" /> Past</span>
+              </p>
+            )}
           </Card>
 
           {(phone || whatsapp) && (
@@ -296,7 +318,7 @@ export function BookingPanel({
               <div className="flex justify-between"><dt className="text-muted-foreground">Duration</dt><dd>{PERIOD_LABEL[period]}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Start date</dt><dd>{formatDateShort(date)}</dd></div>
               {endDate && <div className="flex justify-between"><dt className="text-muted-foreground">End date</dt><dd>{formatDateShort(endDate)}</dd></div>}
-              <div className="flex justify-between"><dt className="text-muted-foreground">Start time</dt><dd className="text-right">{startTimeLabel}</dd></div>
+              {isMultiHour && <div className="flex justify-between"><dt className="text-muted-foreground">Start time</dt><dd className="text-right">{startTimeLabel}</dd></div>}
             </dl>
 
             <div className="mt-3 space-y-1.5 border-t pt-3">
