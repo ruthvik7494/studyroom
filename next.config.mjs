@@ -1,6 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    // Next.js caps Server Action request bodies at 1MB by default — far
+    // below the 5MB per-image limit this app's own upload actions already
+    // validate against (uploadCentreImage / uploadCentreLogo in
+    // features/centres/actions.ts). Cover photos, logos and gallery images
+    // are sent as multipart FormData straight to those Server Actions, so
+    // anything over ~1MB was being rejected by Next.js itself before the
+    // app's own code ever ran — surfacing as a generic, unhelpful
+    // "Server Components render" error with no useful detail on the client.
+    serverActions: {
+      bodySizeLimit: '6mb', // 5MB file limit + multipart/form-data overhead headroom
+    },
+  },
   async headers() {
     // Security headers applied to every route (OWASP A05 hardening).
     // CSP is intentionally report-friendly but strict on framing/objects; tune
