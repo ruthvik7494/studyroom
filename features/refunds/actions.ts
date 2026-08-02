@@ -14,7 +14,7 @@ export async function reviewRefund(raw: unknown): Promise<Result<{ ok: true }>> 
     const { error } = await db.rpc('review_refund', {
       p_refund_id: input.refundId,
       p_approve: input.approve,
-      p_note: input.note ?? null,
+      p_note: input.note ?? undefined,
     });
     if (error) throw error;
     revalidatePath('/owner/refunds');
@@ -32,7 +32,7 @@ export async function completeRefund(raw: unknown): Promise<Result<{ ok: true }>
     const db = await createClient();
     const { error } = await db.rpc('complete_refund', {
       p_refund_id: input.refundId,
-      p_razorpay_refund_id: input.razorpayRefundId ?? null,
+      p_razorpay_refund_id: input.razorpayRefundId ?? undefined,
     });
     if (error) throw error;
     revalidatePath('/owner/refunds');

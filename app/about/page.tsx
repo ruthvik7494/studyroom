@@ -36,7 +36,6 @@ export default async function AboutPage() {
     { count: centresCount },
     { count: reviewsCount },
     { count: studentsCount },
-    { count: locationsCount },
     { count: bookingsCount },
     { data: ratingRows },
     { data: testimonialRows },
@@ -44,7 +43,6 @@ export default async function AboutPage() {
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
     db.from('reviews').select('id', { count: 'exact', head: true }).eq('status', 'published'),
     admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
-    db.from('locations').select('id', { count: 'exact', head: true }),
     db.from('bookings').select('id', { count: 'exact', head: true }).in('status', ['confirmed', 'completed']),
     db.from('centres').select('rating').eq('is_published', true).gt('reviews_count', 0),
     db.from('reviews')

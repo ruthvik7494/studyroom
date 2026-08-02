@@ -19,7 +19,7 @@ import { GalleryLightbox } from '@/features/centres/components/gallery-lightbox'
 import { SocialIcon, type SocialPlatform } from '@/features/centres/components/social-icon';
 import { PricingTabs } from '@/features/centres/components/pricing-tabs';
 import { PricingSyncProvider } from '@/features/centres/components/pricing-sync';
-import { CentreCard, STATUS_STYLE } from '@/features/centres/components/centre-card';
+import { CentreCard } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
 import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
 import { PERIOD_LABEL, priceForPeriod, availablePeriods } from '@/features/bookings/pricing';
