@@ -74,7 +74,7 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
         </div>
         <div>
           <span className="text-muted-foreground">Booking Date</span>{' '}
-          <span className="font-semibold">{bookingDate} · {fmtTime(firstStart)}</span>
+          <span className="font-semibold">{bookingDate}{isHourly ? ` · ${fmtTime(firstStart)}` : ''}</span>
         </div>
       </div>
 
@@ -101,10 +101,12 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
                 <p className="text-xs text-muted-foreground">Date</p>
                 <p className="text-sm font-semibold">{fmtDateShort(firstStart)}, {firstStart.getFullYear()}</p>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Time</p>
-                <p className="text-sm font-semibold">{isHourly ? `${fmtTime(firstStart)} – ${fmtTime(rangeEnd!)}` : fmtTime(firstStart)}</p>
-              </div>
+              {isHourly && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Time</p>
+                  <p className="text-sm font-semibold">{`${fmtTime(firstStart)} – ${fmtTime(rangeEnd!)}`}</p>
+                </div>
+              )}
               <div>
                 <p className="text-xs text-muted-foreground">Duration</p>
                 <p className="text-sm font-semibold">{isHourly && bookings.length > 1 ? `${bookings.length} Hours` : PERIOD_LABEL[period]}</p>
@@ -126,7 +128,9 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
                         <span className={b.payment === 'paid' ? 'text-xs font-semibold text-[#2d6c4f]' : 'rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700'}>
                           {b.payment === 'paid' ? 'Paid' : 'Pending'}
                         </span>
-                        {canReschedule && <RescheduleButton bookingId={b.id} slug={slug} />}
+                        {canReschedule && (
+                          <RescheduleButton bookingId={b.id} slug={slug} period={b.period as Period} currentStartsAt={b.starts_at} groupId={id} />
+                        )}
                       </div>
                     </div>
                   );
@@ -135,7 +139,7 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
             )}
             {bookings.length === 1 && allCancellable && (
               <div className="mt-4 flex justify-end border-t pt-4">
-                <RescheduleButton bookingId={bookings[0]!.id} slug={slug} />
+                <RescheduleButton bookingId={bookings[0]!.id} slug={slug} period={period} currentStartsAt={bookings[0]!.starts_at} />
               </div>
             )}
           </Card>

@@ -185,7 +185,7 @@ export async function rescheduleBooking(raw: unknown): Promise<Result<{ id: stri
     const db = await createClient();
 
     const { data: old } = await db.from('bookings')
-      .select('id, centre_id, resource_id, period, amount, status, user_id')
+      .select('id, centre_id, resource_id, period, amount, status, user_id, booking_group_id')
       .eq('id', input.bookingId).maybeSingle();
     if (!old || old.user_id !== user.id) throw new ActionError('NOT_FOUND', 'Booking not found.');
     if (!['pending', 'confirmed'].includes(old.status)) throw new ActionError('CONFLICT', 'This booking can’t be rescheduled.');
@@ -204,10 +204,15 @@ export async function rescheduleBooking(raw: unknown): Promise<Result<{ id: stri
       throw bookErr;
     }
 
-    // 2. Only now release the old one, tagging history.
+    // 2. Only now release the old one, tagging history. If the old booking
+    //    was one hour within a multi-hour group, keep the new booking in
+    //    that same group — otherwise the confirmation page would only be
+    //    able to show this one rescheduled hour instead of the whole group.
     const { error: cancelErr } = await db.rpc('cancel_booking', { p_booking_id: old.id, p_reason: 'rescheduled' });
     if (cancelErr) throw cancelErr;
-    await db.from('bookings').update({ rescheduled_from: old.id }).eq('id', newId as string);
+    await db.from('bookings')
+      .update({ rescheduled_from: old.id, booking_group_id: old.booking_group_id })
+      .eq('id', newId as string);
 
     await notifyBooking(user.id, 'rescheduled', { email: await getUserEmail(user.id) });
     revalidatePath('/account');
