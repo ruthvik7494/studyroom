@@ -119,26 +119,21 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
 
             {bookings.length > 1 && (
               <div className="mt-4 divide-y border-t">
-                {bookings.map((b) => {
-                  const canReschedule = ['pending', 'confirmed'].includes(b.status);
-                  return (
-                    <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
-                      <span>{fmtTime(new Date(b.starts_at))} — {formatINR(Number(b.amount))}</span>
-                      <div className="flex items-center gap-2">
-                        <span className={b.payment === 'paid' ? 'text-xs font-semibold text-[#2d6c4f]' : 'rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700'}>
-                          {b.payment === 'paid' ? 'Paid' : 'Pending'}
-                        </span>
-                        {canReschedule && (
-                          <RescheduleButton bookingId={b.id} slug={slug} period={b.period as Period} currentStartsAt={b.starts_at} groupId={id} />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {bookings.map((b) => (
+                  <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                    <span>{fmtTime(new Date(b.starts_at))} — {formatINR(Number(b.amount))}</span>
+                    <span className={b.payment === 'paid' ? 'text-xs font-semibold text-[#2d6c4f]' : 'rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700'}>
+                      {b.payment === 'paid' ? 'Paid' : 'Pending'}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
-            {bookings.length === 1 && allCancellable && (
-              <div className="mt-4 flex justify-end border-t pt-4">
+            {allCancellable && (
+              <div className="mt-4 flex items-center justify-between border-t pt-4">
+                {bookings.length > 1 && (
+                  <p className="text-xs text-muted-foreground">Rescheduling moves all {bookings.length} hours together, keeping the same {bookings.length}-hour length.</p>
+                )}
                 <RescheduleButton bookingId={bookings[0]!.id} slug={slug} period={period} currentStartsAt={bookings[0]!.starts_at} />
               </div>
             )}

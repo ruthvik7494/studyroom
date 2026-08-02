@@ -179,7 +179,7 @@ export async function cancelBooking(raw: unknown): Promise<Result<{ ok: true }>>
 
 /** Reschedule: book the new slot first (capacity-checked), then cancel the old
  * one — so a failed move never loses the original seat. */
-export async function rescheduleBooking(raw: unknown): Promise<Result<{ id: string }>> {
+export async function rescheduleBooking(raw: unknown): Promise<Result<{ id: string; isGroup: boolean }>> {
   return action(rescheduleSchema, raw, async (input) => {
     const user = await requireUser();
     const db = await createClient();
@@ -191,8 +191,36 @@ export async function rescheduleBooking(raw: unknown): Promise<Result<{ id: stri
     if (!['pending', 'confirmed'].includes(old.status)) throw new ActionError('CONFLICT', 'This booking can’t be rescheduled.');
 
     const startsAt = new Date(input.startsAt);
-    const days = old.period === 'hour' ? null : (PERIOD_DAYS[old.period as keyof typeof PERIOD_DAYS] ?? 1);
-    const endsAt = new Date(startsAt.getTime() + (days !== null ? days * 86_400_000 : 3_600_000));
+
+    // Every hourly booking — one hour or many — is created by
+    // book_seat_multi() and always carries a booking_group_id (see 0031/0034).
+    // Rescheduling it must move the WHOLE group together (same duration,
+    // same seat-count), not just the one row this booking id happens to
+    // point at — otherwise the other hours silently detach from the group.
+    if (old.period === 'hour') {
+      if (!old.booking_group_id) throw new ActionError('INTERNAL', 'This booking is missing its group reference.');
+      const { data: groupId, error: groupErr } = await db.rpc('reschedule_booking_group', {
+        p_booking_group_id: old.booking_group_id,
+        p_new_starts_at: startsAt.toISOString(),
+      });
+      if (groupErr) {
+        if (groupErr.message.includes('RANGE_UNAVAILABLE'))
+          throw new ActionError('CONFLICT', 'Selected time range is not fully available.');
+        if (groupErr.message.includes('CENTRE_CLOSED'))
+          throw new ActionError('VALIDATION', 'This centre is closed on that day. Please pick another date.');
+        if (groupErr.message.includes('RESOURCE_NOT_FOUND'))
+          throw new ActionError('NOT_FOUND', 'That option is no longer available.');
+        throw groupErr;
+      }
+      await notifyBooking(user.id, 'rescheduled', { email: await getUserEmail(user.id) });
+      revalidatePath('/account');
+      return { id: groupId as string, isGroup: true };
+    }
+
+    // Day+ (Daily/Weekly/Fortnightly/Monthly/Quarterly/Half-yearly/Yearly):
+    // a single row, unchanged from before.
+    const days = PERIOD_DAYS[old.period as keyof typeof PERIOD_DAYS] ?? 1;
+    const endsAt = new Date(startsAt.getTime() + days * 86_400_000);
 
     // 1. Acquire the new slot (atomic capacity check).
     const { data: newId, error: bookErr } = await db.rpc('book_seat', {
@@ -204,19 +232,14 @@ export async function rescheduleBooking(raw: unknown): Promise<Result<{ id: stri
       throw bookErr;
     }
 
-    // 2. Only now release the old one, tagging history. If the old booking
-    //    was one hour within a multi-hour group, keep the new booking in
-    //    that same group — otherwise the confirmation page would only be
-    //    able to show this one rescheduled hour instead of the whole group.
+    // 2. Only now release the old one, tagging history.
     const { error: cancelErr } = await db.rpc('cancel_booking', { p_booking_id: old.id, p_reason: 'rescheduled' });
     if (cancelErr) throw cancelErr;
-    await db.from('bookings')
-      .update({ rescheduled_from: old.id, booking_group_id: old.booking_group_id })
-      .eq('id', newId as string);
+    await db.from('bookings').update({ rescheduled_from: old.id }).eq('id', newId as string);
 
     await notifyBooking(user.id, 'rescheduled', { email: await getUserEmail(user.id) });
     revalidatePath('/account');
-    return { id: newId as string };
+    return { id: newId as string, isGroup: false };
   });
 }
 

@@ -14,13 +14,9 @@ const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const todayISO = () => new Date(Date.now() + IST_OFFSET_MS).toISOString().slice(0, 10);
 
 export function RescheduleButton({
-  bookingId, slug, period, currentStartsAt, groupId,
+  bookingId, slug, period, currentStartsAt,
 }: {
   bookingId: string; slug: string; period: Period; currentStartsAt: string;
-  /** If this hour is part of a multi-hour group, pass the group id so the
-   * redirect after rescheduling goes back to the group view (showing every
-   * hour) instead of collapsing to just this one rescheduled hour. */
-  groupId?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -40,12 +36,11 @@ export function RescheduleButton({
       const startsAt = new Date(`${date}T${effectiveTime}:00+05:30`).toISOString();
       const res = await rescheduleBooking({ bookingId, startsAt });
       if (!res.ok) { setError(res.error.message); return; }
-      // rescheduleBooking creates a brand-new booking row and cancels the
-      // old one — staying on this page's current URL would keep showing the
-      // now-cancelled old booking. Navigate to wherever the new booking now
-      // lives: the group view (same group id, unchanged) if this hour was
-      // part of one, otherwise the new booking's own confirmation page.
-      const target = groupId ? `?id=${groupId}&group=1` : `?id=${res.data.id}`;
+      // For an hourly booking, rescheduleBooking moves the WHOLE group (every
+      // hour, together) and reports that back — go to the group view so every
+      // hour still shows, not just whichever one this button happened to be
+      // attached to. Day+ bookings get their own new booking's page as before.
+      const target = res.data.isGroup ? `?id=${res.data.id}&group=1` : `?id=${res.data.id}`;
       router.push(`/centres/${slug}/book/confirmed${target}`);
       router.refresh();
     });
