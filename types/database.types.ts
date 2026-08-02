@@ -902,7 +902,7 @@ export type Database = {
           slug: string
         }
         Insert: {
-          city?: string
+          city: string
           id?: string
           lat?: number | null
           lng?: number | null

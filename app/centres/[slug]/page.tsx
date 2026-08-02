@@ -57,7 +57,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!centre) return { title: 'Not found' };
 
   const isPublic = centre.status === 'approved';
-  const desc = `${centre.name} in ${centre.area ?? 'Warangal'} — live availability, ${centre.reviews_count} reviews, rated ${centre.rating}/5.`;
+  const desc = centre.area
+    ? `${centre.name} in ${centre.area} — live availability, ${centre.reviews_count} reviews, rated ${centre.rating}/5.`
+    : `${centre.name} — live availability, ${centre.reviews_count} reviews, rated ${centre.rating}/5.`;
   return {
     title: centre.name,
     description: desc,

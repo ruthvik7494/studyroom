@@ -6,13 +6,19 @@ import { admin } from '@/lib/supabase/admin';
 import { Card } from '@/components/ui/card';
 import { ReadingCornerIllustration } from '@/components/reading-corner-illustration';
 import { TestimonialCarousel, type Testimonial } from '@/components/testimonial-carousel';
+import { getServiceArea } from '@/lib/service-area';
 
-export const metadata: Metadata = {
-  title: 'About StudyNook',
-  description:
-    'StudyNook helps students in Warangal find, compare and book verified study spaces — study halls, reading rooms, libraries and coworking desks.',
-  alternates: { canonical: '/about' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const db = await createClient();
+  const { city } = await getServiceArea(db);
+  return {
+    title: 'About StudyNook',
+    description: city
+      ? `StudyNook helps students in ${city} find, compare and book verified study spaces — study halls, reading rooms, libraries and coworking desks.`
+      : 'StudyNook helps students find, compare and book verified study spaces — study halls, reading rooms, libraries and coworking desks.',
+    alternates: { canonical: '/about' },
+  };
+}
 
 const WHY_US = [
   ['✓', 'Verified Centres', 'All centres are verified for quality and safety.'],
@@ -39,6 +45,7 @@ export default async function AboutPage() {
     { count: bookingsCount },
     { data: ratingRows },
     { data: testimonialRows },
+    serviceArea,
   ] = await Promise.all([
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
     db.from('reviews').select('id', { count: 'exact', head: true }).eq('status', 'published'),
@@ -50,6 +57,7 @@ export default async function AboutPage() {
       .eq('status', 'published')
       .order('created_at', { ascending: false })
       .limit(6),
+    getServiceArea(db),
   ]);
 
   const avgRating = ratingRows && ratingRows.length > 0
@@ -96,7 +104,7 @@ export default async function AboutPage() {
           </p>
 
           <form action="/centres" method="get" className="mt-6 flex max-w-md gap-2 rounded-full border bg-card p-1.5 shadow-sm">
-            <input name="q" type="text" placeholder="Search study centres in Warangal" className="h-10 flex-1 rounded-full bg-transparent px-4 text-sm" />
+            <input name="q" type="text" placeholder={serviceArea.city ? `Search study centres in ${serviceArea.city}` : 'Search study centres'} className="h-10 flex-1 rounded-full bg-transparent px-4 text-sm" />
             <button type="submit" className="h-10 shrink-0 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90">Search Centres</button>
           </form>
 
@@ -200,7 +208,7 @@ export default async function AboutPage() {
         <div className="mt-16">
           <div className="text-center">
             <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">What Students Say</p>
-            <h2 className="mx-auto mt-2 max-w-lg font-display text-2xl font-extrabold sm:text-3xl">Loved by students across Warangal.</h2>
+            <h2 className="mx-auto mt-2 max-w-lg font-display text-2xl font-extrabold sm:text-3xl">Loved by students{serviceArea.city ? ` across ${serviceArea.city}` : ''}.</h2>
           </div>
           <div className="mx-auto mt-8 max-w-2xl">
             <TestimonialCarousel items={testimonials} />

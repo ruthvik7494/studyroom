@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { ContactForm } from '@/features/contact/components/contact-form';
+import { createClient } from '@/lib/supabase/server';
+import { getServiceArea } from '@/lib/service-area';
 
 export const metadata: Metadata = {
   title: 'Contact StudyNook',
@@ -27,15 +29,13 @@ const SOCIAL_LINKS = [
   ) },
 ];
 
-// General Warangal-city centre — the same coordinates already seeded for
-// "Warangal City" (supabase/migrations/0003_directory.sql). There's no single
-// registered business address stored anywhere in the app yet, so this shows
-// the service area rather than a fabricated street address.
-const MAP_LAT = 17.9689;
-const MAP_LNG = 79.5941;
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const db = await createClient();
+  const { city, state, coords } = await getServiceArea(db);
+  const areaLabel = [city, state].filter(Boolean).join(', ');
+
   return (
     <main id="main-content" className="mx-auto max-w-6xl px-6 py-12">
       {/* Hero */}
@@ -100,7 +100,7 @@ export default function ContactPage() {
             <span className="text-xs font-bold uppercase tracking-wider">StudyNook</span>
           </div>
           <h2 className="mt-6 font-display text-2xl font-bold leading-tight">
-            Find your perfect study space in <span className="text-white/70">Warangal</span>
+            Find your perfect study space{city ? <> in <span className="text-white/70">{city}</span></> : ''}
           </h2>
           <p className="mt-3 text-sm text-white/80">
             Compare study halls, reading rooms and coworking desks — with real-time seats, verified reviews and transparent pricing.
@@ -133,18 +133,18 @@ export default function ContactPage() {
       {/* Map + contact details */}
       <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_320px]">
         <div>
-          <h2 className="mb-3 font-display text-lg font-bold">Find us in Warangal</h2>
+          <h2 className="mb-3 font-display text-lg font-bold">Find us{city ? ` in ${city}` : ''}</h2>
           <div className="overflow-hidden rounded-2xl border">
-            {MAPBOX_TOKEN ? (
+            {MAPBOX_TOKEN && coords ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${MAP_LNG},${MAP_LAT})/${MAP_LNG},${MAP_LAT},11,0/900x320@2x?access_token=${MAPBOX_TOKEN}`}
-                alt="Map of StudyNook's Warangal service area"
+                src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${coords.lng},${coords.lat})/${coords.lng},${coords.lat},11,0/900x320@2x?access_token=${MAPBOX_TOKEN}`}
+                alt={`Map of StudyNook's service area${city ? ` in ${city}` : ''}`}
                 className="h-80 w-full object-cover"
               />
             ) : (
-              <div className="flex h-80 items-center justify-center bg-secondary/40 text-sm text-muted-foreground">
-                Map unavailable right now.
+              <div className="flex h-80 items-center justify-center bg-secondary/40 text-center text-sm text-muted-foreground">
+                {coords ? 'Map unavailable right now.' : 'No study centres are listed yet — check back once centres are added.'}
               </div>
             )}
           </div>
@@ -163,7 +163,7 @@ export default function ContactPage() {
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10" aria-hidden>📍</span>
               <div>
                 <p className="font-semibold">Service Area</p>
-                <p className="text-muted-foreground">Warangal, Telangana</p>
+                <p className="text-muted-foreground">{areaLabel || 'Not yet available'}</p>
               </div>
             </div>
           </div>

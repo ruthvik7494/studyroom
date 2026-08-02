@@ -99,7 +99,7 @@ export function ListingForm(props: Props) {
 
       <div>
         <Label htmlFor="address">Address</Label>
-        <Input id="address" placeholder="e.g. 12-3-45, Hanamkonda, Warangal" aria-invalid={!!errors.address} {...register('address')} />
+        <Input id="address" placeholder="e.g. 12-3-45, Main Road, Your Area" aria-invalid={!!errors.address} {...register('address')} />
         {errors.address && <p className="mt-1 text-xs text-destructive">{errors.address.message}</p>}
       </div>
 

@@ -10,17 +10,22 @@ import { listCentres } from '@/features/centres/services/centres.service';
 import { CentreCard } from '@/features/centres/components/centre-card';
 import { TestimonialCarousel, type Testimonial } from '@/components/testimonial-carousel';
 import { organizationJsonLd, websiteJsonLd, safeJsonLd } from '@/lib/seo';
+import { getServiceArea } from '@/lib/service-area';
 
-export const metadata: Metadata = {
-  title: 'StudyNook — find & book study spaces in Warangal',
-  description: 'Discover, compare and book study halls, reading rooms and coworking spaces near you. Live availability, verified reviews, transparent prices.',
-  alternates: { canonical: '/' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const db = await createClient();
+  const { city } = await getServiceArea(db);
+  return {
+    title: city ? `StudyNook — find & book study spaces in ${city}` : 'StudyNook — find & book study spaces',
+    description: 'Discover, compare and book study halls, reading rooms and coworking spaces near you. Live availability, verified reviews, transparent prices.',
+    alternates: { canonical: '/' },
+  };
+}
 
 export default async function HomePage() {
   const db = await createClient();
   const viewer = await getSessionUser();
-  const [{ items: featured }, locations, { count: centresCount }, { count: studentsCount }, { data: testimonialRows }, { data: ratingRows }] = await Promise.all([
+  const [{ items: featured }, locations, { count: centresCount }, { count: studentsCount }, { data: testimonialRows }, { data: ratingRows }, serviceArea] = await Promise.all([
     listCentres(db, { limit: 6 }),
     listAllLocations(db),
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
@@ -31,6 +36,7 @@ export default async function HomePage() {
       .order('created_at', { ascending: false })
       .limit(6),
     db.from('centres').select('rating').eq('is_published', true).gt('reviews_count', 0),
+    getServiceArea(db),
   ]);
 
   const testimonials: Testimonial[] = (testimonialRows ?? [])
@@ -72,7 +78,7 @@ export default async function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd([organizationJsonLd(), websiteJsonLd()]) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd([organizationJsonLd(serviceArea), websiteJsonLd()]) }}
       />
 
       {/* Hero — the photo is a true full-bleed background layer behind
@@ -207,7 +213,7 @@ export default async function HomePage() {
         <section className="mx-auto max-w-6xl px-6 py-14">
           <div className="text-center">
             <h2 className="font-display text-2xl font-extrabold sm:text-3xl">Popular Study Spaces</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Top rated study spaces loved by students in and around Warangal.</p>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Top rated study spaces loved by students {serviceArea.city ? `in and around ${serviceArea.city}` : 'near you'}.</p>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((c) => (
@@ -291,7 +297,7 @@ export default async function HomePage() {
       <section className="mx-auto max-w-6xl px-6 py-6">
         <Card className="flex flex-col items-start gap-4 bg-secondary/40 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-display font-bold">Own a study space in Warangal?</p>
+            <p className="font-display font-bold">Own a study space{serviceArea.city ? ` in ${serviceArea.city}` : ''}?</p>
             <p className="mt-1 text-sm text-muted-foreground">List your centre on StudyNook and reach students actively looking for a place to study.</p>
           </div>
           <Link href="/owner/centres/new" className="shrink-0 rounded-lg border border-primary px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/5">

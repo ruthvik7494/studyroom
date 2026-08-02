@@ -15,7 +15,7 @@ export interface BrandPanelStats { students: number; centres: number; avgRating:
  * are passed in from the page (which has DB access) rather than fetched
  * here, so this stays a simple, reusable presentational component.
  */
-export function BrandPanel({ className = '', stats }: { className?: string; stats?: BrandPanelStats }) {
+export function BrandPanel({ className = '', stats, city }: { className?: string; stats?: BrandPanelStats; city?: string | null }) {
   return (
     <div className={`relative overflow-hidden ${className}`}>
       <Image src="/images/login-desk.png" alt="A calm, well-lit home study desk" fill priority className="object-cover" />
@@ -24,7 +24,7 @@ export function BrandPanel({ className = '', stats }: { className?: string; stat
       <div className="relative flex h-full flex-col justify-end p-10">
         <div className="rounded-xl bg-background/90 p-4 shadow-sm backdrop-blur">
           <h2 className="max-w-md font-display text-3xl font-bold leading-tight text-foreground">
-            Find your perfect<br />study space in <span className="text-primary">Warangal</span>
+            Find your perfect<br />study space{city ? <> in <span className="text-primary">{city}</span></> : ''}
           </h2>
           <p className="mt-3 max-w-sm text-sm text-foreground/70">
             Compare study halls, reading rooms and coworking desks — with real-time seats, verified reviews and transparent pricing.

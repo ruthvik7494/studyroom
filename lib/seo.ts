@@ -62,16 +62,19 @@ export function safeJsonLd(data: unknown): string {
  * Organization schema — establishes the brand entity for Google Knowledge Graph.
  * Emitted once, on the homepage.
  */
-export function organizationJsonLd(): Record<string, unknown> {
+export function organizationJsonLd(serviceArea?: { city: string | null; state: string | null }): Record<string, unknown> {
+  const city = serviceArea?.city ?? null;
+  const state = serviceArea?.state ?? null;
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'StudyNook',
     url: base,
     logo: `${base}/icon`,
-    description:
-      'StudyNook helps students in Warangal find, compare and book study spaces — libraries, study halls, coworking desks and reading rooms.',
-    areaServed: { '@type': 'City', name: 'Warangal', addressRegion: 'Telangana', addressCountry: 'IN' },
+    description: city
+      ? `StudyNook helps students in ${city} find, compare and book study spaces — libraries, study halls, coworking desks and reading rooms.`
+      : 'StudyNook helps students find, compare and book study spaces — libraries, study halls, coworking desks and reading rooms.',
+    ...(city ? { areaServed: { '@type': 'City', name: city, ...(state ? { addressRegion: state } : {}), addressCountry: 'IN' } } : {}),
   };
 }
 

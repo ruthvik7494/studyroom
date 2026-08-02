@@ -42,7 +42,7 @@ export default async function LocationPage({ params }: PageProps) {
       <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Locations' }, { label: loc.name }]} />
       <header className="mb-5">
         <h1 className="font-display text-2xl font-bold">Study spaces in {loc.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Warangal · live availability and verified reviews.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Live availability and verified reviews.</p>
       </header>
       {centres.length === 0 ? <CentreEmptyState /> : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">

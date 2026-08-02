@@ -12,12 +12,17 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Card } from '@/components/ui/card';
 import { getSessionUser } from '@/lib/auth/rbac';
 import { cn } from '@/lib/utils';
+import { getServiceArea } from '@/lib/service-area';
 
-export const metadata: Metadata = {
-  title: 'Study spaces in Warangal',
-  description: 'Browse verified study halls, reading rooms and coworking seats with live availability, ratings and prices.',
-  alternates: { canonical: '/centres' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const db = await createClient();
+  const { city } = await getServiceArea(db);
+  return {
+    title: city ? `Study spaces in ${city}` : 'Study spaces',
+    description: 'Browse verified study halls, reading rooms and coworking seats with live availability, ratings and prices.',
+    alternates: { canonical: '/centres' },
+  };
+}
 
 const PAGE_SIZE = 8;
 
@@ -42,7 +47,10 @@ export default async function CentresPage({ searchParams }: PageProps) {
 
   const db = await createClient();
   const viewer = await getSessionUser();
-  const result = await searchCentresPaginated(db, { ...filters, pageSize: PAGE_SIZE });
+  const [result, serviceArea] = await Promise.all([
+    searchCentresPaginated(db, { ...filters, pageSize: PAGE_SIZE }),
+    getServiceArea(db),
+  ]);
 
   let savedIds = new Set<string>();
   if (viewer) {
@@ -79,7 +87,7 @@ export default async function CentresPage({ searchParams }: PageProps) {
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="font-display text-2xl font-bold">Study spaces in Warangal</h1>
+            <h1 className="font-display text-2xl font-bold">Study spaces{serviceArea.city ? ` in ${serviceArea.city}` : ''}</h1>
             <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{result.total} centre{result.total === 1 ? '' : 's'} found</span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">Live availability, verified reviews &amp; transparent prices.</p>

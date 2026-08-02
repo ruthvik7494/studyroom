@@ -46,7 +46,7 @@ export default async function InvoicePage({
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">S</span>
               <span className="font-display text-lg font-extrabold">StudyNook</span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">Warangal, Telangana, India</p>
+            <p className="mt-2 text-xs text-muted-foreground">India</p>
           </div>
           <div className="text-right">
             <h1 className="font-display text-xl font-extrabold">INVOICE</h1>

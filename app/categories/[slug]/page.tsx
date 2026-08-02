@@ -6,6 +6,7 @@ import { CentreCard } from '@/features/centres/components/centre-card';
 import { CentreEmptyState } from '@/features/centres/components/centre-states';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { breadcrumbJsonLd, safeJsonLd } from '@/lib/seo';
+import { getServiceArea } from '@/lib/service-area';
 
 interface PageProps { params: Promise<{ slug: string }> }
 
@@ -14,9 +15,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const db = await createClient();
   const cat = await getCategoryBySlug(db, slug);
   if (!cat) return { title: 'Not found' };
+  const { city } = await getServiceArea(db);
   return {
-    title: `${cat.name} in Warangal`,
-    description: cat.description ?? `Browse ${cat.name.toLowerCase()} in Warangal with live availability and verified reviews.`,
+    title: city ? `${cat.name} in ${city}` : cat.name,
+    description: cat.description ?? (city
+      ? `Browse ${cat.name.toLowerCase()} in ${city} with live availability and verified reviews.`
+      : `Browse ${cat.name.toLowerCase()} with live availability and verified reviews.`),
     alternates: { canonical: `/categories/${cat.slug}` },
   };
 }
@@ -29,7 +33,10 @@ export default async function CategoryPage({ params }: PageProps) {
   const cat = await getCategoryBySlug(db, slug);
   if (!cat) notFound();
 
-  const centres = await listCentresByCategory(db, slug);
+  const [centres, { city }] = await Promise.all([
+    listCentresByCategory(db, slug),
+    getServiceArea(db),
+  ]);
   const jsonLd = breadcrumbJsonLd([
     { name: 'Home', path: '/' },
     { name: 'Categories', path: '/centres' },
@@ -41,7 +48,7 @@ export default async function CategoryPage({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Categories' }, { label: cat.name }]} />
       <header className="mb-5">
-        <h1 className="font-display text-2xl font-bold">{cat.name} in Warangal</h1>
+        <h1 className="font-display text-2xl font-bold">{cat.name}{city ? ` in ${city}` : ''}</h1>
         {cat.description && <p className="mt-1 text-sm text-muted-foreground">{cat.description}</p>}
       </header>
       {centres.length === 0 ? <CentreEmptyState /> : (
