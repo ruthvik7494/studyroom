@@ -8,6 +8,7 @@ import { action } from '@/lib/auth/action';
 import { centreUpsertSchema, socialLinksSchema, centreAmenitiesSchema, centreDocumentSchema } from './schema';
 import type { Result } from '@/lib/result';
 import { ActionError, ok, err } from '@/lib/result';
+import { logAudit } from '@/lib/audit';
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
@@ -200,6 +201,17 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
         }
         const { error: resourceErr } = await db.from('resources').update(resourcePatch as never).eq('id', resource.id);
         if (resourceErr) throw resourceErr;
+
+        // Pricing/seat-capacity changes directly affect what students are
+        // charged and how many seats can be booked — worth a real audit
+        // trail, which nothing was writing before.
+        if (resourcePatch.pricing || resourcePatch.unit_count !== undefined) {
+          await logAudit('centre.pricing_updated', 'resource', resource.id, {
+            by: user.id,
+            ...(resourcePatch.pricing ? { pricingBefore: resource.pricing, pricingAfter: resourcePatch.pricing } : {}),
+            ...(resourcePatch.unit_count !== undefined ? { seatsAfter: resourcePatch.unit_count } : {}),
+          });
+        }
       }
     }
 
