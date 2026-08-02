@@ -20,8 +20,8 @@ function loadCheckout(): Promise<boolean> {
 }
 
 type PayButtonProps =
-  | { bookingId: string; groupId?: undefined }
-  | { groupId: string; bookingId?: undefined };
+  | { bookingId: string; groupId?: undefined; label?: string }
+  | { groupId: string; bookingId?: undefined; label?: string };
 
 /**
  * Pay for a booking — or a whole multi-hour group at once (one combined
@@ -78,7 +78,7 @@ export function PayButton(props: PayButtonProps) {
   return (
     <div>
       <Button onClick={pay} disabled={busy} className="flex w-full items-center justify-center gap-2">
-        {busy ? 'Opening…' : <>Pay now <span aria-hidden>🔒</span></>}
+        {busy ? 'Opening…' : <>{props.label ?? 'Pay now'} <span aria-hidden>🔒</span></>}
       </Button>
       {error && <p className="mt-2 text-sm text-destructive" role="alert">{error}</p>}
     </div>

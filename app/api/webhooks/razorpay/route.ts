@@ -60,5 +60,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (event.event === 'payment.failed') {
+    const orderId = event.payload?.payment?.entity?.order_id;
+    if (orderId) {
+      // Only mark as failed if it's still genuinely unpaid — never overwrite
+      // an already-paid booking (e.g. a late/out-of-order failed-attempt
+      // webhook arriving after a separate successful retry already succeeded).
+      await admin
+        .from('bookings')
+        .update({ payment: 'failed' })
+        .eq('razorpay_order_id', orderId)
+        .eq('payment', 'unpaid');
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

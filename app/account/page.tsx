@@ -5,11 +5,10 @@ import { requireUser } from '@/lib/auth/rbac';
 import { noindex } from '@/lib/seo';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { BookingStatusBadge, PaymentStatusBadge } from '@/components/booking-status-badge';
 import { formatINR } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'My account', ...noindex };
-
-const PAY_VARIANT: Record<string, 'success' | 'warning' | 'secondary'> = { paid: 'success', unpaid: 'warning', refunded: 'secondary' };
 
 export default async function AccountPage() {
   const user = await requireUser();
@@ -62,8 +61,8 @@ export default async function AccountPage() {
                     <p className="text-xs text-muted-foreground capitalize">{b.period} · {formatINR(b.amount)} · {new Date(b.created_at).toLocaleDateString('en-IN')}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="capitalize">{b.status}</Badge>
-                    <Badge variant={PAY_VARIANT[b.payment] ?? 'secondary'} className="capitalize">{b.payment}</Badge>
+                    <BookingStatusBadge status={b.status} />
+                    <PaymentStatusBadge status={b.payment} />
                     {b.payment === 'paid' && b.invoice_number && (
                       <Link href={`/account/bookings/${b.id}/invoice`} className="text-xs font-semibold underline hover:no-underline">
                         Invoice

@@ -9,6 +9,7 @@ import { PERIOD_LABEL, type Period } from '@/features/bookings/pricing';
 import { PayButton } from '@/features/payments/components/pay-button';
 import { CancelBookingButton } from '@/features/bookings/components/cancel-booking-button';
 import { CopyBookingId } from '@/features/bookings/components/copy-booking-id';
+import { BookingStatusBadge, PaymentStatusBadge } from '@/components/booking-status-badge';
 import { noindex } from '@/lib/seo';
 
 export const metadata: Metadata = { title: 'Booking confirmed', ...noindex };
@@ -26,8 +27,8 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
   // A multi-hour booking (2+ hours) returns a group id from book_seat_multi
   // instead of a single booking id — look up every row in that group.
   const { data: bookings } = group === '1'
-    ? await db.from('bookings').select('id, period, amount, status, payment, starts_at, centres(name, slug, area, cover_url, rating, is_verified)').eq('booking_group_id', id).order('starts_at')
-    : await db.from('bookings').select('id, period, amount, status, payment, starts_at, centres(name, slug, area, cover_url, rating, is_verified)').eq('id', id).then((r) => ({ data: r.data ?? [] }));
+    ? await db.from('bookings').select('id, period, amount, status, payment, starts_at, razorpay_payment_id, centres(name, slug, area, cover_url, rating, is_verified)').eq('booking_group_id', id).order('starts_at')
+    : await db.from('bookings').select('id, period, amount, status, payment, starts_at, razorpay_payment_id, centres(name, slug, area, cover_url, rating, is_verified)').eq('id', id).then((r) => ({ data: r.data ?? [] }));
 
   if (!bookings || bookings.length === 0) notFound(); // RLS also scopes to owner
 
@@ -53,16 +54,71 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
   const bookingDate = firstStart.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
   const refCode = `SN-${bookings[0]!.id.slice(0, 8).toUpperCase()}`;
 
+  // The real state to show — driven by actual booking_status/payment_status,
+  // not an assumption that reaching this page means the booking is done.
+  // A group's rows share one payment lifecycle in practice, so checking
+  // "any row" for expired/failed and "every row" for paid is a safe summary.
+  const anyExpired = bookings.some((b) => b.status === 'expired');
+  const anyFailed = bookings.some((b) => b.payment === 'failed');
+  const heroState: 'expired' | 'failed' | 'paid' | 'pending' | 'other' =
+    anyExpired ? 'expired'
+    : anyFailed ? 'failed'
+    : allPaid ? 'paid'
+    : bookings.every((b) => ['pending', 'confirmed'].includes(b.status)) ? 'pending'
+    : 'other';
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
-      {/* Hero */}
+      {/* Hero — branches entirely on the real booking_status/payment_status,
+          never assuming success just because this page was reached. */}
       <div className="flex flex-col items-center text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#2d6c4f] text-4xl text-white shadow-lg" aria-hidden>✓</span>
-        <h1 className="mt-4 font-display text-2xl font-bold sm:text-3xl">Booking Confirmed! 🎉</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Your {bookings.length > 1 ? `${bookings.length} seats` : 'seat'} at <span className="font-semibold text-foreground">{centre?.name}</span> {bookings.length > 1 ? 'have' : 'has'} been reserved.
-          {allPaid ? ' Payment is complete.' : ' Complete payment to secure your booking.'}
-        </p>
+        {heroState === 'paid' && (
+          <>
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#2d6c4f] text-4xl text-white shadow-lg" aria-hidden>✓</span>
+            <h1 className="mt-4 font-display text-2xl font-bold sm:text-3xl">Booking Confirmed! 🎉</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Your {bookings.length > 1 ? `${bookings.length} seats` : 'seat'} at <span className="font-semibold text-foreground">{centre?.name}</span> {bookings.length > 1 ? 'are' : 'is'} confirmed and paid.
+            </p>
+            <div className="mt-3"><PaymentStatusBadge status="paid" /></div>
+          </>
+        )}
+        {heroState === 'pending' && (
+          <>
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-100 text-4xl text-amber-600 shadow-lg" aria-hidden>⏳</span>
+            <h1 className="mt-4 font-display text-2xl font-bold sm:text-3xl">Seat Reserved</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Your seat has been reserved temporarily.</p>
+            <p className="mt-1 text-sm font-medium text-foreground">Complete your payment to confirm your booking.</p>
+            <div className="mt-3"><PaymentStatusBadge status="unpaid" /></div>
+          </>
+        )}
+        {heroState === 'failed' && (
+          <>
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10 text-4xl text-destructive shadow-lg" aria-hidden>✕</span>
+            <h1 className="mt-4 font-display text-2xl font-bold sm:text-3xl">Payment Failed</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Your last payment attempt for this seat didn&apos;t go through. Your seat is still reserved — try again to confirm it.
+            </p>
+            <div className="mt-3"><PaymentStatusBadge status="failed" /></div>
+          </>
+        )}
+        {heroState === 'expired' && (
+          <>
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-4xl text-muted-foreground shadow-lg" aria-hidden>⏱</span>
+            <h1 className="mt-4 font-display text-2xl font-bold sm:text-3xl">Reservation Expired</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The payment window for this reservation expired before payment was completed, so the seat was released.
+            </p>
+            <div className="mt-3"><BookingStatusBadge status="expired" /></div>
+          </>
+        )}
+        {heroState === 'other' && (
+          <>
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-4xl text-muted-foreground shadow-lg" aria-hidden>ℹ️</span>
+            <h1 className="mt-4 font-display text-2xl font-bold sm:text-3xl">Booking Status</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Your {bookings.length > 1 ? 'bookings have' : 'booking has'} mixed statuses — see details below.</p>
+            <div className="mt-3"><BookingStatusBadge status={bookings[0]!.status} /></div>
+          </>
+        )}
       </div>
 
       <div className="mx-auto mt-5 flex max-w-xl flex-wrap items-center justify-between gap-3 rounded-xl bg-secondary/40 px-4 py-3 text-sm">
@@ -91,6 +147,9 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>📅</span>
               Your booking details
             </p>
+            {heroState === 'paid' && bookings[0]!.razorpay_payment_id && (
+              <p className="mb-3 text-xs text-muted-foreground">Payment reference: <span className="font-mono">{bookings[0]!.razorpay_payment_id}</span></p>
+            )}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               <div>
                 <p className="text-xs text-muted-foreground">Centre</p>
@@ -208,9 +267,17 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
               <span className="font-display text-xl font-bold">₹{(allPaid ? 0 : unpaidAmount).toFixed(2)}</span>
             </div>
 
-            {!allPaid ? (
+            {heroState === 'expired' ? (
+              <Link href={`/centres/${slug}/book`} className="mt-4 block rounded-lg bg-primary py-2.5 text-center text-sm font-bold text-primary-foreground hover:bg-primary/90">
+                Book Again
+              </Link>
+            ) : heroState === 'failed' ? (
               <div className="mt-4">
-                {isGroupBooking ? <PayButton groupId={id} /> : <PayButton bookingId={bookings[0]!.id} />}
+                {isGroupBooking ? <PayButton groupId={id} label="Retry Payment" /> : <PayButton bookingId={bookings[0]!.id} label="Retry Payment" />}
+              </div>
+            ) : !allPaid ? (
+              <div className="mt-4">
+                {isGroupBooking ? <PayButton groupId={id} label="Proceed to Payment" /> : <PayButton bookingId={bookings[0]!.id} label="Proceed to Payment" />}
                 {isGroupBooking && <p className="mt-2 text-xs text-muted-foreground">Pays the remaining {formatINR(unpaidAmount)} for all unpaid hours in one go.</p>}
               </div>
             ) : (

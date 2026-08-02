@@ -13,6 +13,7 @@ const MAP: Record<string, { variant: 'default' | 'secondary' | 'success' | 'warn
 const PAY: Record<string, { variant: 'default' | 'secondary' | 'success' | 'warning' | 'destructive'; label: string }> = {
   unpaid: { variant: 'warning', label: 'Unpaid' },
   paid: { variant: 'success', label: 'Paid' },
+  failed: { variant: 'destructive', label: 'Failed' },
   refunded: { variant: 'secondary', label: 'Refunded' },
   partially_refunded: { variant: 'secondary', label: 'Part. refunded' },
   refund_pending: { variant: 'warning', label: 'Refund pending' },
