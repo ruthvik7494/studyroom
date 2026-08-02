@@ -7,7 +7,7 @@ import { action } from '@/lib/auth/action';
 import { rateLimit, clientKey } from '@/lib/rate-limit';
 import type { Result } from '@/lib/result';
 import { ActionError, err } from '@/lib/result';
-import { reviewSchema, reportSchema } from './schema';
+import { reviewSchema, reportSchema, updateReviewSchema, deleteReviewSchema, respondToReviewSchema } from './schema';
 
 /**
  * Submit a review for a centre.
@@ -66,6 +66,61 @@ export async function reportReview(raw: unknown): Promise<Result<{ ok: true }>> 
     });
     if (error) throw error;
 
+    return { ok: true as const };
+  });
+}
+
+/** Edit your own review — RLS ("reviews author update") restricts this to
+ * the review's own author regardless of what centreId is passed in. */
+export async function updateReview(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(updateReviewSchema, raw, async (input) => {
+    const user = await requireUser();
+    const db = await createClient();
+    const { error, count } = await db
+      .from('reviews')
+      .update({ rating: input.rating, body: input.body || null, updated_at: new Date().toISOString() }, { count: 'exact' })
+      .eq('id', input.reviewId)
+      .eq('author_id', user.id);
+    if (error) throw error;
+    if (!count) throw new ActionError('NOT_FOUND', 'Review not found.');
+    revalidatePath('/account');
+    revalidatePath('/centres');
+    return { ok: true as const };
+  });
+}
+
+/** Delete your own review — RLS ("reviews author delete") restricts this to
+ * the review's own author (or admin) regardless of what's passed in. */
+export async function deleteReview(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(deleteReviewSchema, raw, async (input) => {
+    const user = await requireUser();
+    const db = await createClient();
+    const { error, count } = await db
+      .from('reviews')
+      .delete({ count: 'exact' })
+      .eq('id', input.reviewId)
+      .eq('author_id', user.id);
+    if (error) throw error;
+    if (!count) throw new ActionError('NOT_FOUND', 'Review not found.');
+    revalidatePath('/account');
+    revalidatePath('/centres');
+    return { ok: true as const };
+  });
+}
+
+/** Centre owner responds to a review on their own centre. */
+export async function respondToReview(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(respondToReviewSchema, raw, async (input) => {
+    await requireUser();
+    const db = await createClient();
+    const { error } = await db.rpc('respond_to_review', { p_review_id: input.reviewId, p_response: input.response });
+    if (error) {
+      if (error.message.includes('FORBIDDEN')) throw new ActionError('FORBIDDEN', 'You can only respond to reviews on your own centre.');
+      if (error.message.includes('NOT_FOUND')) throw new ActionError('NOT_FOUND', 'Review not found.');
+      throw error;
+    }
+    revalidatePath('/centres');
+    revalidatePath('/owner');
     return { ok: true as const };
   });
 }
