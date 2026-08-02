@@ -8,7 +8,6 @@ import { formatINR } from '@/lib/utils';
 import { PERIOD_LABEL, type Period } from '@/features/bookings/pricing';
 import { PayButton } from '@/features/payments/components/pay-button';
 import { CancelBookingButton } from '@/features/bookings/components/cancel-booking-button';
-import { RescheduleButton } from '@/features/bookings/components/reschedule-button';
 import { CopyBookingId } from '@/features/bookings/components/copy-booking-id';
 import { noindex } from '@/lib/seo';
 
@@ -127,14 +126,6 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
                     </span>
                   </div>
                 ))}
-              </div>
-            )}
-            {allCancellable && (
-              <div className="mt-4 flex items-center justify-between border-t pt-4">
-                {bookings.length > 1 && (
-                  <p className="text-xs text-muted-foreground">Rescheduling moves all {bookings.length} hours together, keeping the same {bookings.length}-hour length.</p>
-                )}
-                <RescheduleButton bookingId={bookings[0]!.id} slug={slug} period={period} currentStartsAt={bookings[0]!.starts_at} />
               </div>
             )}
           </Card>
