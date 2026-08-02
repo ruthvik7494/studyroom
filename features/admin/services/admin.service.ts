@@ -165,3 +165,94 @@ export async function getCentreForAdminEdit(db: DB, centreId: string): Promise<A
 
   return { ...centre, gallery: images ?? [] };
 }
+
+export interface AdminOverview {
+  users: { total: number; students: number; owners: number; admins: number; suspended: number; newLast30d: number };
+  centres: { total: number; draft: number; pendingReview: number; approved: number; rejected: number; archived: number; published: number };
+  bookings: { total: number; pending: number; confirmed: number; checkedIn: number; completed: number; cancelled: number; expired: number };
+  payments: { paid: number; unpaid: number; failed: number; refundPending: number; refunded: number };
+  revenue: { totalLifetime: number; last30d: number; last7d: number };
+  pendingRefunds: number;
+}
+
+/**
+ * Comprehensive platform overview — separate from getAdminStats (which stays
+ * exactly as it was, still backing the same 4 pending-action cards) so
+ * nothing that already depends on it is affected. This adds real user/owner/
+ * centre/booking/payment/revenue breakdowns for a genuine dashboard.
+ */
+export async function getAdminOverview(db: DB): Promise<AdminOverview> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+
+  const [
+    totalUsers, students, owners, admins, suspended, newUsers,
+    totalCentres, draftC, pendingC, approvedC, rejectedC, archivedC, publishedC,
+    totalBookings, pendingB, confirmedB, checkedInB, completedB, cancelledB, expiredB,
+    paidP, unpaidP, failedP, refundPendingP, refundedP,
+    revenueAll, revenue30, revenue7,
+    pendingRefunds,
+  ] = await Promise.all([
+    db.from('profiles').select('id', { count: 'exact', head: true }),
+    db.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+    db.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'owner'),
+    db.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin'),
+    db.from('profiles').select('id', { count: 'exact', head: true }).eq('account_status', 'suspended'),
+    db.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo),
+
+    db.from('centres').select('id', { count: 'exact', head: true }),
+    db.from('centres').select('id', { count: 'exact', head: true }).eq('status', 'draft'),
+    db.from('centres').select('id', { count: 'exact', head: true }).eq('status', 'pending_review'),
+    db.from('centres').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+    db.from('centres').select('id', { count: 'exact', head: true }).eq('status', 'rejected'),
+    db.from('centres').select('id', { count: 'exact', head: true }).eq('status', 'archived'),
+    db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
+
+    db.from('bookings').select('id', { count: 'exact', head: true }),
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'confirmed'),
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'checked_in'),
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'cancelled'),
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'expired'),
+
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('payment', 'paid'),
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('payment', 'unpaid'),
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('payment', 'failed'),
+    db.from('bookings').select('id', { count: 'exact', head: true }).eq('payment', 'refund_pending'),
+    db.from('bookings').select('id', { count: 'exact', head: true }).in('payment', ['refunded', 'partially_refunded']),
+
+    db.from('bookings').select('amount').in('payment', ['paid', 'partially_refunded']),
+    db.from('bookings').select('amount').in('payment', ['paid', 'partially_refunded']).gte('created_at', thirtyDaysAgo),
+    db.from('bookings').select('amount').in('payment', ['paid', 'partially_refunded']).gte('created_at', sevenDaysAgo),
+
+    db.from('refunds').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+  ]);
+
+  const sumAmount = (rows: { amount: number }[] | null) => (rows ?? []).reduce((s, r) => s + Number(r.amount), 0);
+
+  return {
+    users: {
+      total: totalUsers.count ?? 0, students: students.count ?? 0, owners: owners.count ?? 0,
+      admins: admins.count ?? 0, suspended: suspended.count ?? 0, newLast30d: newUsers.count ?? 0,
+    },
+    centres: {
+      total: totalCentres.count ?? 0, draft: draftC.count ?? 0, pendingReview: pendingC.count ?? 0,
+      approved: approvedC.count ?? 0, rejected: rejectedC.count ?? 0, archived: archivedC.count ?? 0,
+      published: publishedC.count ?? 0,
+    },
+    bookings: {
+      total: totalBookings.count ?? 0, pending: pendingB.count ?? 0, confirmed: confirmedB.count ?? 0,
+      checkedIn: checkedInB.count ?? 0, completed: completedB.count ?? 0, cancelled: cancelledB.count ?? 0,
+      expired: expiredB.count ?? 0,
+    },
+    payments: {
+      paid: paidP.count ?? 0, unpaid: unpaidP.count ?? 0, failed: failedP.count ?? 0,
+      refundPending: refundPendingP.count ?? 0, refunded: refundedP.count ?? 0,
+    },
+    revenue: {
+      totalLifetime: sumAmount(revenueAll.data), last30d: sumAmount(revenue30.data), last7d: sumAmount(revenue7.data),
+    },
+    pendingRefunds: pendingRefunds.count ?? 0,
+  };
+}

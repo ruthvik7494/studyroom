@@ -9,7 +9,7 @@ import { logAudit } from '@/lib/audit';
 import type { Result } from '@/lib/result';
 import { ActionError, ok, err } from '@/lib/result';
 import type { Database } from '@/types/database.types';
-import { moderateCentreSchema, moderateReviewSchema, resolveReportSchema, moderateClaimSchema, setUserRoleSchema } from './schema';
+import { moderateCentreSchema, moderateReviewSchema, resolveReportSchema, moderateClaimSchema, setUserRoleSchema, setAccountStatusSchema } from './schema';
 import { adminCentreCreateSchema, adminCentreCreateBaseSchema } from '@/features/centres/schema';
 import { notifyCentreDecision } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
@@ -328,6 +328,20 @@ export async function setUserRole(raw: unknown): Promise<Result<{ ok: true }>> {
     const { error } = await db.rpc('admin_set_user_role', { p_user: input.userId, p_role: input.role });
     if (error) {
       if (error.message.includes('CONFLICT')) throw new ActionError('CONFLICT', 'Cannot demote the last admin.');
+      if (error.message.includes('FORBIDDEN')) throw new ActionError('FORBIDDEN', 'Admin only.');
+      throw error;
+    }
+    revalidatePath('/admin/users');
+    return { ok: true as const };
+  });
+}
+
+export async function setAccountStatus(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(setAccountStatusSchema, raw, async (input) => {
+    await requireRole('admin');
+    const db = await createClient();
+    const { error } = await db.rpc('admin_set_account_status', { p_user_id: input.userId, p_status: input.status });
+    if (error) {
       if (error.message.includes('FORBIDDEN')) throw new ActionError('FORBIDDEN', 'Admin only.');
       throw error;
     }

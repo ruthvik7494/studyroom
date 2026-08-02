@@ -31,3 +31,10 @@ export const setUserRoleSchema = z.object({
   role: z.enum(['student', 'owner', 'admin']),
 });
 export type SetUserRole = z.infer<typeof setUserRoleSchema>;
+
+/** Admin suspending/reactivating a user account. */
+export const setAccountStatusSchema = z.object({
+  userId: z.string().uuid(),
+  status: z.enum(['active', 'suspended']),
+});
+export type SetAccountStatus = z.infer<typeof setAccountStatusSchema>;

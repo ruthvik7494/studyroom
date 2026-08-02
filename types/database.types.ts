@@ -1009,6 +1009,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string
           avatar_url: string | null
           created_at: string
           exam: string | null
@@ -1021,6 +1022,7 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
+          account_status?: string
           avatar_url?: string | null
           created_at?: string
           exam?: string | null
@@ -1033,6 +1035,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
         }
         Update: {
+          account_status?: string
           avatar_url?: string | null
           created_at?: string
           exam?: string | null
@@ -1373,6 +1376,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_set_account_status: {
+        Args: { p_status: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_set_user_role: {
         Args: {
           p_role: Database["public"]["Enums"]["user_role"]

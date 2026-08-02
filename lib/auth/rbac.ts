@@ -8,6 +8,7 @@ export interface SessionUser {
   id: string;
   email: string | null;
   role: Role;
+  accountStatus: 'active' | 'suspended';
 }
 
 /**
@@ -21,24 +22,31 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, account_status')
     .eq('id', user.id)
     .single();
 
-  return { id: user.id, email: user.email ?? null, role: (profile?.role ?? 'student') as Role };
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    role: (profile?.role ?? 'student') as Role,
+    accountStatus: (profile?.account_status ?? 'active') as 'active' | 'suspended',
+  };
 }
 
 class AuthError extends Error {
-  constructor(public code: 'UNAUTHENTICATED' | 'FORBIDDEN') {
+  constructor(public code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'SUSPENDED') {
     super(code);
     this.name = 'AuthError';
   }
 }
 
-/** Throws AuthError('UNAUTHENTICATED') if not signed in. */
+/** Throws AuthError('UNAUTHENTICATED') if not signed in, or AuthError('SUSPENDED')
+ * if the account has been suspended — a real, enforced block, not cosmetic. */
 export async function requireUser(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) throw new AuthError('UNAUTHENTICATED');
+  if (user.accountStatus === 'suspended') throw new AuthError('SUSPENDED');
   return user;
 }
 

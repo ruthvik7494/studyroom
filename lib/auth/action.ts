@@ -27,9 +27,9 @@ export async function action<TInput, TOutput>(
     return ok(await run(input));
   } catch (e) {
     if (e instanceof AuthError) {
-      return e.code === 'UNAUTHENTICATED'
-        ? err('UNAUTHENTICATED', 'Please sign in to continue.')
-        : err('FORBIDDEN', 'You do not have permission to do that.');
+      if (e.code === 'UNAUTHENTICATED') return err('UNAUTHENTICATED', 'Please sign in to continue.');
+      if (e.code === 'SUSPENDED') return err('FORBIDDEN', 'Your account has been suspended. Contact support if you think this is a mistake.');
+      return err('FORBIDDEN', 'You do not have permission to do that.');
     }
     if (e instanceof ActionError) {
       return err(e.code, e.message, e.fields);
