@@ -250,14 +250,15 @@ const submitSchema = z.object({ centreId: z.string().uuid() });
 /** Submit a draft for admin review (draft/rejected → pending_review). */
 export async function submitForReview(raw: unknown): Promise<Result<{ ok: true }>> {
   return action(submitSchema, raw, async (input) => {
-    const user = await requireRole('owner');
+    await requireRole('owner');
     const db = await createClient();
-    const { data: owned } = await db.from('centres').select('owner_id, status').eq('id', input.centreId).maybeSingle();
-    if (!owned || owned.owner_id !== user.id) throw new ActionError('FORBIDDEN', 'That listing isn’t yours.');
-    if (owned.status === 'approved') throw new ActionError('CONFLICT', 'This listing is already live.');
-
-    const { error } = await db.from('centres').update({ status: 'pending_review' }).eq('id', input.centreId);
-    if (error) throw error;
+    const { error } = await db.rpc('submit_centre_for_review', { p_centre_id: input.centreId });
+    if (error) {
+      if (error.message.includes('FORBIDDEN')) throw new ActionError('FORBIDDEN', 'That listing isn’t yours.');
+      if (error.message.includes('INVALID_STATE')) throw new ActionError('CONFLICT', 'This listing is already live or already awaiting review.');
+      if (error.message.includes('NOT_FOUND')) throw new ActionError('NOT_FOUND', 'Listing not found.');
+      throw error;
+    }
     revalidatePath('/owner/centres');
     return { ok: true as const };
   });
