@@ -6,7 +6,7 @@ import { rescheduleBooking } from '../actions';
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const todayISO = () => new Date(Date.now() + IST_OFFSET_MS).toISOString().slice(0, 10);
 
-export function RescheduleButton({ bookingId }: { bookingId: string }) {
+export function RescheduleButton({ bookingId, slug }: { bookingId: string; slug: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(todayISO());
@@ -20,8 +20,12 @@ export function RescheduleButton({ bookingId }: { bookingId: string }) {
       const startsAt = new Date(`${date}T${time}:00+05:30`).toISOString();
       const res = await rescheduleBooking({ bookingId, startsAt });
       if (!res.ok) { setError(res.error.message); return; }
+      // rescheduleBooking creates a brand-new booking row (with its own id)
+      // and cancels the old one — staying on this page's current URL would
+      // keep showing the now-cancelled old booking. Navigate to the new
+      // booking's own confirmation page instead.
+      router.push(`/centres/${slug}/book/confirmed?id=${res.data.id}`);
       router.refresh();
-      setOpen(false);
     });
   };
 

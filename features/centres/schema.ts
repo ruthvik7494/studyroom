@@ -106,13 +106,10 @@ const dayHoursSchema = z.object({
   closingTime: z.string().regex(TIME_RE, 'Invalid time').default('10:00'),
 }).refine((d) => {
   if (!d.isOpen) return true;
-  const [oh, om] = d.openingTime.split(':').map(Number);
-  const [ch, cm] = d.closingTime.split(':').map(Number);
-  const openMin = oh! * 60 + om!;
-  let closeMin = ch! * 60 + cm!;
-  if (closeMin <= openMin) closeMin += 24 * 60; // past-midnight wraparound (e.g. 23:40 -> 00:40)
-  return closeMin - openMin === 60;
-}, { message: 'Closing time must be exactly 1 hour after opening time', path: ['closingTime'] });
+  const om = Number(d.openingTime.split(':')[1]);
+  const cm = Number(d.closingTime.split(':')[1]);
+  return om === cm;
+}, { message: 'Closing time must use the same minutes as opening time', path: ['closingTime'] });
 const DEFAULT_WEEKLY_HOURS = Array.from({ length: 7 }, () => ({ isOpen: true, openingTime: '09:00', closingTime: '10:00' }));
 
 export const centreUpsertSchema = z.object({

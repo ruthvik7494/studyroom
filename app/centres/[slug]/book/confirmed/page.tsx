@@ -80,7 +80,7 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
 
       {allCancellable && (
         <div className="mt-4 flex justify-center">
-          <CancelBookingButton bookingIds={bookingIds} />
+          <CancelBookingButton bookingIds={bookingIds} slug={slug} />
         </div>
       )}
 
@@ -126,7 +126,7 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
                         <span className={b.payment === 'paid' ? 'text-xs font-semibold text-[#2d6c4f]' : 'rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700'}>
                           {b.payment === 'paid' ? 'Paid' : 'Pending'}
                         </span>
-                        {canReschedule && <RescheduleButton bookingId={b.id} />}
+                        {canReschedule && <RescheduleButton bookingId={b.id} slug={slug} />}
                       </div>
                     </div>
                   );
@@ -135,7 +135,7 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
             )}
             {bookings.length === 1 && allCancellable && (
               <div className="mt-4 flex justify-end border-t pt-4">
-                <RescheduleButton bookingId={bookings[0]!.id} />
+                <RescheduleButton bookingId={bookings[0]!.id} slug={slug} />
               </div>
             )}
           </Card>

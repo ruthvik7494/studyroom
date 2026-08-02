@@ -3,7 +3,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { cancelBooking } from '../actions';
 
-export function CancelBookingButton({ bookingIds }: { bookingIds: string[] }) {
+export function CancelBookingButton({ bookingIds, slug }: { bookingIds: string[]; slug: string }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,8 +16,8 @@ export function CancelBookingButton({ bookingIds }: { bookingIds: string[] }) {
         const res = await cancelBooking({ bookingId: id });
         if (!res.ok) { setError(res.error.message); return; }
       }
+      router.push(`/centres/${slug}`);
       router.refresh();
-      setConfirming(false);
     });
   };
 

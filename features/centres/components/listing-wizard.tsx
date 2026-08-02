@@ -28,11 +28,11 @@ const SEATING_TIERS: { label: string; sub: string; icon: string; value: number }
 
 const BUSINESS_TAGS = ['Quiet', 'Premium', 'Affordable', 'AC', 'Library', '24x7', 'Students', 'Professionals'] as const;
 
-/** "08:40" -> "09:40" — wraps past midnight ("23:40" -> "00:40"). */
-function addOneHour(time: string): string {
-  const [h, m] = time.split(':').map(Number);
-  const next = ((h ?? 0) + 1) % 24;
-  return `${String(next).padStart(2, '0')}:${String(m ?? 0).padStart(2, '0')}`;
+/** Keeps the closing time's hour as-is, syncing only its minute to match the new opening minute (e.g. opening changed to 8:15 -> closing "10:00" becomes "10:15"). */
+function syncMinuteToOpening(newOpeningTime: string, currentClosingTime: string): string {
+  const minute = newOpeningTime.split(':')[1] ?? '00';
+  const closingHour = currentClosingTime.split(':')[0] ?? '10';
+  return `${closingHour}:${minute}`;
 }
 
 const SPACE_TYPES: { value: CentreUpsert['spaceType']; label: string; icon: string }[] = [
@@ -520,10 +520,11 @@ export function ListingWizard(props: Props) {
 
           <div>
             <p className="mb-2 text-sm font-medium">Weekly Timings</p>
-            <p className="-mt-1 mb-2 text-xs text-muted-foreground">Each open day is a 1-hour window — closing time is set automatically to exactly one hour after opening time.</p>
+            <p className="-mt-1 mb-2 text-xs text-muted-foreground">Pick any closing hour — its minutes will always match the opening time's minutes.</p>
             <div className="space-y-2 rounded-md border p-3">
               {DAY_ORDER.map((dayIdx) => {
                 const isOpen = watch(`hours.${dayIdx}.isOpen`);
+                const closingError = errors.hours?.[dayIdx]?.closingTime;
                 return (
                   <div key={dayIdx} className="flex flex-wrap items-center gap-2">
                     <label className="flex w-32 shrink-0 items-center gap-2 text-sm font-medium">
@@ -531,21 +532,25 @@ export function ListingWizard(props: Props) {
                       {DAY_LABELS[dayIdx]}
                     </label>
                     {isOpen ? (
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
                         <input
                           type="time"
                           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                           {...register(`hours.${dayIdx}.openingTime`, {
-                            onChange: (e) => setValue(`hours.${dayIdx}.closingTime`, addOneHour(e.target.value), { shouldValidate: true }),
+                            onChange: (e) => {
+                              const currentClosing = watch(`hours.${dayIdx}.closingTime`);
+                              setValue(`hours.${dayIdx}.closingTime`, syncMinuteToOpening(e.target.value, currentClosing), { shouldValidate: true });
+                            },
                           })}
                         />
                         <span className="text-muted-foreground">to</span>
                         <input
                           type="time"
-                          readOnly
-                          className="h-9 cursor-not-allowed rounded-md border border-input bg-secondary/40 px-2 text-sm text-muted-foreground"
+                          aria-invalid={!!closingError}
+                          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                           {...register(`hours.${dayIdx}.closingTime`)}
                         />
+                        {closingError && <p className="w-full text-xs text-destructive">{closingError.message}</p>}
                       </div>
                     ) : (
                       <span className="text-sm text-muted-foreground">Closed</span>
