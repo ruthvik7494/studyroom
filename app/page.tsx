@@ -133,6 +133,11 @@ export default async function HomePage() {
                 </div>
               )}
             </form>
+
+            {/* Secondary CTA for anyone without a specific search term yet */}
+            <Link href="/centres" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+              Or browse all study spaces <span aria-hidden>→</span>
+            </Link>
           </div>
 
           {/* Rating badge + featured-centre card float on top of the photo,
@@ -195,6 +200,26 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Popular Study Spaces — shown right after the hero, on purpose: real
+          centres build more trust and convert better than telling visitors
+          about features before showing them the actual product. */}
+      {featured.length > 0 && (
+        <section className="mx-auto max-w-6xl px-6 py-14">
+          <div className="text-center">
+            <h2 className="font-display text-2xl font-extrabold sm:text-3xl">Popular Study Spaces</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Top rated study spaces loved by students in and around Warangal.</p>
+          </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((c) => (
+              <CentreCard key={c.slug} centre={c} showSave={!!viewer} isSaved={savedIds.has(c.id)} />
+            ))}
+          </div>
+          <div className="mt-6 text-center">
+            <Link href="/centres" className="text-sm font-semibold text-primary hover:underline">View all centres →</Link>
+          </div>
+        </section>
+      )}
+
       {/* Why Choose StudyNook — single row of 4 */}
       <section className="mx-auto max-w-6xl px-6 py-14">
         <div className="text-center">
@@ -243,24 +268,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Popular Study Spaces */}
-      {featured.length > 0 && (
-        <section className="mx-auto max-w-6xl px-6 py-14">
-          <div className="text-center">
-            <h2 className="font-display text-2xl font-extrabold sm:text-3xl">Popular Study Spaces</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Top rated study spaces loved by students in and around Warangal.</p>
-          </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((c) => (
-              <CentreCard key={c.slug} centre={c} showSave={!!viewer} isSaved={savedIds.has(c.id)} />
-            ))}
-          </div>
-          <div className="mt-6 text-center">
-            <Link href="/centres" className="text-sm font-semibold text-primary hover:underline">View all centres →</Link>
-          </div>
-        </section>
-      )}
-
       {/* What Students Are Saying */}
       {testimonials.length > 0 && (
         <section className="mx-auto max-w-3xl px-6 py-14">
@@ -271,8 +278,27 @@ export default async function HomePage() {
           <div className="mt-10">
             <TestimonialCarousel items={testimonials} />
           </div>
+          {/* CTA right after building trust — a moment worth converting on */}
+          <div className="mt-6 text-center">
+            <Link href="/centres" className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90">
+              Find your study space <span aria-hidden>→</span>
+            </Link>
+          </div>
         </section>
       )}
+
+      {/* Own a study space? — owner-acquisition path; links to the real, existing listing flow */}
+      <section className="mx-auto max-w-6xl px-6 py-6">
+        <Card className="flex flex-col items-start gap-4 bg-secondary/40 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-display font-bold">Own a study space in Warangal?</p>
+            <p className="mt-1 text-sm text-muted-foreground">List your centre on StudyNook and reach students actively looking for a place to study.</p>
+          </div>
+          <Link href="/owner/centres/new" className="shrink-0 rounded-lg border border-primary px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/5">
+            List Your Centre →
+          </Link>
+        </Card>
+      </section>
 
       {/* CTA banner */}
       <section className="mx-auto max-w-6xl px-6 py-6">
