@@ -8,6 +8,7 @@ export const metadata: Metadata = { title: 'Owner', ...noindex };
 const NAV = [
   { href: '/owner', label: 'Dashboard' },
   { href: '/owner/bookings', label: 'Bookings' },
+  { href: '/owner/refunds', label: 'Refunds' },
   { href: '/owner/calendar', label: 'Calendar' },
   { href: '/owner/customers', label: 'Customers' },
   { href: '/owner/centres', label: 'My centres' },

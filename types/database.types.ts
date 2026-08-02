@@ -1418,6 +1418,10 @@ export type Database = {
         Returns: boolean
       }
       choose_role: { Args: { p_role: string }; Returns: undefined }
+      complete_refund: {
+        Args: { p_razorpay_refund_id?: string; p_refund_id: string }
+        Returns: undefined
+      }
       earth: { Args: never; Returns: number }
       expire_pending_bookings: { Args: never; Returns: number }
       is_account_locked: { Args: { p_email: string }; Returns: boolean }
@@ -1483,6 +1487,10 @@ export type Database = {
       resource_hour_taken: {
         Args: { p_date: string; p_hour: number; p_resource_id: string }
         Returns: number
+      }
+      review_refund: {
+        Args: { p_approve: boolean; p_note?: string; p_refund_id: string }
+        Returns: undefined
       }
       search_centres_by_text: {
         Args: { p_query: string }
