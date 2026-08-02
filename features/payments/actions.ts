@@ -41,13 +41,18 @@ export async function startPayment(raw: unknown): Promise<Result<StartResult>> {
     if (input.groupId) {
       const { data: bookings } = await db
         .from('bookings')
-        .select('id, amount, user_id, payment')
+        .select('id, amount, user_id, payment, status, expires_at')
         .eq('booking_group_id', input.groupId);
       if (!bookings || bookings.length === 0 || bookings[0]!.user_id !== user.id) {
         throw new ActionError('NOT_FOUND', 'Booking not found.');
       }
       const unpaid = bookings.filter((b) => b.payment !== 'paid');
       if (unpaid.length === 0) throw new ActionError('CONFLICT', 'This booking is already paid.');
+      // A hold that's already lapsed (even if not yet swept to 'expired')
+      // may have had its seat given to someone else — don't let payment
+      // proceed on a reservation that's no longer actually held.
+      const lapsed = unpaid.some((b) => b.status === 'expired' || (b.expires_at && new Date(b.expires_at) < new Date()));
+      if (lapsed) throw new ActionError('CONFLICT', 'This reservation has expired. Please book again.');
 
       if (!razorpayConfigured) return { configured: false };
 
@@ -59,11 +64,14 @@ export async function startPayment(raw: unknown): Promise<Result<StartResult>> {
 
     const { data: booking } = await db
       .from('bookings')
-      .select('id, amount, user_id, payment')
+      .select('id, amount, user_id, payment, status, expires_at')
       .eq('id', input.bookingId!)
       .maybeSingle();
     if (!booking || booking.user_id !== user.id) throw new ActionError('NOT_FOUND', 'Booking not found.');
     if (booking.payment === 'paid') throw new ActionError('CONFLICT', 'This booking is already paid.');
+    if (booking.status === 'expired' || (booking.expires_at && new Date(booking.expires_at) < new Date())) {
+      throw new ActionError('CONFLICT', 'This reservation has expired. Please book again.');
+    }
 
     if (!razorpayConfigured) return { configured: false };
 

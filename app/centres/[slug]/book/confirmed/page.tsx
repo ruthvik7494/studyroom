@@ -27,8 +27,8 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
   // A multi-hour booking (2+ hours) returns a group id from book_seat_multi
   // instead of a single booking id — look up every row in that group.
   const { data: bookings } = group === '1'
-    ? await db.from('bookings').select('id, period, amount, status, payment, starts_at, razorpay_payment_id, centres(name, slug, area, cover_url, rating, is_verified)').eq('booking_group_id', id).order('starts_at')
-    : await db.from('bookings').select('id, period, amount, status, payment, starts_at, razorpay_payment_id, centres(name, slug, area, cover_url, rating, is_verified)').eq('id', id).then((r) => ({ data: r.data ?? [] }));
+    ? await db.from('bookings').select('id, period, amount, status, payment, starts_at, razorpay_payment_id, expires_at, centres(name, slug, area, cover_url, rating, is_verified)').eq('booking_group_id', id).order('starts_at')
+    : await db.from('bookings').select('id, period, amount, status, payment, starts_at, razorpay_payment_id, expires_at, centres(name, slug, area, cover_url, rating, is_verified)').eq('id', id).then((r) => ({ data: r.data ?? [] }));
 
   if (!bookings || bookings.length === 0) notFound(); // RLS also scopes to owner
 
@@ -66,6 +66,8 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
     : allPaid ? 'paid'
     : bookings.every((b) => ['pending', 'confirmed'].includes(b.status)) ? 'pending'
     : 'other';
+  const expiryTimes = bookings.map((b) => b.expires_at).filter((e): e is string => !!e);
+  const holdExpiresAt = heroState === 'pending' && expiryTimes.length > 0 ? new Date(Math.min(...expiryTimes.map((e) => new Date(e).getTime()))) : null;
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
@@ -85,9 +87,14 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
         {heroState === 'pending' && (
           <>
             <span className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-100 text-4xl text-amber-600 shadow-lg" aria-hidden>⏳</span>
-            <h1 className="mt-4 font-display text-2xl font-bold sm:text-3xl">Seat Reserved</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Your seat has been reserved temporarily.</p>
+            <h1 className="mt-4 font-display text-2xl font-bold sm:text-3xl">Booking Request Received</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Your seat has been reserved temporarily — Awaiting Payment.</p>
             <p className="mt-1 text-sm font-medium text-foreground">Complete your payment to confirm your booking.</p>
+            {holdExpiresAt && (
+              <p className="mt-2 text-xs font-semibold text-amber-700">
+                Reserved until {holdExpiresAt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} — pay before then or the seat is released.
+              </p>
+            )}
             <div className="mt-3"><PaymentStatusBadge status="unpaid" /></div>
           </>
         )}

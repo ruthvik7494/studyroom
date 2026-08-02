@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatINR, cn } from '@/lib/utils';
@@ -44,11 +45,11 @@ function formatDateShort(dateISO: string): string {
  */
 export function BookingPanel({
   centreId, slug, resources, initialPeriod, initialResourceId,
-  centreName, centreArea, coverUrl, rating, phone, whatsapp, initialSaved,
+  centreName, centreArea, coverUrl, rating, phone, whatsapp, initialSaved, cancelCutoffHours,
 }: {
   centreId: string; slug: string; resources: ResourceOpt[]; initialPeriod?: Period; initialResourceId?: string;
   centreName: string; centreArea: string | null; coverUrl: string | null; rating: number;
-  phone: string | null; whatsapp: string | null; initialSaved: boolean;
+  phone: string | null; whatsapp: string | null; initialSaved: boolean; cancelCutoffHours: number;
 }) {
   const router = useRouter();
   const [resourceId, setResourceId] = useState(
@@ -62,6 +63,7 @@ export function BookingPanel({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const selected = resources.find((r) => r.id === resourceId);
   const periods = useMemo(() => (selected ? availablePeriods(selected.pricing) : []), [selected]);
@@ -89,9 +91,9 @@ export function BookingPanel({
     setSelectedHours((prev) => (prev.includes(hour) ? prev.filter((h) => h !== hour) : [...prev, hour].sort((a, b) => a - b)));
   };
 
-  const canBook = isMultiHour
+  const canBook = agreedToTerms && (isMultiHour
     ? selectedHours.length > 0 && perUnitAmount !== null
-    : perUnitAmount !== null && dayAvailable && !closed;
+    : perUnitAmount !== null && dayAvailable && !closed);
 
   const endDate = !isMultiHour && period !== 'day' ? addDays(date, PERIOD_DAYS[period] ?? 1) : null;
 
@@ -334,7 +336,18 @@ export function BookingPanel({
 
             <p className="mt-3 text-center text-xs text-muted-foreground">🔒 Secured by Razorpay</p>
 
-            <Button onClick={book} disabled={busy || !canBook} className="mt-4 w-full">
+            <div className="mt-3 space-y-1 rounded-lg bg-secondary/40 p-3 text-xs text-muted-foreground">
+              <p><strong className="text-foreground">Cancellation policy:</strong> Free cancellation up to {cancelCutoffHours} hour{cancelCutoffHours === 1 ? '' : 's'} before your booking&apos;s start time.</p>
+              <p><strong className="text-foreground">Refund policy:</strong> Refunds for eligible cancellations are processed to your original payment method.</p>
+              <p><strong className="text-foreground">Reservation hold:</strong> Your seat is held temporarily once you confirm below — complete payment before the hold expires or it&apos;s released automatically.</p>
+            </div>
+
+            <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+              <input type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-input accent-primary" />
+              I agree to the <Link href="/terms" className="underline hover:no-underline">Terms &amp; Conditions</Link> and the cancellation/refund policy above.
+            </label>
+
+            <Button onClick={book} disabled={busy || !canBook} className="mt-3 w-full">
               {busy ? 'Booking…' : 'Confirm booking'}
             </Button>
             <div className="mt-2">

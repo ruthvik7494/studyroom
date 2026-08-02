@@ -26,6 +26,8 @@ export default async function BookPage({ params, searchParams }: Params) {
   const user = await getSessionUser();
   const saved = user ? await isSaved(db, user.id, centre.id) : false;
   const social = (centre.social ?? {}) as Record<string, string>;
+  const { data: rules } = await db.from('booking_rules').select('cancel_cutoff_hours').eq('centre_id', centre.id).maybeSingle();
+  const cancelCutoffHours = rules?.cancel_cutoff_hours ?? 12;
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
@@ -70,6 +72,7 @@ export default async function BookPage({ params, searchParams }: Params) {
           phone={centre.phone}
           whatsapp={social.whatsapp || null}
           initialSaved={saved}
+          cancelCutoffHours={cancelCutoffHours}
         />
       )}
     </main>
