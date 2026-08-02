@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /** Skeleton grid — shown while the feed loads (matches card layout to avoid CLS). */
 export function CentreGridSkeleton({ count = 8 }: { count?: number }) {
@@ -25,21 +26,24 @@ export function CentreGridSkeleton({ count = 8 }: { count?: number }) {
 
 export function CentreEmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-      <span className="text-4xl" aria-hidden>🔍</span>
-      <h3 className="mt-3 font-display text-lg font-semibold">No study spaces match</h3>
-      <p className="mt-1 max-w-sm text-sm text-muted-foreground">Try widening your budget or clearing a filter — new centres are added every week.</p>
-    </div>
+    <EmptyState
+      icon="🔍"
+      title="No study spaces match"
+      description="Try widening your budget or clearing a filter — new centres are added every week."
+    />
   );
 }
 
 export function CentreErrorState({ onRetry }: { onRetry?: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-destructive/30 bg-destructive/5 py-16 text-center" role="alert">
-      <span className="text-4xl" aria-hidden>⚠️</span>
-      <h3 className="mt-3 font-display text-lg font-semibold">Couldn’t load study spaces</h3>
-      <p className="mt-1 max-w-sm text-sm text-muted-foreground">Something went wrong on our side. Please try again.</p>
-      {onRetry && <Button variant="outline" className="mt-4" onClick={onRetry}>Retry</Button>}
+    <div role="alert">
+      <EmptyState
+        icon="⚠️"
+        title="Couldn’t load study spaces"
+        description="Something went wrong on our side. Please try again."
+        className="border-destructive/30 bg-destructive/5"
+        action={onRetry && <Button variant="outline" onClick={onRetry}>Retry</Button>}
+      />
     </div>
   );
 }

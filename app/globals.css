@@ -26,6 +26,12 @@ html {
     --accent-foreground: 33 90% 25%;
     --destructive: 11 58% 46%;       /* full/red */
     --destructive-foreground: 40 33% 98%;
+    --success: 145 68% 39%;
+    --success-foreground: 0 0% 100%;
+    --warning: 35 79% 49%;
+    --warning-foreground: 0 0% 100%;
+    --info: 152 41% 30%;
+    --info-foreground: 40 33% 98%;
     --border: 38 24% 84%;
     --input: 38 20% 50%;
     --ring: 152 41% 30%;
@@ -48,6 +54,12 @@ html {
     --accent-foreground: 40 33% 96%;
     --destructive: 11 54% 45%;
     --destructive-foreground: 40 33% 96%;
+    --success: 145 55% 45%;
+    --success-foreground: 152 28% 8%;
+    --warning: 35 70% 55%;
+    --warning-foreground: 152 28% 8%;
+    --info: 152 35% 55%;
+    --info-foreground: 152 28% 8%;
     --border: 152 15% 22%;
     --input: 152 12% 38%;
     --ring: 152 35% 55%;
@@ -57,4 +69,12 @@ html {
 @layer base {
   * { @apply border-border; }
   body { @apply bg-background text-foreground antialiased; }
+  /* Visible keyboard-focus ring on every interactive element, site-wide —
+     :focus-visible so it only shows for keyboard/AT users, not mouse clicks. */
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+  textarea:focus-visible, [tabindex]:focus-visible, summary:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: calc(var(--radius) - 2px);
+  }
 }
