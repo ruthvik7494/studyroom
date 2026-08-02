@@ -124,62 +124,72 @@ export function ListingWizard(props: Props) {
   const doSubmit = async (formValues: CentreUpsert) => {
     setServerError(null);
     setPhase('saving');
+    let navigatedAway = false;
 
-    const res = props.mode === 'create'
-      ? await createCentre(formValues)
-      : await updateCentre({ ...formValues, centreId: props.centreId });
-    if (!res.ok) { setServerError(res.error.message); setPhase('idle'); return; }
+    try {
+      const res = props.mode === 'create'
+        ? await createCentre(formValues)
+        : await updateCentre({ ...formValues, centreId: props.centreId });
+      if (!res.ok) { setServerError(res.error.message); return; }
 
-    const centreId = props.mode === 'create' && 'id' in res.data ? res.data.id : props.centreId;
-    if (centreId) {
-      const allGalleryFiles = [
-        ...Object.entries(galleryFiles).flatMap(([slot, files]) => files.map((file) => ({ slot, file }))),
-        ...extraFiles.map((file) => ({ slot: undefined as string | undefined, file })),
-      ];
+      const centreId = props.mode === 'create' && 'id' in res.data ? res.data.id : props.centreId;
+      if (centreId) {
+        const allGalleryFiles = [
+          ...Object.entries(galleryFiles).flatMap(([slot, files]) => files.map((file) => ({ slot, file }))),
+          ...extraFiles.map((file) => ({ slot: undefined as string | undefined, file })),
+        ];
 
-      if (logoFile || coverFile || allGalleryFiles.length) {
-        setPhase('uploading');
-        const uploadErrors: string[] = [];
+        if (logoFile || coverFile || allGalleryFiles.length) {
+          setPhase('uploading');
+          const uploadErrors: string[] = [];
 
-        if (logoFile) {
-          const fd = new FormData();
-          fd.set('centreId', centreId);
-          fd.set('file', logoFile);
-          const logoRes = await uploadCentreLogo(fd);
-          if (!logoRes.ok) uploadErrors.push(`Logo: ${logoRes.error.message}`);
+          if (logoFile) {
+            const fd = new FormData();
+            fd.set('centreId', centreId);
+            fd.set('file', logoFile);
+            const logoRes = await uploadCentreLogo(fd);
+            if (!logoRes.ok) uploadErrors.push(`Logo: ${logoRes.error.message}`);
+          }
+          if (coverFile) {
+            const e = await uploadOne(centreId, coverFile, { isCover: true });
+            if (e) uploadErrors.push(`Cover image: ${e}`);
+          }
+          for (const { slot, file } of allGalleryFiles) {
+            const e = await uploadOne(centreId, file, slot ? { category: slot } : {});
+            if (e) uploadErrors.push(`${slot ?? file.name}: ${e}`);
+          }
+
+          if (uploadErrors.length) {
+            setServerError(`Listing saved, but some photos didn't upload: ${uploadErrors.join('; ')}`);
+            return;
+          }
         }
-        if (coverFile) {
-          const e = await uploadOne(centreId, coverFile, { isCover: true });
-          if (e) uploadErrors.push(`Cover image: ${e}`);
-        }
-        for (const { slot, file } of allGalleryFiles) {
-          const e = await uploadOne(centreId, file, slot ? { category: slot } : {});
-          if (e) uploadErrors.push(`${slot ?? file.name}: ${e}`);
-        }
 
-        if (uploadErrors.length) {
-          setServerError(`Listing saved, but some photos didn't upload: ${uploadErrors.join('; ')}`);
-          setPhase('idle');
-          return;
+        // Save Draft stops here — the centre stays a draft, exactly as its
+        // name says. Publish additionally submits it for admin review; a
+        // draft never goes through this step, so the two buttons now have
+        // genuinely different outcomes instead of both just saving the same way.
+        if (props.mode === 'create' && submitIntent.current === 'publish') {
+          const submitRes = await submitForReview({ centreId });
+          if (!submitRes.ok) {
+            setServerError(`Saved as a draft, but couldn't submit for review: ${submitRes.error.message}`);
+            return;
+          }
         }
       }
 
-      // Save Draft stops here — the centre stays a draft, exactly as its
-      // name says. Publish additionally submits it for admin review; a
-      // draft never goes through this step, so the two buttons now have
-      // genuinely different outcomes instead of both just saving the same way.
-      if (props.mode === 'create' && submitIntent.current === 'publish') {
-        const submitRes = await submitForReview({ centreId });
-        if (!submitRes.ok) {
-          setServerError(`Saved as a draft, but couldn't submit for review: ${submitRes.error.message}`);
-          setPhase('idle');
-          return;
-        }
-      }
+      navigatedAway = true;
+      router.push('/owner/centres');
+      router.refresh();
+    } catch (e) {
+      // Something unexpected threw (session expired mid-submit, a network
+      // hiccup, etc.) instead of returning a normal Result — previously this
+      // left the button permanently grayed out on "Uploading photos…" with
+      // no way forward. Surface it as a real, actionable error instead.
+      setServerError(e instanceof Error ? `Something went wrong: ${e.message}` : 'Something went wrong. Please try again.');
+    } finally {
+      if (!navigatedAway) setPhase('idle');
     }
-
-    router.push('/owner/centres');
-    router.refresh();
   };
 
   /** Validation failed — jump to the first step that actually has an error, since it's otherwise invisible from a later step. */
@@ -818,19 +828,6 @@ export function ListingWizard(props: Props) {
               })()}
               <button type="button" onClick={() => goto(5)} className="mt-2 text-xs font-semibold text-[#2d6c4f] hover:underline">Edit</button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => { submitIntent.current = 'publish'; void handleSubmit(doSubmit, onInvalid)(); }}
-              disabled={busy}
-              className="flex min-w-[190px] flex-1 flex-col items-start rounded-xl bg-[#2d6c4f] p-3 text-left text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-            >
-              <span className="mb-1 flex items-center gap-1.5 text-sm font-semibold"><span aria-hidden>🚀</span>{props.mode === 'create' ? 'Publish Listing' : 'Save Changes'}</span>
-              <span className="text-xs opacity-90">
-                {phase === 'saving' ? 'Saving…' : phase === 'uploading' ? 'Uploading photos…' : props.mode === 'create' ? 'Your listing will be live after verification' : 'Update this listing now'}
-              </span>
-              <span className="mt-2 self-end text-lg" aria-hidden>→</span>
-            </button>
           </div>
         </div>
       )}
@@ -840,11 +837,6 @@ export function ListingWizard(props: Props) {
         <div className="mt-6 flex items-center justify-between border-t pt-5">
           <Button type="button" variant="outline" onClick={back} disabled={step === 0 || busy}>Back</Button>
           <div className="flex gap-2">
-            {step === STEPS.length - 1 && (
-              <Button type="button" variant="outline" disabled={busy} onClick={() => { submitIntent.current = 'draft'; void handleSubmit(doSubmit, onInvalid)(); }}>
-                {phase === 'saving' ? 'Saving…' : 'Save Draft'}
-              </Button>
-            )}
             {step < STEPS.length - 1 ? (
               <Button type="button" onClick={next} className="bg-[#2d6c4f] hover:bg-[#2d6c4f]/90">Next →</Button>
             ) : (
