@@ -1,14 +1,13 @@
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth/rbac';
 import { signOut } from '@/features/auth/actions';
-
-const navLinkClass = 'relative py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground';
-const activeNavLinkClass = 'relative py-2 text-sm font-semibold text-primary after:absolute after:-bottom-[1px] after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-primary';
+import { DesktopNav, MobileNav } from '@/components/nav-links';
 
 /** App header. Server component: reads the session and shows the right links —
  * same role-based nav items as before (Saved for any signed-in user, My
- * centres for owners, Admin for admins), restyled with an underline on the
- * active link. */
+ * centres for owners, Admin for admins). Active-state highlighting is
+ * delegated to a small client nav component, since that needs the real
+ * current route (usePathname), which only works in a client component. */
 export async function SiteHeader() {
   const user = await getSessionUser();
 
@@ -26,16 +25,7 @@ export async function SiteHeader() {
           </span>
         </Link>
 
-        {/* Primary nav — same items/conditions as before, restyled with an underline on the active link */}
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Primary">
-          <Link href="/" className={activeNavLinkClass}>Home</Link>
-          <Link href="/centres" className={navLinkClass}>Study Centres</Link>
-          <Link href="/about" className={navLinkClass}>About Us</Link>
-          <Link href="/contact" className={navLinkClass}>Contact Us</Link>
-          {user && <Link href="/saved" className={navLinkClass}>Saved</Link>}
-          {user?.role === 'owner' && <Link href="/owner/centres" className={navLinkClass}>My centres</Link>}
-          {user?.role === 'admin' && <Link href="/admin" className={navLinkClass}>Admin</Link>}
-        </nav>
+        <DesktopNav role={user?.role ?? null} />
 
         {/* Right side — account only */}
         <div className="flex shrink-0 items-center gap-3">
@@ -63,17 +53,7 @@ export async function SiteHeader() {
         </div>
       </div>
 
-      {/* Mobile nav — same links, stacked, since the row above hides below md */}
-      <nav className="flex items-center gap-1 overflow-x-auto border-t px-4 py-2 md:hidden" aria-label="Primary mobile">
-        <Link href="/" className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-primary">Home</Link>
-        <Link href="/centres" className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">Study Centres</Link>
-        <Link href="/about" className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">About Us</Link>
-        <Link href="/contact" className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">Contact Us</Link>
-        {user && <Link href="/saved" className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">Saved</Link>}
-        {user?.role === 'owner' && <Link href="/owner/centres" className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">My centres</Link>}
-        {user?.role === 'admin' && <Link href="/admin" className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">Admin</Link>}
-        {!user && <Link href="/login" className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">Sign In</Link>}
-      </nav>
+      <MobileNav role={user?.role ?? null} showSignIn={!user} />
     </header>
   );
 }

@@ -7,7 +7,6 @@ import { CentreCard } from '@/features/centres/components/centre-card';
 import { CentreListRow } from '@/features/centres/components/centre-list-row';
 import { CentreEmptyState } from '@/features/centres/components/centre-states';
 import { CentreSearchBar } from '@/features/centres/components/centre-search-bar';
-import { ResultsMap, type MapCentre } from '@/features/centres/components/results-map';
 import { PaginationBar } from '@/components/ui/pagination-bar';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Card } from '@/components/ui/card';
@@ -43,20 +42,13 @@ export default async function CentresPage({ searchParams }: PageProps) {
 
   const db = await createClient();
   const viewer = await getSessionUser();
-  const [result, { data: mapRows }] = await Promise.all([
-    searchCentresPaginated(db, { ...filters, pageSize: PAGE_SIZE }),
-    db.from('centres').select('id, slug, name, lat, lng, rating').eq('is_published', true).not('lat', 'is', null).limit(30),
-  ]);
+  const result = await searchCentresPaginated(db, { ...filters, pageSize: PAGE_SIZE });
 
   let savedIds = new Set<string>();
   if (viewer) {
     const { data: savedRows } = await db.from('saved_listings').select('centre_id').eq('user_id', viewer.id);
     savedIds = new Set((savedRows ?? []).map((r) => r.centre_id));
   }
-
-  const mapCentres: MapCentre[] = (mapRows ?? [])
-    .filter((r) => r.lat !== null && r.lng !== null)
-    .map((r) => ({ id: r.id, slug: r.slug, name: r.name, lat: r.lat as number, lng: r.lng as number, rating: r.rating }));
 
   const baseParams = () => {
     const params = new URLSearchParams();
@@ -122,18 +114,8 @@ export default async function CentresPage({ searchParams }: PageProps) {
           <PaginationBar page={result.page} totalPages={result.totalPages} hrefForPage={hrefForPage} />
         </div>
 
-        {/* Right — map, list-your-centre CTA, help */}
+        {/* Right — list-your-centre CTA, help */}
         <div className="space-y-4">
-          <Card className="overflow-hidden p-4">
-            <p className="mb-3 font-semibold">Explore on map</p>
-            <div className="h-56 overflow-hidden rounded-lg">
-              <ResultsMap initialCentres={mapCentres} />
-            </div>
-            <Link href="/centres?view=list" className="mt-3 block rounded-lg border py-2 text-center text-sm font-semibold hover:bg-secondary">
-              View all on map ↗
-            </Link>
-          </Card>
-
           <Card className="bg-primary/5 p-4">
             <p className="font-display font-bold">List your study space</p>
             <p className="mt-1 text-sm text-muted-foreground">Reach students looking for the perfect place to study.</p>
