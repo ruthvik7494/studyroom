@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { admin } from '@/lib/supabase/admin';
 import { BookingSidebar } from '@/features/centres/components/booking-sidebar';
@@ -329,11 +328,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
               icon="☰"
               title="About"
               headingId="description-heading"
-              action={isPublic && centre.resources.length > 0 && (
-                <Link href={`/centres/${centre.slug}/book`} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-                  <span aria-hidden>◈</span> Book a Seat
-                </Link>
-              )}
             >
               {centre.description ? (
                 <p className="whitespace-pre-line text-sm text-foreground/80">{centre.description}</p>

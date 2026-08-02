@@ -55,15 +55,16 @@ export default async function OwnerBookingsPage({
       <div className="mt-2 overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[720px] text-sm">
           <thead className="bg-secondary/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <tr><th scope="col" className="px-3 py-2.5">Student</th><th scope="col" className="px-3 py-2.5">Centre</th><th scope="col" className="px-3 py-2.5">Start</th>
+            <tr><th scope="col" className="px-3 py-2.5">Student</th><th scope="col" className="px-3 py-2.5">Centre</th><th scope="col" className="px-3 py-2.5">Period</th><th scope="col" className="px-3 py-2.5">Start</th>
               <th scope="col" className="px-3 py-2.5">Amount</th><th scope="col" className="px-3 py-2.5">Status</th><th scope="col" className="px-3 py-2.5">Payment</th><th scope="col" className="px-3 py-2.5">Manage</th></tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">No bookings match.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={8} className="px-3 py-10 text-center text-muted-foreground">No bookings match.</td></tr>}
             {rows.map((b) => (
               <tr key={b.id} className="border-t">
                 <td className="px-3 py-2.5">{b.student?.full_name ?? 'Guest'}</td>
                 <td className="px-3 py-2.5 font-semibold">{b.centre?.name ?? '—'}</td>
+                <td className="px-3 py-2.5 capitalize">{b.period}</td>
                 <td className="px-3 py-2.5 text-muted-foreground">
                   {new Date(b.starts_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
                 </td>
