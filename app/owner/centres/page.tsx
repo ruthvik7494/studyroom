@@ -6,6 +6,7 @@ import { noindex } from '@/lib/seo';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SubmitForReviewButton } from '@/features/centres/components/submit-for-review-button';
+import { ArchiveButton, UnarchiveButton, PublishToggle } from '@/features/centres/components/centre-lifecycle-buttons';
 
 export const metadata: Metadata = { title: 'My listings', ...noindex };
 
@@ -19,7 +20,7 @@ export default async function OwnerCentresPage() {
   const db = await createClient();
   const { data: centres } = await db
     .from('centres')
-    .select('id, name, slug, area, emoji, status, rejection_reason')
+    .select('id, name, slug, area, emoji, status, rejection_reason, is_published')
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
 
@@ -40,7 +41,7 @@ export default async function OwnerCentresPage() {
       ) : (
         <div className="space-y-3">
           {list.map((c) => (
-            <Card key={c.id} className="flex items-center gap-4 p-4">
+            <Card key={c.id} className="flex flex-wrap items-center gap-4 p-4">
               <span className="text-2xl" aria-hidden>{c.emoji}</span>
               <div className="min-w-0 flex-1">
                 <p className="font-display font-semibold">{c.name}</p>
@@ -50,8 +51,10 @@ export default async function OwnerCentresPage() {
                 )}
               </div>
               <Badge variant={STATUS_VARIANT[c.status] ?? 'secondary'}>{c.status.replace('_', ' ')}</Badge>
+              {c.status === 'approved' && <PublishToggle centreId={c.id} published={c.is_published} />}
               {(c.status === 'draft' || c.status === 'rejected') && <SubmitForReviewButton centreId={c.id} />}
               <Link href={`/owner/centres/${c.id}`} className="text-sm font-semibold underline">Edit</Link>
+              {c.status === 'archived' ? <UnarchiveButton centreId={c.id} /> : <ArchiveButton centreId={c.id} />}
             </Card>
           ))}
         </div>

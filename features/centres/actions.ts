@@ -22,6 +22,19 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
     const user = await requireRole('owner');
     const supabase = await createClient();
 
+    // Duplicate validation: same owner listing the same centre name twice
+    // (a genuinely different centre with a coincidentally similar name is
+    // fine — this only blocks an exact, case-insensitive match for this
+    // same owner, and ignores anything they've already archived).
+    const { data: dup } = await supabase
+      .from('centres')
+      .select('id')
+      .eq('owner_id', user.id)
+      .ilike('name', input.name)
+      .neq('status', 'archived')
+      .maybeSingle();
+    if (dup) throw new ActionError('VALIDATION', 'You already have a listing with this name.');
+
     let slug = slugify(input.name);
     const { data: clash } = await supabase.from('centres').select('id').eq('slug', slug).maybeSingle();
     if (clash) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
@@ -497,6 +510,48 @@ export async function deleteListingImage(raw: unknown): Promise<Result<{ ok: tru
 
     revalidatePath('/owner/centres');
     revalidatePath('/centres');
+    return { ok: true as const };
+  });
+}
+
+const centreIdSchema = z.object({ centreId: z.string().uuid() });
+const publishToggleSchema = z.object({ centreId: z.string().uuid(), published: z.boolean() });
+
+/** Owner toggles visibility of an already-approved listing (temporary
+ * hide/show) without losing its approved status or needing re-review. */
+export async function setCentrePublished(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(publishToggleSchema, raw, async (input) => {
+    await requireRole('owner', 'admin');
+    const db = await createClient();
+    const { error } = await db.rpc('set_centre_published', { p_centre_id: input.centreId, p_published: input.published });
+    if (error) throw error;
+    revalidatePath('/owner/centres');
+    revalidatePath('/centres');
+    return { ok: true as const };
+  });
+}
+
+/** Soft-delete: archives a listing (reversible), removing it from public view. */
+export async function archiveCentre(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(centreIdSchema, raw, async (input) => {
+    await requireRole('owner', 'admin');
+    const db = await createClient();
+    const { error } = await db.rpc('archive_centre', { p_centre_id: input.centreId });
+    if (error) throw error;
+    revalidatePath('/owner/centres');
+    revalidatePath('/centres');
+    return { ok: true as const };
+  });
+}
+
+/** Restores an archived listing back to draft for review/re-submission. */
+export async function unarchiveCentre(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(centreIdSchema, raw, async (input) => {
+    await requireRole('owner', 'admin');
+    const db = await createClient();
+    const { error } = await db.rpc('unarchive_centre', { p_centre_id: input.centreId });
+    if (error) throw error;
+    revalidatePath('/owner/centres');
     return { ok: true as const };
   });
 }
