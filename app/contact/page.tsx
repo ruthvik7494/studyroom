@@ -37,7 +37,7 @@ export default async function ContactPage() {
   const areaLabel = [city, state].filter(Boolean).join(', ');
 
   return (
-    <main id="main-content">
+    <main id="main-content" className="overflow-x-hidden">
       {/* Hero — full-bleed background photo behind the whole section, same
           treatment as the homepage hero: opaque where the text sits,
           fading to a fully visible photo on the right. */}
