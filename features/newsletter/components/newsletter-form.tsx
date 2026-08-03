@@ -19,7 +19,7 @@ export function NewsletterForm() {
 
   return (
     <form onSubmit={onSubmit} className="mt-3">
-      <div className="flex items-center rounded-full border border-white/15 bg-white/5 py-1 pl-4 pr-1.5">
+      <div className="flex items-center rounded-full border border-white/15 bg-white/5 py-1 pl-4 pr-1.5 transition-all duration-300 focus-within:border-white/40 focus-within:bg-white/10 focus-within:ring-2 focus-within:ring-white/20">
         <input
           type="email"
           required

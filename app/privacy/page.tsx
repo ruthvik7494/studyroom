@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { PageTocNav } from '@/components/page-toc-nav';
+import { Reveal } from '@/components/motion/reveal';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
@@ -197,7 +198,8 @@ export default function PrivacyPage() {
           {/* Sections */}
           <div className="space-y-5 text-muted-foreground">
             {SECTIONS.map((s) => (
-              <Card key={s.id} id={s.id} className="scroll-mt-24 p-6">
+              <Reveal key={s.id} id={s.id} margin="-100px" className="scroll-mt-24">
+              <Card className="p-6">
                 <div className="flex gap-4">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <s.icon className="h-5 w-5 text-primary" />
@@ -208,12 +210,13 @@ export default function PrivacyPage() {
                   </div>
                 </div>
               </Card>
+              </Reveal>
             ))}
           </div>
         </div>
 
         {/* Trust banner */}
-        <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl bg-secondary/40 p-6 sm:flex-row">
+        <Reveal className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl bg-secondary/40 p-6 sm:flex-row">
           <div className="flex items-center gap-4">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
               <Lock className="h-5 w-5 text-primary" />
@@ -228,11 +231,11 @@ export default function PrivacyPage() {
           </div>
           <Link
             href="/contact"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Learn more about security <ArrowRight className="h-4 w-4" />
           </Link>
-        </div>
+        </Reveal>
       </section>
     </main>
   );

@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { QueryProvider } from '@/lib/query/provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { MotionRoot } from '@/components/motion/motion-root';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { BackToTop } from '@/components/back-to-top';
@@ -60,12 +61,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <ThemeProvider>
-          <QueryProvider>
-            <SiteHeader />
-            <div id="main-content">{children}</div>
-            <SiteFooter />
-          </QueryProvider>
-          <BackToTop />
+          <MotionRoot>
+            <QueryProvider>
+              <SiteHeader />
+              <div id="main-content">{children}</div>
+              <SiteFooter />
+            </QueryProvider>
+            <BackToTop />
+          </MotionRoot>
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

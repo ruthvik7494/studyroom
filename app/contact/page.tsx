@@ -4,6 +4,9 @@ import { Card } from '@/components/ui/card';
 import { ContactForm } from '@/features/contact/components/contact-form';
 import { createClient } from '@/lib/supabase/server';
 import { getServiceArea } from '@/lib/service-area';
+import { Reveal } from '@/components/motion/reveal';
+import { LoadReveal } from '@/components/motion/load-reveal';
+import { StaggerGroup, StaggerItem } from '@/components/motion/stagger';
 
 export const metadata: Metadata = {
   title: 'Contact StudyNook',
@@ -48,6 +51,7 @@ export default async function ContactPage() {
         </div>
 
         <div className="relative mx-auto max-w-6xl px-6 py-12 lg:py-16">
+          <LoadReveal>
           <div className="max-w-xl">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">💬 Get in Touch</span>
             <h1 className="mt-4 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
@@ -57,51 +61,53 @@ export default async function ContactPage() {
               Have questions, suggestions or need support? Reach out to us. We&apos;ll get back to you as soon as possible.
             </p>
 
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="flex items-start gap-2.5">
+            <StaggerGroup delay={0.15} className="mt-6 grid grid-cols-2 gap-4">
+              <StaggerItem className="flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-300 hover:bg-secondary/60">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🎓</span>
                 <div>
                   <p className="text-sm font-semibold">For Students</p>
                   <p className="text-xs text-muted-foreground">Booking, payment, refund or general queries.</p>
                 </div>
-              </div>
-              <div className="flex items-start gap-2.5">
+              </StaggerItem>
+              <StaggerItem className="flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-300 hover:bg-secondary/60">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🏢</span>
                 <div>
                   <p className="text-sm font-semibold">For Space Owners</p>
                   <p className="text-xs text-muted-foreground">List your space or manage your listing.</p>
                 </div>
-              </div>
-              <div className="flex items-start gap-2.5">
+              </StaggerItem>
+              <StaggerItem className="flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-300 hover:bg-secondary/60">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🎧</span>
                 <div>
                   <p className="text-sm font-semibold">Support</p>
                   <p className="text-xs text-muted-foreground">We&apos;re here to help between 9 AM – 9 PM everyday.</p>
                 </div>
-              </div>
-              <div className="flex items-start gap-2.5">
+              </StaggerItem>
+              <StaggerItem className="flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-300 hover:bg-secondary/60">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>✉️</span>
                 <div>
                   <p className="text-sm font-semibold">Quick Response</p>
                   <p className="text-xs text-muted-foreground">We usually reply within a few hours.</p>
                 </div>
-              </div>
-            </div>
+              </StaggerItem>
+            </StaggerGroup>
           </div>
+          </LoadReveal>
 
           {/* Floats on top of the photo, in its right-hand portion where
               the gradient has fully cleared — same treatment as the
               homepage hero's floating card. */}
-          <div className="absolute bottom-8 right-6 hidden items-center gap-2 rounded-xl bg-background/95 px-3 py-2.5 shadow-md backdrop-blur sm:flex lg:right-10">
+          <LoadReveal delay={0.4} y={8} className="absolute bottom-8 right-6 hidden items-center gap-2 rounded-xl bg-background/95 px-3 py-2.5 shadow-md backdrop-blur sm:flex lg:right-10">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>💚</span>
             <p className="max-w-[180px] text-xs font-medium">Happy to support students and space owners.</p>
-          </div>
+          </LoadReveal>
         </div>
       </section>
 
       <div className="mx-auto max-w-6xl px-6 py-12">
 
       {/* Green info panel + form */}
+      <Reveal>
       <div className="mt-12 grid overflow-hidden rounded-2xl border shadow-sm lg:grid-cols-[1fr_1.3fr]">
         <div className="bg-[#1f4a37] p-8 text-white">
           <div className="flex items-center gap-2">
@@ -138,8 +144,10 @@ export default async function ContactPage() {
           </div>
         </div>
       </div>
+      </Reveal>
 
       {/* Map + contact details */}
+      <Reveal>
       <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_320px]">
         <div>
           <h2 className="mb-3 font-display text-lg font-bold">Find us{city ? ` in ${city}` : ''}</h2>
@@ -161,14 +169,14 @@ export default async function ContactPage() {
 
         <Card className="h-fit p-5">
           <div className="space-y-4 text-sm">
-            <div className="flex items-start gap-2.5">
+            <div className="flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-300 hover:bg-secondary/60">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10" aria-hidden>✉️</span>
               <div>
                 <p className="font-semibold">Email</p>
                 <a href="mailto:support@studynook.app" className="text-muted-foreground hover:underline">support@studynook.app</a>
               </div>
             </div>
-            <div className="flex items-start gap-2.5">
+            <div className="flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-300 hover:bg-secondary/60">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10" aria-hidden>📍</span>
               <div>
                 <p className="font-semibold">Service Area</p>
@@ -178,6 +186,7 @@ export default async function ContactPage() {
           </div>
         </Card>
       </div>
+      </Reveal>
       </div>
     </main>
   );

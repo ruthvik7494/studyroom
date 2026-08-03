@@ -4,18 +4,21 @@ import { signOut } from '@/features/auth/actions';
 import { DesktopNav, MobileMenu } from '@/components/nav-links';
 import { AccountAvatarLink } from '@/components/account-avatar-link';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { HeaderShell } from '@/components/header-shell';
 
 /** App header. Server component: reads the session and shows the right links —
  * same role-based nav items as before (Saved for any signed-in user, My
  * centres for owners, Admin for admins). Active-state highlighting and the
  * mobile hamburger menu are delegated to a small client nav component, since
- * both need client-only APIs (usePathname, useState). */
+ * both need client-only APIs (usePathname, useState). The scroll-linked
+ * height shrink lives in <HeaderShell>, a thin client wrapper around this
+ * otherwise server-rendered row. */
 export async function SiteHeader() {
   const user = await getSessionUser();
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
-      <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
+      <HeaderShell>
         {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-display text-sm font-bold text-primary-foreground">S</span>
@@ -58,7 +61,7 @@ export async function SiteHeader() {
           <ThemeToggle />
           <MobileMenu role={user?.role ?? null} email={user?.email ?? null} signOutAction={signOut} />
         </div>
-      </div>
+      </HeaderShell>
     </header>
   );
 }

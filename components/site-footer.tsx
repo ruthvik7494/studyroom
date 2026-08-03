@@ -26,6 +26,15 @@ const SOCIAL_LINKS = [
   ) },
 ];
 
+/**
+ * Underline grows in from the left on hover (a scaled-up pseudo-element,
+ * not a layout-affecting border) — pure CSS, so the footer can stay a
+ * server component. "w-fit" keeps the underline no wider than the text.
+ */
+const footerLinkClass =
+  'relative inline-block w-fit transition-colors duration-300 hover:text-white ' +
+  "after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-white after:transition-transform after:duration-300 after:content-[''] hover:after:scale-x-100";
+
 export function SiteFooter() {
   const year = new Date().getFullYear();
 
@@ -54,31 +63,31 @@ export function SiteFooter() {
             <nav aria-label="Explore">
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#F7F5F0]/40">Explore</h3>
               <ul className="space-y-3.5 text-sm text-[#F7F5F0]/80">
-                <li><Link href="/centres" className="hover:text-white">All study spaces</Link></li>
-                <li><Link href="/about" className="hover:text-white">How it works</Link></li>
+                <li><Link href="/centres" className={footerLinkClass}>All study spaces</Link></li>
+                <li><Link href="/about" className={footerLinkClass}>How it works</Link></li>
               </ul>
             </nav>
             <nav aria-label="For Students">
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#F7F5F0]/40">For Students</h3>
               <ul className="space-y-3.5 text-sm text-[#F7F5F0]/80">
-                <li><Link href="/saved" className="hover:text-white">Saved centres</Link></li>
-                <li><Link href="/login" className="hover:text-white">Sign in</Link></li>
+                <li><Link href="/saved" className={footerLinkClass}>Saved centres</Link></li>
+                <li><Link href="/login" className={footerLinkClass}>Sign in</Link></li>
               </ul>
             </nav>
             <nav aria-label="For Owners">
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#F7F5F0]/40">For Owners</h3>
               <ul className="space-y-3.5 text-sm text-[#F7F5F0]/80">
-                <li><Link href="/owner/centres/new" className="hover:text-white">List your centre</Link></li>
-                <li><Link href="/login" className="hover:text-white">Owner login</Link></li>
+                <li><Link href="/owner/centres/new" className={footerLinkClass}>List your centre</Link></li>
+                <li><Link href="/login" className={footerLinkClass}>Owner login</Link></li>
               </ul>
             </nav>
             <nav aria-label="Company">
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#F7F5F0]/40">Company</h3>
               <ul className="space-y-3.5 text-sm text-[#F7F5F0]/80">
-                <li><Link href="/about" className="hover:text-white">About Us</Link></li>
-                <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
-                <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-white">Terms &amp; Conditions</Link></li>
+                <li><Link href="/about" className={footerLinkClass}>About Us</Link></li>
+                <li><Link href="/contact" className={footerLinkClass}>Contact</Link></li>
+                <li><Link href="/privacy" className={footerLinkClass}>Privacy Policy</Link></li>
+                <li><Link href="/terms" className={footerLinkClass}>Terms &amp; Conditions</Link></li>
               </ul>
             </nav>
           </div>
@@ -93,7 +102,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-[#F7F5F0]/80 transition-colors hover:border-white/30 hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-[#F7F5F0]/80 transition-all duration-300 hover:-translate-y-0.5 hover:scale-110 hover:border-white/30 hover:text-white"
                 >
                   {s.icon}
                 </a>

@@ -18,6 +18,8 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Reveal } from '@/components/motion/reveal';
+import { StaggerGroup, StaggerItem } from '@/components/motion/stagger';
 import { PageTocNav } from '@/components/page-toc-nav';
 import { PrintPageButton } from '@/components/print-page-button';
 
@@ -224,7 +226,8 @@ export default function TermsPage() {
           {/* Sections */}
           <div className="space-y-5 text-muted-foreground">
             {SECTIONS.map((s, i) => (
-              <Card key={s.id} id={s.id} className="scroll-mt-24 p-6">
+              <Reveal key={s.id} id={s.id} margin="-100px" className="scroll-mt-24">
+              <Card className="p-6">
                 <div className="flex gap-4">
                   <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <s.icon className="h-5 w-5 text-primary" />
@@ -238,13 +241,14 @@ export default function TermsPage() {
                   </div>
                 </div>
               </Card>
+              </Reveal>
             ))}
           </div>
         </div>
 
         {/* Trust strip */}
-        <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          <div className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-5">
+        <StaggerGroup className="mt-10 grid gap-4 sm:grid-cols-3">
+          <StaggerItem className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-5">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
               <Lock className="h-5 w-5 text-primary" />
             </span>
@@ -255,8 +259,8 @@ export default function TermsPage() {
                 at all times.
               </p>
             </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-5">
+          </StaggerItem>
+          <StaggerItem className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-5">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
               <CheckCircle2 className="h-5 w-5 text-primary" />
             </span>
@@ -267,8 +271,8 @@ export default function TermsPage() {
                 everyone.
               </p>
             </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-5">
+          </StaggerItem>
+          <StaggerItem className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-5">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
               <Users className="h-5 w-5 text-primary" />
             </span>
@@ -278,11 +282,11 @@ export default function TermsPage() {
                 These terms apply to all users whether you are a student or a study space owner.
               </p>
             </div>
-          </div>
-        </div>
+          </StaggerItem>
+        </StaggerGroup>
 
         {/* FAQ */}
-        <div className="mt-12">
+        <Reveal className="mt-12">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-xl font-bold text-foreground">Frequently asked questions</h2>
             <p className="text-sm text-muted-foreground">
@@ -303,7 +307,7 @@ export default function TermsPage() {
               </details>
             ))}
           </div>
-        </div>
+        </Reveal>
       </section>
     </main>
   );
