@@ -8,6 +8,7 @@ import { bookingSchema, cancelSchema, rescheduleSchema, waitlistSchema, availabi
 import { priceForPeriod, PERIOD_DAYS } from './pricing';
 import { notifyBooking } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
+import { rateLimit } from '@/lib/rate-limit';
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
@@ -70,6 +71,16 @@ export async function getResourceAvailability(raw: unknown) {
 export async function createBooking(raw: unknown): Promise<Result<{ id: string; isGroup: boolean }>> {
   return action(bookingSchema, raw, async (input) => {
     const user = await requireUser();
+
+    // Rate limit booking attempts per user — not a double-booking concern
+    // (book_seat/book_seat_multi already serialize that correctly via row
+    // locking), just a guard against rapid-fire spam/load from one account.
+    // Keyed by user id rather than IP: more precise for an authenticated
+    // action, and doesn't unfairly limit other students sharing a network.
+    if (!(await rateLimit(`booking:${user.id}`, 10, 60_000)).success) {
+      throw new ActionError('RATE_LIMITED', 'Too many booking attempts. Please wait a moment and try again.');
+    }
+
     const db = await createClient();
 
     const { data: resource } = await db
