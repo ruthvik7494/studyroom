@@ -43,6 +43,7 @@ async function matchingCentreIds(db: DB, q: string | undefined): Promise<string[
  */
 export interface PaginatedCentreSearch {
   q?: string;
+  area?: string;
   minPrice?: number;
   maxPrice?: number;
   spaceType?: 'study_hall' | 'reading_room' | 'coworking' | 'both';
@@ -76,6 +77,7 @@ export async function searchCentresPaginated(db: DB, params: PaginatedCentreSear
   }
   if (params.spaceType) query = query.eq('space_type', params.spaceType);
   if (params.womenSafe) query = query.eq('women_safe_verified', true);
+  if (params.area) query = query.eq('area', params.area);
 
   const { data, error } = await query;
   if (error) throw error;

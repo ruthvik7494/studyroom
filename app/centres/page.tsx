@@ -14,7 +14,16 @@ import { getSessionUser } from '@/lib/auth/rbac';
 import { cn } from '@/lib/utils';
 import { getServiceArea } from '@/lib/service-area';
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const { area } = await searchParams;
+  const areaName = typeof area === 'string' && area.trim() ? area.trim() : undefined;
+  if (areaName) {
+    return {
+      title: `Study spaces in ${areaName}`,
+      description: 'Browse verified study halls, reading rooms and coworking seats with live availability, ratings and prices.',
+      alternates: { canonical: '/centres' },
+    };
+  }
   const db = await createClient();
   const { city } = await getServiceArea(db);
   return {
@@ -61,6 +70,7 @@ export default async function CentresPage({ searchParams }: PageProps) {
   const baseParams = () => {
     const params = new URLSearchParams();
     if (filters.q) params.set('q', filters.q);
+    if (filters.area) params.set('area', filters.area);
     if (filters.minPrice !== undefined) params.set('minPrice', String(filters.minPrice));
     if (filters.maxPrice !== undefined) params.set('maxPrice', String(filters.maxPrice));
     if (filters.spaceType) params.set('spaceType', filters.spaceType);
@@ -87,7 +97,7 @@ export default async function CentresPage({ searchParams }: PageProps) {
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="font-display text-2xl font-bold">Study spaces{serviceArea.city ? ` in ${serviceArea.city}` : ''}</h1>
+            <h1 className="font-display text-2xl font-bold">Study spaces{filters.area ? ` in ${filters.area}` : serviceArea.city ? ` in ${serviceArea.city}` : ''}</h1>
             <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{result.total} centre{result.total === 1 ? '' : 's'} found</span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">Live availability, verified reviews &amp; transparent prices.</p>

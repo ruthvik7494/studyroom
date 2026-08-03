@@ -20,6 +20,7 @@ export function CentreSearchBar({ filters }: { filters: CentrePaginatedSearch })
   return (
     <form action="/centres" method="get" className="mb-5 rounded-xl border bg-card p-4">
       <input type="hidden" name="view" value={filters.view} />
+      {filters.area && <input type="hidden" name="area" value={filters.area} />}
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[220px] flex-1">
@@ -59,19 +60,19 @@ export function CentreSearchBar({ filters }: { filters: CentrePaginatedSearch })
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-xs font-medium text-muted-foreground">Popular filters:</span>
         <a
-          href={`/centres?${new URLSearchParams({ ...(filters.q ? { q: filters.q } : {}), womenSafe: 'true', sort: filters.sort, view: filters.view }).toString()}`}
+          href={`/centres?${new URLSearchParams({ ...(filters.q ? { q: filters.q } : {}), ...(filters.area ? { area: filters.area } : {}), womenSafe: 'true', sort: filters.sort, view: filters.view }).toString()}`}
           className="rounded-full border px-3 py-1 text-xs font-semibold text-brand-plum hover:bg-brand-plum/5"
         >
           🛡 Women safe
         </a>
         <a
-          href={`/centres?${new URLSearchParams({ ...(filters.q ? { q: filters.q } : {}), spaceType: 'study_hall', sort: filters.sort, view: filters.view }).toString()}`}
+          href={`/centres?${new URLSearchParams({ ...(filters.q ? { q: filters.q } : {}), ...(filters.area ? { area: filters.area } : {}), spaceType: 'study_hall', sort: filters.sort, view: filters.view }).toString()}`}
           className="rounded-full border px-3 py-1 text-xs font-semibold hover:bg-secondary"
         >
           Study Hall
         </a>
         <a
-          href={`/centres?${new URLSearchParams({ ...(filters.q ? { q: filters.q } : {}), spaceType: 'coworking', sort: filters.sort, view: filters.view }).toString()}`}
+          href={`/centres?${new URLSearchParams({ ...(filters.q ? { q: filters.q } : {}), ...(filters.area ? { area: filters.area } : {}), spaceType: 'coworking', sort: filters.sort, view: filters.view }).toString()}`}
           className="rounded-full border px-3 py-1 text-xs font-semibold hover:bg-secondary"
         >
           Coworking
