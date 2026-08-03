@@ -1,5 +1,6 @@
 import 'server-only';
 import type { Database } from '@/types/database.types';
+import { admin as adminDb } from '@/lib/supabase/admin';
 
 type DB = Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>;
 
@@ -64,7 +65,15 @@ export async function getOwnerBookings(
   const centreIds = (centres ?? []).map((c) => c.id);
   if (centreIds.length === 0) return [];
 
-  let query = db
+  // Read via the service-role client, not the owner's own session: RLS on
+  // `profiles` only lets a user read their OWN row (or an admin read any
+  // row) — an owner has no policy letting them read a *student's* profile,
+  // so this join to student:user_id(full_name) silently comes back null
+  // under the owner's session, and the UI fell back to "Guest". The centre
+  // scoping above (owner_id = ownerId, verified server-side) is what makes
+  // this safe: an owner only ever sees bookings at centres they actually
+  // own, same rows they're already entitled to see.
+  let query = adminDb
     .from('bookings')
     .select('id, status, payment, amount, period, starts_at, centre:centre_id(name), student:user_id(full_name)')
     .in('centre_id', centreIds)
@@ -100,7 +109,10 @@ export async function getOwnerCustomers(db: DB, ownerId: string, limit = 100): P
   const centreIds = (centres ?? []).map((c) => c.id);
   if (centreIds.length === 0) return [];
 
-  const { data: rows } = await db
+  // Same reasoning as getOwnerBookings above: the join to the student's
+  // profile needs the service-role client, since an owner's own session has
+  // no RLS grant to read another user's profile row.
+  const { data: rows } = await adminDb
     .from('bookings')
     .select('user_id, amount, payment, starts_at, student:user_id(full_name)')
     .in('centre_id', centreIds)
