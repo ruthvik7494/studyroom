@@ -7,8 +7,8 @@ import { EASE_OUT, DURATION } from '@/lib/motion';
 
 interface IconCardProps {
   icon: ReactNode;
-  title: string;
-  body: string;
+  title: ReactNode;
+  body: ReactNode;
 }
 
 /**

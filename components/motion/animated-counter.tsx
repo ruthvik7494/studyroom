@@ -3,13 +3,13 @@ import { useEffect, useRef } from 'react';
 import { useInView, useMotionValue, useSpring } from 'framer-motion';
 
 interface AnimatedCounterProps {
-  /** e.g. "120+", "4.5/5", "500+", "—" — a non-numeric value renders as static text. */
-  value: string;
+  /** e.g. "120+", "4.5/5", "500+", "—" — a non-numeric or missing value renders as static (empty) text. */
+  value: string | undefined;
   className?: string;
 }
 
 /** Counts up to the numeric part of `value` once, the first time it scrolls into view. No bounce (bounce: 0) — a smooth settle, not a spring wobble. */
-export function AnimatedCounter({ value, className }: AnimatedCounterProps) {
+export function AnimatedCounter({ value = '', className }: AnimatedCounterProps) {
   const containerRef = useRef<HTMLParagraphElement>(null);
   const digitsRef = useRef<HTMLSpanElement>(null);
   const inView = useInView(containerRef, { once: true, margin: '-40px' });
