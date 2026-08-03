@@ -107,7 +107,7 @@ export default async function AccountPage() {
   const recentActivity = (bookings ?? []).slice(0, 5);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="max-w-3xl">
       {/* Personalized welcome */}
       <h1 className="font-display text-2xl font-bold">
         Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''} 👋
@@ -340,6 +340,6 @@ export default async function AccountPage() {
           </div>
         )}
       </section>
-    </main>
+    </div>
   );
 }

@@ -32,7 +32,7 @@ export default async function InvoicePage({
     iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10 print:py-0">
+    <div className="mx-auto max-w-2xl px-6 py-10 print:py-0">
       {/* Print button — hidden when printing */}
       <div className="mb-6 flex justify-end print:hidden">
         <PrintButton />
@@ -118,7 +118,7 @@ export default async function InvoicePage({
           </p>
         </footer>
       </article>
-    </main>
+    </div>
   );
 }
 

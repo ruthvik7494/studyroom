@@ -17,7 +17,7 @@ export interface SidebarUser {
 }
 
 function isActive(pathname: string, href: string): boolean {
-  if (href === '/admin' || href === '/owner') return pathname === href;
+  if (href === '/admin' || href === '/owner' || href === '/account') return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -90,12 +90,12 @@ export function DashboardShell({
   return (
     <div className="min-h-screen bg-secondary/20 lg:flex">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-card lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-card print:hidden lg:flex">
         {nav}
       </aside>
 
       {/* Mobile/tablet top bar + off-canvas drawer */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b bg-card px-4 py-3 lg:hidden">
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b bg-card px-4 py-3 print:hidden lg:hidden">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-display text-sm font-bold text-primary-foreground">S</span>
           <p className="font-display text-sm font-extrabold">StudyNook <span className="font-normal text-muted-foreground">· {brandLabel}</span></p>

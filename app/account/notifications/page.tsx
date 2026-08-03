@@ -28,7 +28,7 @@ export default async function NotificationsPage() {
   const unread = (notifications ?? []).filter((n) => !n.read_at).length;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-8">
+    <div className="max-w-2xl">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-xl font-bold">Notifications</h1>
@@ -69,6 +69,6 @@ export default async function NotificationsPage() {
           })
         )}
       </div>
-    </main>
+    </div>
   );
 }

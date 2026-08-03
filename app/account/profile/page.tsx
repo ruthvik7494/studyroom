@@ -17,7 +17,7 @@ export default async function ProfilePage() {
     .maybeSingle();
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <div className="max-w-3xl">
       <h1 className="font-display text-2xl font-bold">Your profile</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         This is the name study centres see on your bookings.
@@ -25,6 +25,6 @@ export default async function ProfilePage() {
       <Card className="mt-5 p-5">
         <ProfileForm defaults={{ fullName: profile?.full_name ?? '', phone: profile?.phone ?? '' }} />
       </Card>
-    </main>
+    </div>
   );
 }
