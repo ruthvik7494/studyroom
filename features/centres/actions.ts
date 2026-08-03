@@ -175,6 +175,7 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
     if (Object.keys(patch).length) {
       const { error } = await db.from('centres').update(patch as never).eq('id', centreId);
       if (error) throw error;
+      await logAudit('centre.updated', 'centre', centreId, { by: user.id, fieldsChanged: Object.keys(patch) });
     }
 
     // Pricing/seats live on the centre's resource row, not on centres itself.
@@ -223,6 +224,7 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
         const { error: amenityErr } = await db.from('centre_amenities').insert(rows);
         if (amenityErr) throw amenityErr;
       }
+      await logAudit('centre.amenities_updated', 'centre', centreId, { by: user.id, amenityCount: fields.amenityIds.length });
     }
 
     // Weekly hours: full replace (7 rows, one per day of week).
@@ -237,6 +239,7 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
       }));
       const { error: hoursErr } = await db.from('centre_hours').insert(hourRows);
       if (hoursErr) throw hoursErr;
+      await logAudit('centre.hours_updated', 'centre', centreId, { by: user.id });
     }
 
     revalidatePath('/owner/centres');

@@ -12,8 +12,8 @@ export default async function NewListingPage() {
   const { data: amenities } = await db.from('amenities').select('id, label, icon').order('sort_order');
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="max-w-3xl">
       <ListingWizard mode="create" amenities={amenities ?? []} intro="Add your study space. It stays a draft until you submit it for review." />
-    </main>
+    </div>
   );
 }

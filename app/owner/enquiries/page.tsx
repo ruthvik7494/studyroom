@@ -19,7 +19,7 @@ export default async function OwnerEnquiriesPage() {
     .limit(100);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="max-w-3xl">
       <h1 className="font-display text-2xl font-bold">Enquiries</h1>
       <p className="mt-1 text-sm text-muted-foreground">Messages from students interested in your centres.</p>
 
@@ -43,6 +43,6 @@ export default async function OwnerEnquiriesPage() {
           })}
         </div>
       )}
-    </main>
+    </div>
   );
 }

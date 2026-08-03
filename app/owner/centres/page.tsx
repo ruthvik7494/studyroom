@@ -27,7 +27,7 @@ export default async function OwnerCentresPage() {
   const list = centres ?? [];
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="max-w-3xl">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">My listings</h1>
         <Link href="/owner/centres/new" className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">+ New listing</Link>
@@ -59,6 +59,6 @@ export default async function OwnerCentresPage() {
           ))}
         </div>
       )}
-    </main>
+    </div>
   );
 }

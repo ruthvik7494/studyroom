@@ -36,7 +36,7 @@ export default async function OwnerRefundsPage() {
   });
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-8">
+    <div className="max-w-5xl">
       <h1 className="font-display text-2xl font-bold">Refund requests</h1>
       <p className="mt-1 text-sm text-muted-foreground">Review and process refund requests for your centres.</p>
 
@@ -61,6 +61,6 @@ export default async function OwnerRefundsPage() {
           );
         })}
       </div>
-    </main>
+    </div>
   );
 }

@@ -16,7 +16,7 @@ export default async function OwnerCustomersPage() {
   const totalSpend = customers.reduce((s, c) => s + c.totalSpend, 0);
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-8">
+    <div className="max-w-4xl">
       <h1 className="font-display text-xl font-bold">Customers</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Everyone who has booked across your centres, by lifetime spend.
@@ -56,6 +56,6 @@ export default async function OwnerCustomersPage() {
           </table>
         )}
       </Card>
-    </main>
+    </div>
   );
 }

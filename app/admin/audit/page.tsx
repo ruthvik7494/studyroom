@@ -30,7 +30,7 @@ export default async function AdminAuditPage() {
                   <TableCell><Badge variant="secondary">{e.action}</Badge></TableCell>
                   <TableCell className="text-sm">{e.entity_type}<span className="text-muted-foreground"> · {e.entity_id?.slice(0, 8)}</span></TableCell>
                   <TableCell className="text-sm">{e.actor?.full_name ?? 'system'}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{new Date(e.created_at).toLocaleString('en-IN')}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{new Date(e.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

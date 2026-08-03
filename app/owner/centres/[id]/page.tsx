@@ -42,7 +42,7 @@ export default async function EditListingPage({ params }: PageProps) {
   });
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="max-w-3xl">
       <h1 className="mb-6 font-display text-2xl font-bold">Edit “{centre.name}”</h1>
       <ListingWizard
         mode="edit"
@@ -91,6 +91,6 @@ export default async function EditListingPage({ params }: PageProps) {
           googleBusiness: social.googleBusiness ?? '',
         }}
       />
-    </main>
+    </div>
   );
 }

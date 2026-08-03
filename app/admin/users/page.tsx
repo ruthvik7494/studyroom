@@ -42,7 +42,7 @@ export default async function AdminUsersPage({
   const counts = { total: users?.length ?? 0 };
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-8">
+    <div className="max-w-4xl">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-display text-xl font-bold">Users</h1>
         <a
@@ -122,6 +122,6 @@ export default async function AdminUsersPage({
           </table>
         )}
       </Card>
-    </main>
+    </div>
   );
 }

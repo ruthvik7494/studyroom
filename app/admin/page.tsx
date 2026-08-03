@@ -9,8 +9,8 @@ import { Sparkline } from '@/components/ui/sparkline';
 const CARDS = [
   { key: 'pendingCentres', label: 'Listings awaiting approval', href: '/admin/centres', bg: 'bg-violet-100', fg: 'text-violet-600', icon: '📋' },
   { key: 'openReports', label: 'Open review reports', href: '/admin/reviews', bg: 'bg-amber-100', fg: 'text-amber-600', icon: '📝' },
-  { key: 'pendingClaims', label: 'Pending claims', href: '/admin/centres', bg: 'bg-rose-100', fg: 'text-rose-600', icon: '🛡️' },
-  { key: 'newEnquiries', label: 'New enquiries', href: '/admin', bg: 'bg-emerald-100', fg: 'text-emerald-600', icon: '✉️' },
+  { key: 'pendingClaims', label: 'Pending claims', href: '/admin/claims', bg: 'bg-rose-100', fg: 'text-rose-600', icon: '🛡️' },
+  { key: 'newEnquiries', label: 'New enquiries', href: '/admin/enquiries', bg: 'bg-emerald-100', fg: 'text-emerald-600', icon: '✉️' },
 ] as const;
 
 const ACTIVITY_LABEL: Record<string, string> = {
@@ -32,6 +32,7 @@ const QUICK_ACTIONS = [
   { href: '/admin/users', label: 'Manage Users', icon: '👥' },
   { href: '/admin/bookings', label: 'View All Bookings', icon: '📅' },
   { href: '/admin/claims', label: 'Open Claims', icon: '🛡️' },
+  { href: '/admin/enquiries', label: 'View Enquiries', icon: '✉️' },
   { href: '/admin/audit', label: 'View Audit Log', icon: '📄' },
 ] as const;
 

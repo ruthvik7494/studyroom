@@ -31,7 +31,7 @@ export default async function OwnerBookingsPage({
   for (const r of rows) if (r.student?.full_name) customers.set(r.student.full_name, r.student.full_name);
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-8">
+    <div className="max-w-5xl">
       <h1 className="font-display text-xl font-bold">Bookings</h1>
       <p className="mt-1 text-sm text-muted-foreground">Search, filter, manage and export your bookings.</p>
 
@@ -77,6 +77,6 @@ export default async function OwnerBookingsPage({
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
   );
 }

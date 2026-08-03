@@ -57,7 +57,7 @@ export default async function OwnerCalendarPage({
   for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d });
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-8">
+    <div className="max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-xl font-bold">Calendar</h1>
@@ -105,6 +105,6 @@ export default async function OwnerCalendarPage({
         </div>
         </div>
       </Card>
-    </main>
+    </div>
   );
 }
