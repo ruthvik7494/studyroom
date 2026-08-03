@@ -18,6 +18,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { PageTocNav } from '@/components/page-toc-nav';
 import { PrintPageButton } from '@/components/print-page-button';
 
 export const metadata: Metadata = {
@@ -203,28 +204,7 @@ export default function TermsPage() {
           {/* Sidebar */}
           <aside className="lg:sticky lg:top-20 lg:h-fit">
             <p className="text-sm font-bold">On this page</p>
-            <nav className="mt-3 flex flex-col gap-1 border-l">
-              {SECTIONS.map((s, i) => (
-                <a
-                  key={s.id}
-                  href={`#${s.id}`}
-                  className={`-ml-px flex items-center gap-2 border-l-2 px-3 py-1.5 text-sm transition-colors ${
-                    i === 0
-                      ? 'border-primary font-semibold text-primary'
-                      : 'border-transparent text-muted-foreground hover:border-secondary hover:text-foreground'
-                  }`}
-                >
-                  <span
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                      i === 0 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  {s.title}
-                </a>
-              ))}
-            </nav>
+            <PageTocNav sections={SECTIONS.map((s) => ({ id: s.id, title: s.title }))} numbered />
 
             <Card className="mt-6 flex flex-col items-center gap-2 border-none bg-secondary/40 p-5 text-center">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">

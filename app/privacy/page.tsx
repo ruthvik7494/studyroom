@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { PageTocNav } from '@/components/page-toc-nav';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
@@ -176,21 +177,7 @@ export default function PrivacyPage() {
           {/* Sidebar */}
           <aside className="lg:sticky lg:top-20 lg:h-fit">
             <p className="text-sm font-bold">On this page</p>
-            <nav className="mt-3 flex flex-col gap-1 border-l">
-              {SECTIONS.map((s, i) => (
-                <a
-                  key={s.id}
-                  href={`#${s.id}`}
-                  className={`-ml-px border-l-2 px-3 py-1.5 text-sm transition-colors ${
-                    i === 0
-                      ? 'border-primary font-semibold text-primary'
-                      : 'border-transparent text-muted-foreground hover:border-secondary hover:text-foreground'
-                  }`}
-                >
-                  {s.title}
-                </a>
-              ))}
-            </nav>
+            <PageTocNav sections={SECTIONS.map((s) => ({ id: s.id, title: s.title }))} />
 
             <Card className="mt-6 flex flex-col items-center gap-2 border-none bg-secondary/40 p-5 text-center">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
