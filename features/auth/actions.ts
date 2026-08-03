@@ -3,12 +3,13 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
-import { requireUser } from '@/lib/auth/rbac';
+import { admin as adminDb } from '@/lib/supabase/admin';
+import { requireUser, requireRole } from '@/lib/auth/rbac';
 import { action } from '@/lib/auth/action';
 import { rateLimit, clientKey } from '@/lib/rate-limit';
 import { logAudit } from '@/lib/audit';
-import { ActionError, type Result, err } from '@/lib/result';
-import { credentialsSchema, emailOnlySchema, newPasswordSchema, roleSchema, signUpSchema, profileSchema } from './schema';
+import { ActionError, type Result, err, ok } from '@/lib/result';
+import { credentialsSchema, emailOnlySchema, newPasswordSchema, roleSchema, signUpSchema, profileSchema, ownerProfileSchema } from './schema';
 
 async function siteUrl(): Promise<string> {
   return process.env.NEXT_PUBLIC_SITE_URL ?? `https://${(await headers()).get('host')}`;
@@ -173,6 +174,56 @@ export async function updateProfile(raw: unknown): Promise<Result<{ ok: true }>>
     revalidatePath('/', 'layout');
     return { ok: true as const };
   });
+}
+
+/**
+ * Owner-facing public profile (bio + public contact email) shown on the
+ * "Centre Owner" card on every one of their centre listing pages.
+ */
+export async function updateOwnerProfile(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(ownerProfileSchema, raw, async (input) => {
+    const user = await requireRole('owner');
+    const db = await createClient();
+    const { error } = await db
+      .from('profiles')
+      .update({ bio: input.bio || null, public_email: input.publicEmail || null })
+      .eq('id', user.id);
+    if (error) throw new ActionError('INTERNAL', 'Could not save your public profile. Try again.');
+    revalidatePath('/owner/settings');
+    return { ok: true as const };
+  });
+}
+
+const OWNER_AVATAR_ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+
+/**
+ * Upload/replace the owner's profile photo. Routed through the service-role
+ * client (same trusted-upload pattern as uploadCentreImage in
+ * features/centres/actions.ts) since a direct browser-session write to
+ * Storage hits an RLS rejection there too.
+ */
+export async function uploadOwnerAvatar(formData: FormData): Promise<Result<{ url: string }>> {
+  const user = await requireRole('owner');
+
+  const file = formData.get('file');
+  if (!(file instanceof File)) return err('VALIDATION', 'No file provided.');
+  if (!OWNER_AVATAR_ALLOWED_MIME.includes(file.type)) {
+    return err('VALIDATION', `${file.type || 'That file type'} isn't supported — use JPEG, PNG, WebP, or AVIF.`);
+  }
+  if (file.size > 5 * 1024 * 1024) return err('VALIDATION', 'Image must be under 5 MB.');
+
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const path = `avatars/${user.id}/${crypto.randomUUID()}.${ext}`;
+
+  const { error: upErr } = await adminDb.storage.from('listing-images').upload(path, file, { upsert: false, contentType: file.type });
+  if (upErr) return err('INTERNAL', `Upload failed: ${upErr.message}`);
+
+  const { data: pub } = adminDb.storage.from('listing-images').getPublicUrl(path);
+  const { error: updErr } = await adminDb.from('profiles').update({ avatar_url: pub.publicUrl }).eq('id', user.id);
+  if (updErr) return err('INTERNAL', updErr.message);
+
+  revalidatePath('/owner/settings');
+  return ok({ url: pub.publicUrl });
 }
 
 /** Sign out and return to home. */

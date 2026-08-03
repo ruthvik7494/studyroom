@@ -42,6 +42,18 @@ export const profileSchema = z.object({
 });
 export type ProfileInput = z.infer<typeof profileSchema>;
 
+/**
+ * Owner-facing public profile — shown on the owner's centre listing pages
+ * (see the "Centre Owner" card on /centres/[slug]). Separate from
+ * profileSchema (name/phone) since only owners have this; name/phone are
+ * still reused as-is from the shared profile.
+ */
+export const ownerProfileSchema = z.object({
+  bio: z.string().trim().max(600, 'Keep it under 600 characters').optional().or(z.literal('')),
+  publicEmail: z.string().trim().email('Enter a valid email').max(120).optional().or(z.literal('')),
+});
+export type OwnerProfileInput = z.infer<typeof ownerProfileSchema>;
+
 export const emailOnlySchema = z.object({ email: z.string().trim().email('Enter a valid email') });
 export type EmailOnly = z.infer<typeof emailOnlySchema>;
 

@@ -2,19 +2,22 @@ import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/auth/rbac';
 import { Card } from '@/components/ui/card';
 import { ProfileForm } from '@/features/auth/components/profile-form';
+import { OwnerProfileForm } from '@/features/auth/components/owner-profile-form';
 import { UpdatePasswordForm } from '@/features/auth/components/update-password-form';
 
 /**
  * Shared between /admin/settings and /owner/settings — same personal-detail
  * and password-change capability students already have via /account/profile,
  * just placed here since admin/owner have their own sidebar area instead.
+ * Owners additionally get a "public profile" card (photo, about, public
+ * email) shown to students on their centre listing pages.
  */
 export async function SettingsPageContent() {
   const user = await requireUser();
   const db = await createClient();
 
   const [{ data: profile }, { data: authUser }] = await Promise.all([
-    db.from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle(),
+    db.from('profiles').select('full_name, phone, avatar_url, bio, public_email').eq('id', user.id).maybeSingle(),
     db.auth.getUser(),
   ]);
 
@@ -41,6 +44,20 @@ export async function SettingsPageContent() {
           <ProfileForm defaults={{ fullName: profile?.full_name ?? '', phone: profile?.phone ?? '' }} />
         </div>
       </Card>
+
+      {user.role === 'owner' && (
+        <Card className="p-5">
+          <h2 className="font-display font-semibold">Public profile</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Shown to students on the &quot;Centre Owner&quot; card on your listing pages.</p>
+          <div className="mt-4">
+            <OwnerProfileForm
+              defaults={{ bio: profile?.bio ?? '', publicEmail: profile?.public_email ?? '' }}
+              avatarUrl={profile?.avatar_url ?? null}
+              fullName={profile?.full_name ?? ''}
+            />
+          </div>
+        </Card>
+      )}
 
       <Card className="p-5">
         <h2 className="font-display font-semibold">{hasPasswordIdentity ? 'Change password' : 'Set a password'}</h2>

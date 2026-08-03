@@ -88,7 +88,7 @@ export default async function CentreDetailPage({ params }: PageProps) {
   const isPublic = centre.status === 'approved';
   const canPreview = !isPublic && (viewer?.id === centre.owner_id || viewer?.role === 'admin');
   const { data: ownerProfile } = centre.owner_id
-    ? await admin.from('profiles').select('full_name, avatar_url').eq('id', centre.owner_id).maybeSingle()
+    ? await admin.from('profiles').select('full_name, avatar_url, bio, phone, public_email').eq('id', centre.owner_id).maybeSingle()
     : { data: null };
 
   // Weekly opening hours — built from the real per-day schedule the owner
@@ -506,6 +506,23 @@ export default async function CentreDetailPage({ params }: PageProps) {
                   )}
                   <p className="font-semibold">{ownerProfile.full_name}</p>
                 </div>
+                {ownerProfile.bio && (
+                  <p className="mt-3 text-sm text-muted-foreground">{ownerProfile.bio}</p>
+                )}
+                {(ownerProfile.phone || ownerProfile.public_email) && (
+                  <div className="mt-3 space-y-1.5 border-t pt-3 text-sm">
+                    {ownerProfile.phone && (
+                      <a href={`tel:${ownerProfile.phone}`} className="flex items-center gap-2 text-primary hover:underline">
+                        <span aria-hidden>📞</span> {ownerProfile.phone}
+                      </a>
+                    )}
+                    {ownerProfile.public_email && (
+                      <a href={`mailto:${ownerProfile.public_email}`} className="flex items-center gap-2 text-primary hover:underline">
+                        <span aria-hidden>✉️</span> {ownerProfile.public_email}
+                      </a>
+                    )}
+                  </div>
+                )}
               </Card>
             )}
 
