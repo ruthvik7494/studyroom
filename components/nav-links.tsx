@@ -97,7 +97,7 @@ export function MobileMenu({ role, email, signOutAction }: MobileMenuProps) {
           <div className="mt-3 border-t pt-3">
             {email ? (
               <div className="flex items-center justify-between gap-3 px-1">
-                {!pathname.startsWith('/admin') && !pathname.startsWith('/owner') && (
+                {role !== 'owner' && role !== 'admin' && (
                   <Link href="/account" className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
                       {email.charAt(0).toUpperCase()}

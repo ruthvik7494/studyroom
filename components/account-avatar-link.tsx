@@ -1,15 +1,13 @@
-'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
-/** Just the account-avatar icon that links to /account — hidden only on
- * /admin and /owner routes, where it's confusing next to their own
- * sidebar's account card and sign-out (which already covers the same
- * need). Shown as normal everywhere else, including for students. */
-export function AccountAvatarLink({ initial }: { initial: string }) {
-  const pathname = usePathname();
-  const hide = pathname.startsWith('/admin') || pathname.startsWith('/owner');
-  if (hide) return null;
+/** Just the account-avatar icon that links to /account (the student
+ * dashboard) — hidden for owner/admin accounts everywhere, on every page,
+ * since they have their own role-specific dashboards and /account isn't
+ * really "their" account home. This is a role check, not a route check —
+ * it must stay hidden even after navigating away from /admin or /owner to
+ * some other page like the homepage. */
+export function AccountAvatarLink({ initial, role }: { initial: string; role: 'student' | 'owner' | 'admin' }) {
+  if (role === 'owner' || role === 'admin') return null;
 
   return (
     <Link href="/account" className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">

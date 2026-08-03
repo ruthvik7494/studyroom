@@ -35,7 +35,7 @@ export async function SiteHeader() {
         <div className="hidden shrink-0 items-center gap-3 md:flex">
           {user ? (
             <>
-              <AccountAvatarLink initial={(user.email ?? 'U').charAt(0).toUpperCase()} />
+              <AccountAvatarLink initial={(user.email ?? 'U').charAt(0).toUpperCase()} role={user.role} />
               <form action={signOut}>
                 <button className="rounded-full border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground">
                   Sign out
