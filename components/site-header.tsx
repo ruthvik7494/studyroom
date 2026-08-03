@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth/rbac';
 import { signOut } from '@/features/auth/actions';
 import { DesktopNav, MobileMenu } from '@/components/nav-links';
+import { AccountAvatarLink } from '@/components/account-avatar-link';
 
 /** App header. Server component: reads the session and shows the right links —
  * same role-based nav items as before (Saved for any signed-in user, My
@@ -34,11 +35,7 @@ export async function SiteHeader() {
         <div className="hidden shrink-0 items-center gap-3 md:flex">
           {user ? (
             <>
-              <Link href="/account" className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
-                  {(user.email ?? 'U').charAt(0).toUpperCase()}
-                </span>
-              </Link>
+              <AccountAvatarLink initial={(user.email ?? 'U').charAt(0).toUpperCase()} />
               <form action={signOut}>
                 <button className="rounded-full border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground">
                   Sign out
