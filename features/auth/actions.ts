@@ -57,6 +57,12 @@ export async function signUp(raw: unknown): Promise<Result<{ needsVerification: 
       options: {
         // handle_new_user() reads raw_user_meta_data->>'full_name' into profiles.
         data: { full_name: input.fullName },
+        // NOTE: the actual link the user receives is controlled by the
+        // "Confirm signup" template in Supabase Dashboard > Authentication >
+        // Email Templates, which must point at /auth/confirm (token_hash
+        // flow), not /auth/callback (that one's OAuth-only now). This
+        // emailRedirectTo is kept only as the allow-listed fallback Supabase
+        // falls back to if the template is ever reset to default.
         emailRedirectTo: `${await siteUrl()}/auth/callback?next=/onboarding`,
       },
     });
@@ -81,6 +87,7 @@ export async function resendVerificationEmail(raw: unknown): Promise<Result<{ ok
     const { error } = await db.auth.resend({
       type: 'signup',
       email: input.email,
+      // Same "Confirm signup" template as signUp() above controls the real link.
       options: { emailRedirectTo: `${await siteUrl()}/auth/callback?next=/onboarding` },
     });
     // Don't reveal whether the email exists/is already verified — same
@@ -101,6 +108,7 @@ export async function sendMagicLink(raw: unknown): Promise<Result<{ ok: true }>>
     const db = await createClient();
     const { error } = await db.auth.signInWithOtp({
       email: input.email,
+      // Real link comes from the "Magic Link" template (must use /auth/confirm + type=magiclink).
       options: { emailRedirectTo: `${await siteUrl()}/auth/callback?next=/onboarding` },
     });
     if (error) throw new ActionError('INTERNAL', 'Could not send the link. Try again.');
@@ -116,6 +124,7 @@ export async function requestPasswordReset(raw: unknown): Promise<Result<{ ok: t
 
   return action(emailOnlySchema, raw, async (input) => {
     const db = await createClient();
+    // Real link comes from the "Reset Password" template (must use /auth/confirm + type=recovery).
     await db.auth.resetPasswordForEmail(input.email, { redirectTo: `${await siteUrl()}/auth/callback?next=/auth/update-password` });
     await logAudit('auth.password_reset_requested', 'auth', input.email);
     return { ok: true as const };
