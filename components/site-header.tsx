@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth/rbac';
 import { signOut } from '@/features/auth/actions';
 import { DesktopNav, MobileMenu } from '@/components/nav-links';
 import { AccountAvatarLink } from '@/components/account-avatar-link';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 /** App header. Server component: reads the session and shows the right links —
  * same role-based nav items as before (Saved for any signed-in user, My
@@ -13,7 +14,7 @@ export async function SiteHeader() {
   const user = await getSessionUser();
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-[#fcfaf8]/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
       <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
         {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center gap-2">
@@ -33,6 +34,7 @@ export async function SiteHeader() {
             matching DesktopNav's md breakpoint exactly so there's no gap
             where neither is shown) */}
         <div className="hidden shrink-0 items-center gap-3 md:flex">
+          <ThemeToggle />
           {user ? (
             <>
               <AccountAvatarLink initial={(user.email ?? 'U').charAt(0).toUpperCase()} role={user.role} />
@@ -52,7 +54,10 @@ export async function SiteHeader() {
           )}
         </div>
 
-        <MobileMenu role={user?.role ?? null} email={user?.email ?? null} signOutAction={signOut} />
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle />
+          <MobileMenu role={user?.role ?? null} email={user?.email ?? null} signOutAction={signOut} />
+        </div>
       </div>
     </header>
   );

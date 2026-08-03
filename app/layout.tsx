@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { QueryProvider } from '@/lib/query/provider';
+import { ThemeProvider } from '@/components/theme-provider';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { BackToTop } from '@/components/back-to-top';
@@ -11,6 +12,23 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
+
+// Runs before hydration (in <head>, blocking) so the page never flashes the
+// wrong theme: apply `dark` from localStorage if set, otherwise fall back to
+// the OS preference. Kept as a plain string (not an imported file) so it can
+// be inlined directly — a <script src> here would itself cause a flash
+// while it loads.
+const NO_FLASH_THEME_SCRIPT = `
+(function() {
+  try {
+    var stored = localStorage.getItem('studynook-theme');
+    var theme = stored === 'dark' || stored === 'light'
+      ? stored
+      : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (theme === 'dark') document.documentElement.classList.add('dark');
+  } catch (e) {}
+})();
+`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://studynook.app'),
@@ -30,6 +48,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${jakarta.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
+      </head>
       <body className="min-h-screen font-sans">
         {/* Skip link — WCAG 2.4.1 Bypass Blocks. Visible on keyboard focus. */}
         <a
@@ -38,12 +59,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
-        <QueryProvider>
-          <SiteHeader />
-          <div id="main-content">{children}</div>
-          <SiteFooter />
-        </QueryProvider>
-        <BackToTop />
+        <ThemeProvider>
+          <QueryProvider>
+            <SiteHeader />
+            <div id="main-content">{children}</div>
+            <SiteFooter />
+          </QueryProvider>
+          <BackToTop />
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

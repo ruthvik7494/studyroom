@@ -44,8 +44,8 @@ html {
     --card-foreground: 40 33% 96%;
     --popover: 152 22% 11%;
     --popover-foreground: 40 33% 96%;
-    --primary: 152 35% 55%;
-    --primary-foreground: 152 28% 8%;
+    --primary: 152 41% 30%;          /* #2d6c4f — same brand green as light theme */
+    --primary-foreground: 40 33% 98%;
     --secondary: 152 15% 18%;
     --secondary-foreground: 40 33% 96%;
     --muted: 152 15% 18%;
@@ -58,11 +58,11 @@ html {
     --success-foreground: 152 28% 8%;
     --warning: 35 70% 55%;
     --warning-foreground: 152 28% 8%;
-    --info: 152 35% 55%;
-    --info-foreground: 152 28% 8%;
+    --info: 152 41% 30%;             /* #2d6c4f */
+    --info-foreground: 40 33% 98%;
     --border: 152 15% 22%;
     --input: 152 12% 38%;
-    --ring: 152 35% 55%;
+    --ring: 152 41% 30%;             /* #2d6c4f */
   }
 }
 

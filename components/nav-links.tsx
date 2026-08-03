@@ -85,7 +85,7 @@ export function MobileMenu({ role, email, signOutAction }: MobileMenuProps) {
       </button>
 
       {open && (
-        <nav id="mobile-nav-panel" aria-label="Primary mobile" className="absolute inset-x-0 top-full border-b bg-[#fcfaf8] px-4 py-3 shadow-md">
+        <nav id="mobile-nav-panel" aria-label="Primary mobile" className="absolute inset-x-0 top-full border-b bg-background px-4 py-3 shadow-md">
           <div className="space-y-0.5">
             {items.map((item) => (
               <Link key={item.href} href={item.href} className={cn(isActive(pathname, item.href) ? panelActiveLinkClass : panelLinkClass)}>
