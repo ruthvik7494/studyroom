@@ -17,7 +17,7 @@ export interface SidebarUser {
 }
 
 function isActive(pathname: string, href: string): boolean {
-  if (href === '/admin' || href === '/owner') return pathname === href;
+  if (href === '/admin' || href === '/owner' || href === '/account') return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
