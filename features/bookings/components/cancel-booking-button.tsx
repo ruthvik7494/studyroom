@@ -24,10 +24,16 @@ export function CancelBookingButton({ bookingIds, slug }: { bookingIds: string[]
     setError(null);
     const finalReason = reason === 'Other' ? (otherReason.trim() || 'Other') : reason;
     startTransition(async () => {
-      for (const id of bookingIds) {
-        const res = await cancelBooking({ bookingId: id, reason: finalReason });
-        if (!res.ok) { setError(res.error.message); return; }
-      }
+      // Cancelling one hour of a group doesn't depend on any other hour in
+      // it, so there's no reason to wait for each one before starting the
+      // next — this was a real, measurable slowdown on longer bookings
+      // (an 8-hour group meant 8 sequential round-trips). Running them in
+      // parallel also means a single failing hour no longer silently leaves
+      // the rest of the group un-cancelled, which the old stop-at-first-
+      // error loop did.
+      const results = await Promise.all(bookingIds.map((id) => cancelBooking({ bookingId: id, reason: finalReason })));
+      const failed = results.find((res) => !res.ok);
+      if (failed && !failed.ok) { setError(failed.error.message); return; }
       router.push(`/centres/${slug}`);
       router.refresh();
     });

@@ -143,21 +143,30 @@ export function ListingWizard(props: Props) {
           setPhase('uploading');
           const uploadErrors: string[] = [];
 
-          if (logoFile) {
-            const fd = new FormData();
-            fd.set('centreId', centreId);
-            fd.set('file', logoFile);
-            const logoRes = await uploadCentreLogo(fd);
-            if (!logoRes.ok) uploadErrors.push(`Logo: ${logoRes.error.message}`);
-          }
-          if (coverFile) {
-            const e = await uploadOne(centreId, coverFile, { isCover: true });
-            if (e) uploadErrors.push(`Cover image: ${e}`);
-          }
-          for (const { slot, file } of allGalleryFiles) {
-            const e = await uploadOne(centreId, file, slot ? { category: slot } : {});
-            if (e) uploadErrors.push(`${slot ?? file.name}: ${e}`);
-          }
+          // None of logo/cover/gallery uploads depend on each other, so all
+          // of them run together instead of one after another — previously
+          // a listing with a logo, cover, and several gallery photos paid
+          // for every single upload's latency back-to-back.
+          const [logoResult, coverResult, ...galleryResults] = await Promise.all([
+            logoFile
+              ? (async () => {
+                  const fd = new FormData();
+                  fd.set('centreId', centreId);
+                  fd.set('file', logoFile);
+                  const res = await uploadCentreLogo(fd);
+                  return res.ok ? null : `Logo: ${res.error.message}`;
+                })()
+              : Promise.resolve(null),
+            coverFile
+              ? uploadOne(centreId, coverFile, { isCover: true }).then((e) => (e ? `Cover image: ${e}` : null))
+              : Promise.resolve(null),
+            ...allGalleryFiles.map(({ slot, file }) =>
+              uploadOne(centreId, file, slot ? { category: slot } : {}).then((e) => (e ? `${slot ?? file.name}: ${e}` : null)),
+            ),
+          ]);
+          if (logoResult) uploadErrors.push(logoResult);
+          if (coverResult) uploadErrors.push(coverResult);
+          galleryResults.forEach((e) => { if (e) uploadErrors.push(e); });
 
           if (uploadErrors.length) {
             setServerError(`Listing saved, but some photos didn't upload: ${uploadErrors.join('; ')}`);
