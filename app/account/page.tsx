@@ -137,13 +137,14 @@ export default async function AccountPage() {
       {/* Booking statistics summary */}
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          ['Total bookings', bookings?.length ?? 0],
-          ['Upcoming', upcomingCount],
-          ['Saved centres', saved?.length ?? 0],
-          ['Reviews written', reviews?.length ?? 0],
-        ].map(([label, value]) => (
-          <Card key={label} className="p-3 text-center">
-            <p className="font-display text-xl font-extrabold text-brand-green">{value}</p>
+          ['Total bookings', bookings?.length ?? 0, '📅', 'bg-violet-100', 'text-violet-600'],
+          ['Upcoming', upcomingCount, '⏭️', 'bg-blue-100', 'text-blue-600'],
+          ['Saved centres', saved?.length ?? 0, '❤️', 'bg-rose-100', 'text-rose-600'],
+          ['Reviews written', reviews?.length ?? 0, '⭐', 'bg-amber-100', 'text-amber-600'],
+        ].map(([label, value, icon, bg, fg]) => (
+          <Card key={label as string} className="p-4">
+            <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-base ${bg} ${fg}`} aria-hidden>{icon}</span>
+            <p className="mt-2 font-display text-xl font-extrabold">{value}</p>
             <p className="text-xs text-muted-foreground">{label}</p>
           </Card>
         ))}

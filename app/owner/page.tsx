@@ -10,20 +10,20 @@ import { getOwnerMetrics, getOwnerBookings } from '@/features/owner/services/boo
 
 export const metadata: Metadata = { title: 'Dashboard · Owner', ...noindex };
 
-function Metric({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
-  return (
-    <Card className="p-4">
-      <p className="font-display text-2xl font-extrabold text-brand-green">{value}</p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-      {hint && <p className="text-[11px] text-muted-foreground/80">{hint}</p>}
-    </Card>
-  );
-}
+const METRIC_STYLE = [
+  { key: 'today', label: "Today's bookings", bg: 'bg-violet-100', fg: 'text-violet-600', icon: '📅' },
+  { key: 'upcoming', label: 'Upcoming', bg: 'bg-blue-100', fg: 'text-blue-600', icon: '⏭️' },
+  { key: 'occupancyPct', label: 'Occupancy now', bg: 'bg-amber-100', fg: 'text-amber-600', icon: '🪑', suffix: '%' },
+  { key: 'revenue', label: 'Revenue (mo)', bg: 'bg-emerald-100', fg: 'text-emerald-600', icon: '💰', money: true },
+  { key: 'checkIns', label: 'Checked in', bg: 'bg-teal-100', fg: 'text-teal-600', icon: '✅' },
+  { key: 'noShows', label: 'No-shows', bg: 'bg-rose-100', fg: 'text-rose-600', icon: '🚫' },
+  { key: 'waitlist', label: 'Waitlist', bg: 'bg-indigo-100', fg: 'text-indigo-600', icon: '⏳' },
+] as const;
 
 function BookingList({ title, rows, empty }: { title: string; rows: Awaited<ReturnType<typeof getOwnerBookings>>; empty: string }) {
   return (
-    <Card className="p-4">
-      <h2 className="font-display text-sm font-bold">{title}</h2>
+    <Card className="p-5">
+      <h2 className="font-display font-bold">{title}</h2>
       {rows.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{empty}</p>
       ) : (
@@ -79,13 +79,14 @@ export default async function OwnerDashboardPage() {
   if (metrics.waitlist > 0) alerts.push({ text: `${metrics.waitlist} student${metrics.waitlist === 1 ? '' : 's'} on your waitlist`, href: '/owner/bookings' });
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
-      <h1 className="font-display text-xl font-bold">Dashboard</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Bookings, occupancy and revenue across your centres.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-2xl font-bold">Dashboard Overview</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Bookings, occupancy and revenue across your centres.</p>
+      </div>
 
-      {/* Pending actions / alerts — only shown when there's something real to act on */}
       {alerts.length > 0 && (
-        <div className="mt-4 space-y-2">
+        <div className="space-y-2">
           {alerts.map((a) => (
             <Link key={a.href + a.text} href={a.href as never} className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 hover:bg-amber-100">
               <span>⚠️ {a.text}</span>
@@ -95,8 +96,7 @@ export default async function OwnerDashboardPage() {
         </div>
       )}
 
-      {/* Quick shortcuts */}
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         <Link href="/owner/centres/new" className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90">+ New listing</Link>
         <Link href="/owner/bookings" className="rounded-full border px-4 py-2 text-xs font-semibold hover:bg-secondary">View bookings</Link>
         <Link href="/owner/calendar" className="rounded-full border px-4 py-2 text-xs font-semibold hover:bg-secondary">Calendar</Link>
@@ -104,21 +104,29 @@ export default async function OwnerDashboardPage() {
         <Link href="/owner/centres" className="rounded-full border px-4 py-2 text-xs font-semibold hover:bg-secondary">My listings</Link>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        <Metric label="Today's bookings" value={metrics.today} />
-        <Metric label="Upcoming" value={metrics.upcoming} />
-        <Metric label="Occupancy now" value={`${metrics.occupancyPct}%`} />
-        <Metric label="Revenue (mo)" value={formatINR(metrics.revenue)} />
-        <Metric label="Checked in" value={metrics.checkIns} />
-        <Metric label="No-shows" value={metrics.noShows} />
-        <Metric label="Waitlist" value={metrics.waitlist} />
-        <Metric label="Export" value="CSV" hint="via Bookings tab" />
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {METRIC_STYLE.map((m) => {
+          const raw = metrics[m.key as keyof typeof metrics];
+          const value = 'money' in m && m.money ? formatINR(Number(raw)) : `${raw}${'suffix' in m ? m.suffix : ''}`;
+          return (
+            <Card key={m.key} className="p-4">
+              <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-base ${m.bg} ${m.fg}`} aria-hidden>{m.icon}</span>
+              <p className="mt-2 font-display text-xl font-extrabold">{value}</p>
+              <p className="text-xs text-muted-foreground">{m.label}</p>
+            </Card>
+          );
+        })}
+        <Card className="p-4">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-base" aria-hidden>📄</span>
+          <p className="mt-2 font-display text-xl font-extrabold">CSV</p>
+          <p className="text-xs text-muted-foreground">Export via Bookings tab</p>
+        </Card>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <BookingList title="Today" rows={todayRows} empty="No bookings scheduled for today." />
         <BookingList title="Upcoming" rows={upcomingRows} empty="No upcoming bookings." />
       </div>
-    </main>
+    </div>
   );
 }

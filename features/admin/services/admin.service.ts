@@ -256,3 +256,28 @@ export async function getAdminOverview(db: DB): Promise<AdminOverview> {
     pendingRefunds: pendingRefunds.count ?? 0,
   };
 }
+
+/** Real day-by-day revenue for the last `days` days — used for the trend
+ * sparkline on the dashboard. Each entry is a real sum, not synthetic data. */
+export async function getRevenueTrend(db: DB, days = 14): Promise<number[]> {
+  const since = new Date(Date.now() - days * 86_400_000);
+  const { data } = await db.from('bookings')
+    .select('amount, created_at')
+    .in('payment', ['paid', 'partially_refunded'])
+    .gte('created_at', since.toISOString());
+
+  const buckets = new Array(days).fill(0) as number[];
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  (data ?? []).forEach((r) => {
+    const dayIndex = days - 1 - Math.floor((startOfToday.getTime() - new Date(r.created_at).setHours(0, 0, 0, 0)) / 86_400_000);
+    if (dayIndex >= 0 && dayIndex < days) buckets[dayIndex] = (buckets[dayIndex] ?? 0) + Number(r.amount);
+  });
+  return buckets;
+}
+
+/** Recent cross-platform activity feed for the dashboard — a small, readable
+ * slice of the real audit log, not a separate fabricated activity table. */
+export async function getRecentActivity(db: DB, limit = 6): Promise<{ id: number; action: string; created_at: string }[]> {
+  const { data } = await db.from('audit_logs').select('id, action, created_at').order('created_at', { ascending: false }).limit(limit);
+  return data ?? [];
+}

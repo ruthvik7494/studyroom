@@ -1,34 +1,35 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { requireRole } from '@/lib/auth/rbac';
+import { signOut } from '@/features/auth/actions';
 import { noindex } from '@/lib/seo';
+import { DashboardShell, type SidebarNavItem } from '@/components/dashboard-shell';
 
 export const metadata: Metadata = { title: 'Owner', ...noindex };
 
-const NAV = [
-  { href: '/owner', label: 'Dashboard' },
-  { href: '/owner/bookings', label: 'Bookings' },
-  { href: '/owner/refunds', label: 'Refunds' },
-  { href: '/owner/calendar', label: 'Calendar' },
-  { href: '/owner/customers', label: 'Customers' },
-  { href: '/owner/centres', label: 'My centres' },
-  { href: '/owner/enquiries', label: 'Enquiries' },
-] as const;
+const icon = (d: string) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><path d={d} strokeLinecap="round" strokeLinejoin="round" /></svg>
+);
+
+const NAV: SidebarNavItem[] = [
+  { href: '/owner', label: 'Dashboard', icon: icon('M4 12 12 4l8 8M6 10v10h12V10') },
+  { href: '/owner/bookings', label: 'Bookings', icon: icon('M8 3v3m8-3v3M4 8h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z') },
+  { href: '/owner/refunds', label: 'Refunds', icon: icon('M3 10h18M7 15h.01M11 15h4M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z') },
+  { href: '/owner/calendar', label: 'Calendar', icon: icon('M8 3v3m8-3v3M4 8h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z') },
+  { href: '/owner/customers', label: 'Customers', icon: icon('M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 4a4 4 0 0 0 4-4V9a4 4 0 0 0-4-4') },
+  { href: '/owner/centres', label: 'My Centres', icon: icon('M4 6h16M4 12h16M4 18h10') },
+  { href: '/owner/enquiries', label: 'Enquiries', icon: icon('M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z') },
+];
 
 export default async function OwnerLayout({ children }: { children: React.ReactNode }) {
-  await requireRole('owner'); // server gate for the whole /owner section
+  const user = await requireRole('owner'); // server gate for the whole /owner section, unchanged
   return (
-    <div>
-      <div className="border-b bg-secondary/30">
-        <nav className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-6" aria-label="Owner sections">
-          {NAV.map((n) => (
-            <Link key={n.href} href={n.href as never} className="shrink-0 border-b-2 border-transparent px-3 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground">
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
+    <DashboardShell
+      brandLabel="Owner Panel"
+      navItems={NAV}
+      user={{ name: user.email?.split('@')[0] ?? 'Owner', roleLabel: 'Centre Owner', initial: (user.email ?? 'O').charAt(0).toUpperCase() }}
+      signOutAction={signOut}
+    >
       {children}
-    </div>
+    </DashboardShell>
   );
 }

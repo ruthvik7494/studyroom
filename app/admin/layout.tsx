@@ -1,27 +1,34 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/rbac';
+import { signOut } from '@/features/auth/actions';
 import { noindex } from '@/lib/seo';
+import { DashboardShell, type SidebarNavItem } from '@/components/dashboard-shell';
 
 export const metadata: Metadata = { title: 'Admin', ...noindex };
 
-const NAV = [
-  { href: '/admin', label: 'Overview' },
-  { href: '/admin/centres/new', label: 'Create Centre' },
-  { href: '/admin/centres/all', label: 'All Centres' },
-  { href: '/admin/users', label: 'Users' },
-  { href: '/admin/bookings', label: 'Bookings' },
-  { href: '/admin/centres', label: 'Approvals' },
-  { href: '/admin/waitlist', label: 'Waitlist' },
-  { href: '/admin/reviews', label: 'Moderation' },
-  { href: '/admin/claims', label: 'Claims' },
-  { href: '/admin/audit', label: 'Audit log' },
-] as const;
+const icon = (d: string) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><path d={d} strokeLinecap="round" strokeLinejoin="round" /></svg>
+);
+
+const NAV: SidebarNavItem[] = [
+  { href: '/admin', label: 'Overview', icon: icon('M4 12 12 4l8 8M6 10v10h12V10') },
+  { href: '/admin/centres/new', label: 'Create Centre', icon: icon('M12 4v16m-8-8h16') },
+  { href: '/admin/centres/all', label: 'All Centres', icon: icon('M4 6h16M4 12h16M4 18h10') },
+  { href: '/admin/users', label: 'Users', icon: icon('M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 4a4 4 0 0 0 4-4V9a4 4 0 0 0-4-4') },
+  { href: '/admin/bookings', label: 'Bookings', icon: icon('M8 3v3m8-3v3M4 8h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z') },
+  { href: '/admin/centres', label: 'Approvals', icon: icon('m9 12 2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z') },
+  { href: '/admin/waitlist', label: 'Waitlist', icon: icon('M9 6a3 3 0 1 0 6 0 3 3 0 0 0-6 0Zm-6 14c0-3.3 2.7-6 6-6h.5M15 20h6m-3-3v6') },
+  { href: '/admin/reviews', label: 'Moderation', icon: icon('M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z') },
+  { href: '/admin/claims', label: 'Claims', icon: icon('M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z') },
+  { href: '/admin/audit', label: 'Audit Log', icon: icon('M9 12h6m-6 4h6m-9 4h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H8L4 8v10a2 2 0 0 0 2 2Z') },
+];
 
 /**
  * Admin shell. Route protection is enforced here server-side (not just in
  * middleware) — the charter requires real authorization, not hidden nav.
+ * Same guard as before, only the presentation (sidebar instead of a top
+ * pill-nav row) has changed.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
@@ -29,25 +36,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (user.role !== 'admin') redirect('/');
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
-      <header className="mb-6 flex items-center justify-between border-b pb-4">
-        <div>
-          <p className="font-display text-xs font-bold uppercase tracking-wider text-brand-gold">StudyNook Admin</p>
-          <h1 className="font-display text-xl font-bold">Operations</h1>
-        </div>
-      </header>
-      <nav className="mb-6 flex flex-wrap gap-1" aria-label="Admin sections">
-        {NAV.map((n) => (
-          <Link
-            key={n.href}
-            href={n.href as never}
-            className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            {n.label}
-          </Link>
-        ))}
-      </nav>
+    <DashboardShell
+      brandLabel="Admin Panel"
+      navItems={NAV}
+      user={{ name: user.email?.split('@')[0] ?? 'Admin', roleLabel: 'Super Admin', initial: (user.email ?? 'A').charAt(0).toUpperCase() }}
+      signOutAction={signOut}
+    >
       {children}
-    </div>
+    </DashboardShell>
   );
 }
