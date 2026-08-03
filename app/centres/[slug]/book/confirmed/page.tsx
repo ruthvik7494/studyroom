@@ -2,12 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { admin } from '@/lib/supabase/admin';
 import { requireUser } from '@/lib/auth/rbac';
 import { Card } from '@/components/ui/card';
 import { formatINR } from '@/lib/utils';
 import { PERIOD_LABEL, type Period } from '@/features/bookings/pricing';
 import { PayButton } from '@/features/payments/components/pay-button';
 import { CancelBookingButton } from '@/features/bookings/components/cancel-booking-button';
+import { HoldCountdown } from '@/features/bookings/components/hold-countdown';
 import { CopyBookingId } from '@/features/bookings/components/copy-booking-id';
 import { BookingStatusBadge, PaymentStatusBadge } from '@/components/booking-status-badge';
 import { noindex } from '@/lib/seo';
@@ -26,11 +28,26 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
 
   // A multi-hour booking (2+ hours) returns a group id from book_seat_multi
   // instead of a single booking id — look up every row in that group.
-  const { data: bookings } = group === '1'
-    ? await db.from('bookings').select('id, period, amount, status, payment, starts_at, razorpay_payment_id, expires_at, centres(name, slug, area, cover_url, rating, is_verified)').eq('booking_group_id', id).order('starts_at')
-    : await db.from('bookings').select('id, period, amount, status, payment, starts_at, razorpay_payment_id, expires_at, centres(name, slug, area, cover_url, rating, is_verified)').eq('id', id).then((r) => ({ data: r.data ?? [] }));
+  const bookingsSelect = 'id, period, amount, status, payment, starts_at, razorpay_payment_id, expires_at, centres(name, slug, area, cover_url, rating, is_verified)';
+  const fetchBookings = () => group === '1'
+    ? db.from('bookings').select(bookingsSelect).eq('booking_group_id', id).order('starts_at')
+    : db.from('bookings').select(bookingsSelect).eq('id', id).then((r) => ({ data: r.data ?? [] }));
 
+  let { data: bookings } = await fetchBookings();
   if (!bookings || bookings.length === 0) notFound(); // RLS also scopes to owner
+
+  // If this reservation's hold has lapsed and it's still sitting as
+  // "pending", sweep it for real right now instead of waiting for the
+  // scheduled cron (which only runs once a day on Vercel's free tier —
+  // far too slow for "cancel within 10 minutes" to actually mean anything).
+  // expire_pending_bookings() is service_role-only, so it's called with the
+  // admin client here rather than the user's own session.
+  const hasLapsedHold = bookings.some((b) => b.status === 'pending' && b.expires_at && new Date(b.expires_at) < new Date());
+  if (hasLapsedHold) {
+    await admin.rpc('expire_pending_bookings');
+    ({ data: bookings } = await fetchBookings());
+    if (!bookings || bookings.length === 0) notFound();
+  }
 
   const centre = bookings[0]!.centres as unknown as { name: string; slug: string; area: string | null; cover_url: string | null; rating: number; is_verified: boolean } | null;
   const unpaidAmount = bookings.filter((b) => b.payment !== 'paid').reduce((sum, b) => sum + Number(b.amount), 0);
@@ -92,7 +109,7 @@ export default async function ConfirmedPage({ params, searchParams }: Props) {
             <p className="mt-1 text-sm font-medium text-foreground">Complete your payment to confirm your booking.</p>
             {holdExpiresAt && (
               <p className="mt-2 text-xs font-semibold text-amber-700">
-                Reserved until {holdExpiresAt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} — pay before then or the seat is released.
+                <HoldCountdown expiresAt={holdExpiresAt.toISOString()} />
               </p>
             )}
             <div className="mt-3"><PaymentStatusBadge status="unpaid" /></div>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { admin } from '@/lib/supabase/admin';
 import { requireUser } from '@/lib/auth/rbac';
 import { noindex } from '@/lib/seo';
 import { Card } from '@/components/ui/card';
@@ -16,9 +17,9 @@ export default async function AccountPage() {
   const user = await requireUser();
   const db = await createClient();
 
-  const [{ data: bookings }, { data: profile }, { data: saved }, { data: reviews }] = await Promise.all([
+  const [{ data: bookingsRaw }, { data: profile }, { data: saved }, { data: reviews }] = await Promise.all([
     db.from('bookings')
-      .select('id, period, amount, status, payment, invoice_number, created_at, starts_at, ends_at, resource_id, centres(name, slug)')
+      .select('id, period, amount, status, payment, invoice_number, created_at, starts_at, ends_at, resource_id, expires_at, centres(name, slug)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(30),
@@ -33,6 +34,21 @@ export default async function AccountPage() {
       .order('created_at', { ascending: false })
       .limit(10),
   ]);
+
+  // Same reasoning as the booking confirmation page: a lapsed reservation
+  // hold should show as expired right away, not sit as stale "Pending
+  // Payment" until the once-daily cron sweep gets to it.
+  let bookings = bookingsRaw;
+  const hasLapsedHold = (bookings ?? []).some((b) => b.status === 'pending' && b.expires_at && new Date(b.expires_at) < new Date());
+  if (hasLapsedHold) {
+    await admin.rpc('expire_pending_bookings');
+    const { data: refreshed } = await db.from('bookings')
+      .select('id, period, amount, status, payment, invoice_number, created_at, starts_at, ends_at, resource_id, expires_at, centres(name, slug)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    bookings = refreshed;
+  }
 
   const bookingIds = (bookings ?? []).map((b) => b.id);
   const { data: refundRows } = bookingIds.length
