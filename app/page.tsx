@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { admin } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/auth/rbac';
 import { Card } from '@/components/ui/card';
-import { listAllLocations } from '@/features/taxonomy/taxonomy.service';
+import { getPopularAreas } from '@/features/taxonomy/taxonomy.service';
 import { listCentres } from '@/features/centres/services/centres.service';
 import { CentreCard } from '@/features/centres/components/centre-card';
 import { TestimonialCarousel, type Testimonial } from '@/components/testimonial-carousel';
@@ -25,9 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HomePage() {
   const db = await createClient();
   const viewer = await getSessionUser();
-  const [{ items: featured }, locations, { count: centresCount }, { count: studentsCount }, { data: testimonialRows }, { data: ratingRows }, serviceArea] = await Promise.all([
+  const [{ items: featured }, popularAreas, { count: centresCount }, { count: studentsCount }, { data: testimonialRows }, { data: ratingRows }, serviceArea] = await Promise.all([
     listCentres(db, { limit: 6 }),
-    listAllLocations(db),
+    getPopularAreas(db, 3),
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
     admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
     db.from('reviews')
@@ -128,11 +128,11 @@ export default async function HomePage() {
                 <input name="q" type="text" placeholder="Search by name, area or landmark" className="h-11 rounded-lg border border-input bg-background px-3 text-sm" />
                 <button type="submit" className="h-11 rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90">Search</button>
               </div>
-              {locations.length > 0 && (
+              {popularAreas.length > 0 && (
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   Popular searches:
-                  {locations.slice(0, 5).map((loc) => (
-                    <Link key={loc.slug} href={`/centres?area=${encodeURIComponent(loc.name)}`} className="rounded-full border bg-background px-2.5 py-1 hover:bg-secondary">
+                  {popularAreas.map((loc) => (
+                    <Link key={loc.name} href={`/centres?area=${encodeURIComponent(loc.name)}`} className="rounded-full border bg-background px-2.5 py-1 hover:bg-secondary">
                       {loc.name}
                     </Link>
                   ))}

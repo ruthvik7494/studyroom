@@ -26,6 +26,23 @@ export async function listAllLocations(db: DB): Promise<Taxonomy[]> {
   return data ?? [];
 }
 
+/**
+ * Real "popular search" suggestions — derived from the areas actual
+ * published centres are in, not the static seeded `locations` table (which
+ * always shows the same 3 sample places regardless of what's really
+ * listed). Ranked by how many published centres are in each area, capped
+ * at `limit`.
+ */
+export async function getPopularAreas(db: DB, limit = 3): Promise<{ name: string }[]> {
+  const { data } = await db.from('centres').select('area').eq('is_published', true).not('area', 'is', null);
+  const counts = new Map<string, number>();
+  (data ?? []).forEach((r) => { if (r.area) counts.set(r.area, (counts.get(r.area) ?? 0) + 1); });
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([name]) => ({ name }));
+}
+
 /** Approved centres in a category (via listing_categories join), for a landing page. */
 export async function listCentresByCategory(db: DB, categorySlug: string, limit = 24): Promise<CentreListItem[]> {
   const { data: cat } = await db.from('categories').select('id').eq('slug', categorySlug).maybeSingle();
