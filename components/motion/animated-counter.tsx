@@ -15,9 +15,9 @@ export function AnimatedCounter({ value = '', className }: AnimatedCounterProps)
   const inView = useInView(containerRef, { once: true, margin: '-40px' });
 
   const match = value.match(/^(\d+(\.\d+)?)/);
-  const numeric = match ? parseFloat(match[1]) : null;
+  const numeric = match ? parseFloat(match[1] ?? '0') : null;
   const decimals = match?.[2] ? match[2].length - 1 : 0;
-  const suffix = match ? value.slice(match[1].length) : '';
+  const suffix = match ? value.slice((match[1] ?? '').length) : '';
 
   const motionVal = useMotionValue(0);
   const spring = useSpring(motionVal, { duration: 1200, bounce: 0 });
