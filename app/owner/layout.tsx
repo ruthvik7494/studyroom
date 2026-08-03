@@ -12,6 +12,7 @@ const icon = (d: string) => (
 
 const NAV: SidebarNavItem[] = [
   { href: '/owner', label: 'Dashboard', icon: icon('M4 12 12 4l8 8M6 10v10h12V10') },
+  { href: '/owner/centres/new', label: 'Create Centre', icon: icon('M12 4v16m-8-8h16') },
   { href: '/owner/bookings', label: 'Bookings', icon: icon('M8 3v3m8-3v3M4 8h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z') },
   { href: '/owner/refunds', label: 'Refunds', icon: icon('M3 10h18M7 15h.01M11 15h4M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z') },
   { href: '/owner/calendar', label: 'Calendar', icon: icon('M8 3v3m8-3v3M4 8h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z') },

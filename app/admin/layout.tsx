@@ -13,7 +13,6 @@ const icon = (d: string) => (
 
 const NAV: SidebarNavItem[] = [
   { href: '/admin', label: 'Overview', icon: icon('M4 12 12 4l8 8M6 10v10h12V10') },
-  { href: '/admin/centres/new', label: 'Create Centre', icon: icon('M12 4v16m-8-8h16') },
   { href: '/admin/centres/all', label: 'All Centres', icon: icon('M4 6h16M4 12h16M4 18h10') },
   { href: '/admin/users', label: 'Users', icon: icon('M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 4a4 4 0 0 0 4-4V9a4 4 0 0 0-4-4') },
   { href: '/admin/bookings', label: 'Bookings', icon: icon('M8 3v3m8-3v3M4 8h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z') },

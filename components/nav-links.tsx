@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const navLinkClass = 'relative py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground';
-const activeNavLinkClass = 'relative py-2 text-sm font-semibold text-primary after:absolute after:-bottom-[1px] after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-primary';
+const navLinkClass = 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#2d6c4f] hover:text-white';
+const activeNavLinkClass = 'rounded-lg bg-[#2d6c4f] px-3 py-2 text-sm font-semibold text-white';
 
-const panelLinkClass = 'block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground';
-const panelActiveLinkClass = 'block rounded-md bg-primary/10 px-3 py-2.5 text-sm font-semibold text-primary';
+const panelLinkClass = 'block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-[#2d6c4f] hover:text-white';
+const panelActiveLinkClass = 'block rounded-md bg-[#2d6c4f] px-3 py-2.5 text-sm font-semibold text-white';
 
 interface NavItem { href: string; label: string }
 
@@ -36,7 +36,7 @@ export function DesktopNav({ role }: { role: 'student' | 'owner' | 'admin' | nul
   const pathname = usePathname();
   const items = buildItems(role);
   return (
-    <nav className="hidden items-center gap-6 md:flex" aria-label="Primary">
+    <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
       {items.map((item) => (
         <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? activeNavLinkClass : navLinkClass}>
           {item.label}
