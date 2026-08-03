@@ -67,7 +67,7 @@ export function EnquiryForm({ centreId }: { centreId: string }) {
 
       <div>
         <Label htmlFor="enq-phone">Phone <span className="text-muted-foreground">(optional)</span></Label>
-        <Input id="enq-phone" type="tel" autoComplete="tel" {...register('phone')} />
+        <Input id="enq-phone" type="tel" inputMode="numeric" maxLength={10} placeholder="9876543210" autoComplete="tel" {...register('phone')} />
       </div>
 
       <div>

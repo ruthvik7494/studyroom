@@ -54,7 +54,7 @@ export function ContactForm() {
 
       <div>
         <label htmlFor="phone" className="mb-1 block text-sm font-medium">Phone <span className="text-muted-foreground">(optional)</span></label>
-        <Input id="phone" type="tel" autoComplete="tel" placeholder="+91 98765 43210" {...register('phone')} />
+        <Input id="phone" type="tel" inputMode="numeric" maxLength={10} autoComplete="tel" placeholder="9876543210" {...register('phone')} />
       </div>
 
       <div>
