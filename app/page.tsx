@@ -91,7 +91,7 @@ export default async function HomePage() {
       <section className="relative min-h-[560px] overflow-hidden border-b bg-gradient-to-br from-primary/5 via-background to-background sm:min-h-[600px]">
         <div className="absolute inset-0 hidden sm:block">
           <Image src="/images/hero-office.png" alt="" fill priority className="object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background from-0% via-background via-45% to-transparent to-75%" />
         </div>
 
         <div className="relative mx-auto max-w-6xl px-6 py-12 lg:py-16">
