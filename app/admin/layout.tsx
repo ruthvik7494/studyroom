@@ -22,6 +22,7 @@ const NAV: SidebarNavItem[] = [
   { href: '/admin/claims', label: 'Claims', icon: icon('M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z') },
   { href: '/admin/enquiries', label: 'Enquiries', icon: icon('M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z') },
   { href: '/admin/audit', label: 'Audit Log', icon: icon('M9 12h6m-6 4h6m-9 4h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H8L4 8v10a2 2 0 0 0 2 2Z') },
+  { href: '/admin/settings', label: 'Settings', icon: icon('M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.15-1.5l2-1.5-2-3.5-2.3.9a7.5 7.5 0 0 0-2.6-1.5L14 2h-4l-.35 2.9a7.5 7.5 0 0 0-2.6 1.5l-2.3-.9-2 3.5 2 1.5A7.4 7.4 0 0 0 4.6 12a7.4 7.4 0 0 0 .15 1.5l-2 1.5 2 3.5 2.3-.9a7.5 7.5 0 0 0 2.6 1.5L10 22h4l.35-2.9a7.5 7.5 0 0 0 2.6-1.5l2.3.9 2-3.5-2-1.5c.1-.5.15-1 .15-1.5Z') },
 ];
 
 /**

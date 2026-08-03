@@ -19,6 +19,7 @@ const NAV: SidebarNavItem[] = [
   { href: '/owner/customers', label: 'Customers', icon: icon('M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 4a4 4 0 0 0 4-4V9a4 4 0 0 0-4-4') },
   { href: '/owner/centres', label: 'My Centres', icon: icon('M4 6h16M4 12h16M4 18h10') },
   { href: '/owner/enquiries', label: 'Enquiries', icon: icon('M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z') },
+  { href: '/owner/settings', label: 'Settings', icon: icon('M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.15-1.5l2-1.5-2-3.5-2.3.9a7.5 7.5 0 0 0-2.6-1.5L14 2h-4l-.35 2.9a7.5 7.5 0 0 0-2.6 1.5l-2.3-.9-2 3.5 2 1.5A7.4 7.4 0 0 0 4.6 12a7.4 7.4 0 0 0 .15 1.5l-2 1.5 2 3.5 2.3-.9a7.5 7.5 0 0 0 2.6 1.5L10 22h4l.35-2.9a7.5 7.5 0 0 0 2.6-1.5l2.3.9 2-3.5-2-1.5c.1-.5.15-1 .15-1.5Z') },
 ];
 
 export default async function OwnerLayout({ children }: { children: React.ReactNode }) {

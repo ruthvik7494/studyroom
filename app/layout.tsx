@@ -5,6 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { QueryProvider } from '@/lib/query/provider';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
+import { ConditionalChrome } from '@/components/conditional-chrome';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
@@ -38,9 +39,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <QueryProvider>
-          <SiteHeader />
+          <ConditionalChrome><SiteHeader /></ConditionalChrome>
           <div id="main-content">{children}</div>
-          <SiteFooter />
+          <ConditionalChrome><SiteFooter /></ConditionalChrome>
         </QueryProvider>
         <Analytics />
         <SpeedInsights />
