@@ -37,60 +37,69 @@ export default async function ContactPage() {
   const areaLabel = [city, state].filter(Boolean).join(', ');
 
   return (
-    <main id="main-content" className="mx-auto max-w-6xl px-6 py-12">
-      {/* Hero */}
-      <div className="grid items-center gap-10 lg:grid-cols-2">
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">💬 Get in Touch</span>
-          <h1 className="mt-4 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
-            We&apos;re here to help you find the <span className="text-primary">perfect study space</span>.
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Have questions, suggestions or need support? Reach out to us. We&apos;ll get back to you as soon as possible.
-          </p>
-
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="flex items-start gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🎓</span>
-              <div>
-                <p className="text-sm font-semibold">For Students</p>
-                <p className="text-xs text-muted-foreground">Booking, payment, refund or general queries.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🏢</span>
-              <div>
-                <p className="text-sm font-semibold">For Space Owners</p>
-                <p className="text-xs text-muted-foreground">List your space or manage your listing.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🎧</span>
-              <div>
-                <p className="text-sm font-semibold">Support</p>
-                <p className="text-xs text-muted-foreground">We&apos;re here to help between 9 AM – 9 PM everyday.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>✉️</span>
-              <div>
-                <p className="text-sm font-semibold">Quick Response</p>
-                <p className="text-xs text-muted-foreground">We usually reply within a few hours.</p>
-              </div>
-            </div>
-          </div>
+    <main id="main-content">
+      {/* Hero — full-bleed background photo behind the whole section, same
+          treatment as the homepage hero: opaque where the text sits,
+          fading to a fully visible photo on the right. */}
+      <section className="relative left-1/2 right-1/2 -mx-[50vw] w-screen min-h-[480px] overflow-hidden border-b bg-gradient-to-br from-primary/5 via-background to-background sm:min-h-[520px]">
+        <div className="absolute inset-0 hidden sm:block">
+          <Image src="/images/contact-office.png" alt="" fill priority className="object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background from-0% via-background via-45% to-transparent to-75%" />
         </div>
 
-        <div className="relative">
-          <div className="overflow-hidden rounded-2xl shadow-lg">
-            <Image src="/images/contact-office.png" alt="A modern StudyNook study space" width={900} height={600} className="h-[280px] w-full object-cover sm:h-[320px]" priority />
+        <div className="relative mx-auto max-w-6xl px-6 py-12 lg:py-16">
+          <div className="max-w-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">💬 Get in Touch</span>
+            <h1 className="mt-4 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
+              We&apos;re here to help you find the <span className="text-primary">perfect study space</span>.
+            </h1>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Have questions, suggestions or need support? Reach out to us. We&apos;ll get back to you as soon as possible.
+            </p>
+
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div className="flex items-start gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🎓</span>
+                <div>
+                  <p className="text-sm font-semibold">For Students</p>
+                  <p className="text-xs text-muted-foreground">Booking, payment, refund or general queries.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🏢</span>
+                <div>
+                  <p className="text-sm font-semibold">For Space Owners</p>
+                  <p className="text-xs text-muted-foreground">List your space or manage your listing.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🎧</span>
+                <div>
+                  <p className="text-sm font-semibold">Support</p>
+                  <p className="text-xs text-muted-foreground">We&apos;re here to help between 9 AM – 9 PM everyday.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>✉️</span>
+                <div>
+                  <p className="text-sm font-semibold">Quick Response</p>
+                  <p className="text-xs text-muted-foreground">We usually reply within a few hours.</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-xl bg-background/95 px-3 py-2.5 shadow-md backdrop-blur">
+
+          {/* Floats on top of the photo, in its right-hand portion where
+              the gradient has fully cleared — same treatment as the
+              homepage hero's floating card. */}
+          <div className="absolute bottom-8 right-6 hidden items-center gap-2 rounded-xl bg-background/95 px-3 py-2.5 shadow-md backdrop-blur sm:flex lg:right-10">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>💚</span>
             <p className="max-w-[180px] text-xs font-medium">Happy to support students and space owners.</p>
           </div>
         </div>
-      </div>
+      </section>
+
+      <div className="mx-auto max-w-6xl px-6 py-12">
 
       {/* Green info panel + form */}
       <div className="mt-12 grid overflow-hidden rounded-2xl border shadow-sm lg:grid-cols-[1fr_1.3fr]">
@@ -168,6 +177,7 @@ export default async function ContactPage() {
             </div>
           </div>
         </Card>
+      </div>
       </div>
     </main>
   );

@@ -91,52 +91,62 @@ export default async function AboutPage() {
     .maybeSingle();
 
   return (
-    <main id="main-content" className="mx-auto max-w-6xl px-6 py-12">
-      {/* Hero */}
-      <div className="grid items-center gap-10 lg:grid-cols-2">
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">● About StudyNook</span>
-          <h1 className="mt-4 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
-            India&apos;s trusted platform to <span className="text-primary">discover</span> and <span className="text-primary">book</span> study spaces.
-          </h1>
-          <p className="mt-4 max-w-lg text-muted-foreground">
-            We make it simple for students to find verified, affordable and comfortable places to study and focus.
-          </p>
-
-          <form action="/centres" method="get" className="mt-6 flex max-w-md gap-2 rounded-full border bg-card p-1.5 shadow-sm">
-            <input name="q" type="text" placeholder={serviceArea.city ? `Search study centres in ${serviceArea.city}` : 'Search study centres'} className="h-10 flex-1 rounded-full bg-transparent px-4 text-sm" />
-            <button type="submit" className="h-10 shrink-0 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90">Search Centres</button>
-          </form>
-
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
-            <span>✓ Verified Centres</span>
-            <span>✓ Live Availability</span>
-            <span>✓ Instant Booking</span>
-            <span>✓ Secure Payments</span>
-          </div>
+    <main id="main-content">
+      {/* Hero — full-bleed background photo behind the whole section, same
+          treatment as the homepage hero: opaque where the text sits,
+          fading to a fully visible photo on the right. */}
+      <section className="relative left-1/2 right-1/2 -mx-[50vw] w-screen min-h-[480px] overflow-hidden border-b bg-gradient-to-br from-primary/5 via-background to-background sm:min-h-[520px]">
+        <div className="absolute inset-0 hidden sm:block">
+          {heroPhoto?.cover_url ? (
+            <Image src={heroPhoto.cover_url} alt="" fill priority className="object-cover" />
+          ) : (
+            <Image src="/images/hero-office.png" alt="" fill priority className="object-cover" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-background from-0% via-background via-45% to-transparent to-75%" />
         </div>
 
-        <div className="relative">
-          <div className="overflow-hidden rounded-2xl shadow-lg">
-            {heroPhoto?.cover_url ? (
-              <Image src={heroPhoto.cover_url} alt={heroPhoto.name} width={700} height={500} className="h-[300px] w-full object-cover" />
-            ) : (
-              <div className="flex h-[300px] w-full items-center justify-center bg-gradient-to-br from-secondary to-accent text-6xl" aria-hidden>📚</div>
-            )}
+        <div className="relative mx-auto max-w-6xl px-6 py-12 lg:py-16">
+          <div className="max-w-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">● About StudyNook</span>
+            <h1 className="mt-4 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
+              India&apos;s trusted platform to <span className="text-primary">discover</span> and <span className="text-primary">book</span> study spaces.
+            </h1>
+            <p className="mt-4 max-w-lg text-muted-foreground">
+              We make it simple for students to find verified, affordable and comfortable places to study and focus.
+            </p>
+
+            <form action="/centres" method="get" className="mt-6 flex max-w-md gap-2 rounded-full border bg-card p-1.5 shadow-sm">
+              <input name="q" type="text" placeholder={serviceArea.city ? `Search study centres in ${serviceArea.city}` : 'Search study centres'} className="h-10 flex-1 rounded-full bg-transparent px-4 text-sm" />
+              <button type="submit" className="h-10 shrink-0 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90">Search Centres</button>
+            </form>
+
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
+              <span>✓ Verified Centres</span>
+              <span>✓ Live Availability</span>
+              <span>✓ Instant Booking</span>
+              <span>✓ Secure Payments</span>
+            </div>
           </div>
-          <span className="absolute left-4 top-4 rounded-xl bg-background/95 px-3 py-2 text-center shadow-md backdrop-blur">
+
+          {/* Stat badges float on top of the photo, in its right-hand
+              portion where the gradient has fully cleared — same treatment
+              as the homepage hero's rating badge + featured-centre card. */}
+          <span className="absolute right-6 top-8 hidden rounded-xl bg-background/95 px-3 py-2 text-center shadow-md backdrop-blur sm:block lg:right-10">
             <span className="block font-display text-lg font-bold">{centresCount ?? 0}+</span>
             <span className="block text-[11px] text-muted-foreground">Study Centres</span>
           </span>
-          <span className="absolute right-4 top-4 rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-md">Live Seat Availability</span>
+          <span className="absolute right-6 top-24 hidden rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-md sm:block lg:right-10">Live Seat Availability</span>
           {avgRating && (
-            <span className="absolute bottom-4 left-4 rounded-xl bg-background/95 px-3 py-2 shadow-md backdrop-blur">
+            <span className="absolute bottom-8 right-6 hidden rounded-xl bg-background/95 px-3 py-2 shadow-md backdrop-blur sm:block lg:right-10">
               <span className="block font-display text-sm font-bold text-brand-gold2">{avgRating}/5 ★★★★★</span>
               <span className="block text-[11px] text-muted-foreground">From {reviewsCount ?? 0}+ reviews</span>
             </span>
           )}
         </div>
-      </div>
+      </section>
+
+      <div className="mx-auto max-w-6xl px-6 py-12">
+
 
       {/* Stats — real counts from the live database, not invented numbers */}
       <div className="mt-16 grid grid-cols-2 gap-6 rounded-2xl bg-secondary/40 px-8 py-10 sm:grid-cols-4">
@@ -227,6 +237,7 @@ export default async function AboutPage() {
           <Link href="/owner/centres/new" className="rounded-lg border border-white/40 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/10">List Your Centre →</Link>
         </div>
       </Card>
+      </div>
     </main>
   );
 }
