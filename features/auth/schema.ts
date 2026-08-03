@@ -29,14 +29,16 @@ export type Credentials = z.infer<typeof credentialsSchema>;
 export const signUpSchema = z.object({
   email: z.string().trim().email('Enter a valid email'),
   password: passwordComplexity,
-  fullName: z.string().trim().min(2, 'Enter your name').max(80, 'Name is too long'),
+  fullName: z.string().trim().min(2, 'Enter your name').max(80, 'Name is too long')
+    .regex(/^[A-Za-z][A-Za-z .'-]*$/, 'Name can only contain letters'),
 });
 export type SignUpInput = z.infer<typeof signUpSchema>;
 
 /** Profile fields a user may edit themselves. Role is never editable here. */
 export const profileSchema = z.object({
-  fullName: z.string().trim().min(2, 'Enter your name').max(80, 'Name is too long'),
-  phone: z.string().trim().max(20, 'Phone is too long').optional().or(z.literal('')),
+  fullName: z.string().trim().min(2, 'Enter your name').max(80, 'Name is too long')
+    .regex(/^[A-Za-z][A-Za-z .'-]*$/, 'Name can only contain letters'),
+  phone: z.string().trim().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number').optional().or(z.literal('')),
 });
 export type ProfileInput = z.infer<typeof profileSchema>;
 
@@ -44,6 +46,7 @@ export const emailOnlySchema = z.object({ email: z.string().trim().email('Enter 
 export type EmailOnly = z.infer<typeof emailOnlySchema>;
 
 export const newPasswordSchema = z.object({ password: passwordComplexity });
+export type NewPassword = z.infer<typeof newPasswordSchema>;
 
 export const roleSchema = z.object({ role: z.enum(['student', 'owner']) });
 export type RoleInput = z.infer<typeof roleSchema>;

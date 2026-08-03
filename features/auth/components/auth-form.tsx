@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { credentialsSchema, signUpSchema, type SignUpInput } from '../schema';
-import { signInWithPassword, signUp, sendMagicLink, resendVerificationEmail } from '../actions';
+import { signInWithPassword, signUp, resendVerificationEmail } from '../actions';
 
 type Mode = 'signin' | 'signup';
 
@@ -96,15 +96,6 @@ export function AuthForm({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
-  };
-
-  const magicLink = async () => {
-    setServerError(null); setNotice(null);
-    const email = getValues('email');
-    const parsed = credentialsSchema.pick({ email: true }).safeParse({ email });
-    if (!parsed.success) { setServerError('Enter your email first.'); return; }
-    const res = await sendMagicLink({ email });
-    setNotice(res.ok ? 'Magic link sent — check your email.' : 'Could not send the link.');
   };
 
   const resend = async () => {
@@ -226,10 +217,6 @@ export function AuthForm({
           {isSubmitting ? 'Please wait…' : mode === 'signin' ? 'Sign In →' : 'Create account'}
         </Button>
       </form>
-
-      <button onClick={magicLink} className="mt-3 w-full text-center text-xs text-muted-foreground hover:underline">
-        Email me a magic link instead
-      </button>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
         {mode === 'signin' ? (

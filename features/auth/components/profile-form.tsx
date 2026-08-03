@@ -37,7 +37,7 @@ export function ProfileForm({ defaults }: { defaults: { fullName: string; phone:
       </div>
       <div>
         <Label htmlFor="phone">Phone <span className="text-muted-foreground">(optional)</span></Label>
-        <Input id="phone" type="tel" autoComplete="tel" aria-invalid={!!errors.phone} {...register('phone')} />
+        <Input id="phone" type="tel" inputMode="numeric" maxLength={10} placeholder="9876543210" autoComplete="tel" aria-invalid={!!errors.phone} {...register('phone')} />
         {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>}
       </div>
 
