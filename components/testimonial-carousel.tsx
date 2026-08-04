@@ -55,14 +55,33 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {current.map((t) => (
-              <div key={t.id} className="flex flex-col rounded-2xl border bg-card p-5 shadow-sm">
+              <div key={t.id} className="flex h-full flex-col rounded-2xl border bg-card p-5 shadow-sm">
                 <p className="text-brand-gold2" aria-label={`${t.rating} out of 5 stars`}>
                   {'★'.repeat(t.rating)}<span className="text-muted-foreground/30">{'★'.repeat(5 - t.rating)}</span>
                 </p>
-                {t.body && <p className="mt-3 flex-1 text-sm leading-relaxed text-foreground/80">&ldquo;{t.body}&rdquo;</p>}
+                {t.body && (
+                  <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-foreground/80">
+                    &ldquo;{t.body}&rdquo;
+                  </p>
+                )}
                 <div className="mt-5 flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={t.avatarUrl ?? undefined} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                  {t.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={t.avatarUrl}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded-full object-cover"
+                      // If a stored photo URL 404s/breaks, fall back to the
+                      // generic dummy icon instead of a broken-image box.
+                      onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+                    />
+                  ) : null}
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(210,20%,92%)] ${t.avatarUrl ? 'hidden' : ''}`} aria-hidden>
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="hsl(210,15%,55%)" strokeWidth="1.6">
+                      <circle cx="12" cy="8.5" r="3.5" />
+                      <path d="M4.5 20c0-3.6 3.4-6.5 7.5-6.5s7.5 2.9 7.5 6.5" strokeLinecap="round" />
+                    </svg>
+                  </span>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold">{t.name}</p>
                     <a href={`/centres/${t.centreSlug}`} className="block truncate text-xs text-muted-foreground hover:text-primary hover:underline">

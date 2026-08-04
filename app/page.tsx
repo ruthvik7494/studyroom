@@ -38,7 +38,7 @@ export default async function HomePage() {
     getPopularAreas(db, 3),
     db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
     admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
-    db.from('reviews')
+    admin.from('reviews')
       .select('id, rating, body, author:author_id(full_name, avatar_url), centres(name, slug)')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
@@ -60,7 +60,7 @@ export default async function HomePage() {
         // underneath it. The centre name below covers that subtitle role
         // now, with real data either way.
         name: author?.full_name || 'Verified Student',
-        avatarUrl: author?.avatar_url || `https://i.pravatar.cc/150?u=${r.id}`,
+        avatarUrl: author?.avatar_url ?? null,
         rating: r.rating,
         body: r.body ?? '',
         centreName: centre.name,

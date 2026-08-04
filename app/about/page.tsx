@@ -59,7 +59,7 @@ export default async function AboutPage() {
     admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
     db.from('bookings').select('id', { count: 'exact', head: true }).in('status', ['confirmed', 'completed']),
     db.from('centres').select('rating').eq('is_published', true).gt('reviews_count', 0),
-    db.from('reviews')
+    admin.from('reviews')
       .select('id, rating, body, author:author_id(full_name, avatar_url), centres(name, slug)')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
@@ -79,7 +79,7 @@ export default async function AboutPage() {
       return {
         id: r.id,
         name: author?.full_name || 'Verified Student',
-        avatarUrl: author?.avatar_url || `https://i.pravatar.cc/150?u=${r.id}`,
+        avatarUrl: author?.avatar_url ?? null,
         rating: r.rating,
         body: r.body ?? '',
         centreName: centre.name,
