@@ -16,9 +16,23 @@ export interface SidebarUser {
   initial: string;
 }
 
-function isActive(pathname: string, href: string): boolean {
-  if (href === '/admin' || href === '/owner' || href === '/account') return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
+/**
+ * Picks the single most-specific nav item that matches the current path.
+ * Plain per-item prefix matching (pathname.startsWith(href + '/')) breaks
+ * when one item's href is itself a prefix of another's — e.g. "My Centres"
+ * (/owner/centres) and "Create Centre" (/owner/centres/new): visiting
+ * /owner/centres/new would match BOTH, highlighting them simultaneously.
+ * Matching against the whole nav list at once and keeping only the longest
+ * href match fixes that — the more specific route always wins.
+ */
+function bestMatchHref(pathname: string, navItems: SidebarNavItem[]): string | null {
+  let best: string | null = null;
+  for (const item of navItems) {
+    const exact = item.href === '/admin' || item.href === '/owner' || item.href === '/account';
+    const matches = pathname === item.href || (!exact && pathname.startsWith(`${item.href}/`));
+    if (matches && (best === null || item.href.length > best.length)) best = item.href;
+  }
+  return best;
 }
 
 /**
@@ -39,6 +53,8 @@ export function DashboardShell({
   const [open, setOpen] = useState(false);
   useEffect(() => { setOpen(false); }, [pathname]);
 
+  const activeHref = bestMatchHref(pathname, navItems);
+
   const nav = (
     <>
       <div className="flex items-center gap-2.5 px-5 py-5">
@@ -51,7 +67,7 @@ export function DashboardShell({
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3" aria-label="Dashboard">
         {navItems.map((item) => {
-          const active = isActive(pathname, item.href);
+          const active = item.href === activeHref;
           return (
             <Link
               key={item.href}
