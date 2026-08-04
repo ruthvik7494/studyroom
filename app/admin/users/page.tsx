@@ -108,7 +108,12 @@ export default async function AdminUsersPage({
                     <Badge variant={ROLE_VARIANT[u.role] ?? 'secondary'} className="capitalize">{u.role}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant={u.account_status === 'suspended' ? 'destructive' : 'success'} className="capitalize">{u.account_status}</Badge>
+                    <Badge
+                      variant={u.account_status === 'suspended' ? 'destructive' : u.account_status === 'deleted' ? 'secondary' : 'success'}
+                      className="capitalize"
+                    >
+                      {u.account_status}
+                    </Badge>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
