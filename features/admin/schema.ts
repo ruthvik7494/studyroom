@@ -38,3 +38,9 @@ export const setAccountStatusSchema = z.object({
   status: z.enum(['active', 'suspended']),
 });
 export type SetAccountStatus = z.infer<typeof setAccountStatusSchema>;
+
+export const reviewDeletionRequestSchema = z.object({
+  requestId: z.string().uuid(),
+  notes: z.string().trim().max(500).optional().or(z.literal('')),
+});
+export type ReviewDeletionRequest = z.infer<typeof reviewDeletionRequestSchema>;

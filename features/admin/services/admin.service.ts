@@ -8,21 +8,24 @@ export interface AdminStats {
   openReports: number;
   pendingClaims: number;
   newEnquiries: number;
+  pendingDeletions: number;
 }
 
 /** Counts for the dashboard overview. Uses head+count (no rows fetched). */
 export async function getAdminStats(db: DB): Promise<AdminStats> {
-  const [pendingCentres, openReports, pendingClaims, newEnquiries] = await Promise.all([
+  const [pendingCentres, openReports, pendingClaims, newEnquiries, pendingDeletions] = await Promise.all([
     db.from('centres').select('id', { count: 'exact', head: true }).eq('status', 'pending_review'),
     db.from('review_reports').select('id', { count: 'exact', head: true }).eq('resolved', false),
     db.from('listing_claims').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     db.from('enquiries').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+    db.from('account_deletion_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
   ]);
   return {
     pendingCentres: pendingCentres.count ?? 0,
     openReports: openReports.count ?? 0,
     pendingClaims: pendingClaims.count ?? 0,
     newEnquiries: newEnquiries.count ?? 0,
+    pendingDeletions: pendingDeletions.count ?? 0,
   };
 }
 
@@ -42,6 +45,25 @@ export async function getPendingCentres(db: DB): Promise<PendingCentre[]> {
     .limit(100);
   if (error) throw error;
   return (data ?? []) as unknown as PendingCentre[];
+}
+
+export interface PendingDeletionRequest {
+  id: string;
+  reason: string | null;
+  requested_at: string;
+  user: { full_name: string | null; role: Database['public']['Enums']['user_role'] } | null;
+}
+
+/** Account deletion requests awaiting admin review, oldest first. */
+export async function getPendingDeletionRequests(db: DB): Promise<PendingDeletionRequest[]> {
+  const { data, error } = await db
+    .from('account_deletion_requests')
+    .select('id, reason, requested_at, user:user_id(full_name, role)')
+    .eq('status', 'pending')
+    .order('requested_at', { ascending: true })
+    .limit(100);
+  if (error) throw error;
+  return (data ?? []) as unknown as PendingDeletionRequest[];
 }
 
 export interface ReportedReview {

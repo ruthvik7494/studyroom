@@ -9,7 +9,7 @@ import { logAudit } from '@/lib/audit';
 import type { Result } from '@/lib/result';
 import { ActionError, ok, err } from '@/lib/result';
 import type { Database } from '@/types/database.types';
-import { moderateCentreSchema, moderateReviewSchema, resolveReportSchema, moderateClaimSchema, setUserRoleSchema, setAccountStatusSchema } from './schema';
+import { moderateCentreSchema, moderateReviewSchema, resolveReportSchema, moderateClaimSchema, setUserRoleSchema, setAccountStatusSchema, reviewDeletionRequestSchema } from './schema';
 import { adminCentreCreateSchema, adminCentreCreateBaseSchema } from '@/features/centres/schema';
 import { notifyCentreDecision } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
@@ -346,6 +346,45 @@ export async function setAccountStatus(raw: unknown): Promise<Result<{ ok: true 
       throw error;
     }
     revalidatePath('/admin/users');
+    return { ok: true as const };
+  });
+}
+
+/**
+ * Approve a student/owner's account deletion request. Runs through the
+ * admin_approve_account_deletion() RPC (0049_account_deletion_requests.sql)
+ * so the role check, the owner-centres-unpublish step, the profile scrub,
+ * and the audit log all happen atomically — not as separate client-side
+ * calls that could partially fail.
+ */
+export async function approveAccountDeletion(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(reviewDeletionRequestSchema, raw, async (input) => {
+    await requireRole('admin');
+    const db = await createClient();
+    const { error } = await db.rpc('admin_approve_account_deletion', { p_request_id: input.requestId });
+    if (error) {
+      if (error.message.includes('FORBIDDEN')) throw new ActionError('FORBIDDEN', 'Admin only.');
+      if (error.message.includes('NOT_FOUND')) throw new ActionError('NOT_FOUND', 'Request not found.');
+      if (error.message.includes('ALREADY_REVIEWED')) throw new ActionError('VALIDATION', 'This request was already reviewed.');
+      throw error;
+    }
+    revalidatePath('/admin/account-deletions');
+    revalidatePath('/admin/users');
+    return { ok: true as const };
+  });
+}
+
+/** Decline a deletion request (e.g. outstanding dues, ongoing dispute) — the account stays exactly as it is. */
+export async function rejectAccountDeletion(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(reviewDeletionRequestSchema, raw, async (input) => {
+    await requireRole('admin');
+    const db = await createClient();
+    const { error } = await db.rpc('admin_reject_account_deletion', { p_request_id: input.requestId, p_notes: input.notes || '' });
+    if (error) {
+      if (error.message.includes('FORBIDDEN')) throw new ActionError('FORBIDDEN', 'Admin only.');
+      throw error;
+    }
+    revalidatePath('/admin/account-deletions');
     return { ok: true as const };
   });
 }

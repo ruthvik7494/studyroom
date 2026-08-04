@@ -29,6 +29,7 @@ export async function action<TInput, TOutput>(
     if (e instanceof AuthError) {
       if (e.code === 'UNAUTHENTICATED') return err('UNAUTHENTICATED', 'Please sign in to continue.');
       if (e.code === 'SUSPENDED') return err('FORBIDDEN', 'Your account has been suspended. Contact support if you think this is a mistake.');
+      if (e.code === 'DELETED') return err('FORBIDDEN', 'This account has been deleted.');
       return err('FORBIDDEN', 'You do not have permission to do that.');
     }
     if (e instanceof ActionError) {

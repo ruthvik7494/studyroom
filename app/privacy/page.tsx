@@ -101,7 +101,10 @@ const SECTIONS = [
     body: (
       <p>
         We keep booking and payment records for [RETENTION PERIOD — set per applicable
-        tax/accounting law]. You can request deletion of your account at any time.
+        tax/accounting law], even after an account is deleted — this is required for accounting,
+        tax, dispute-resolution and fraud-prevention purposes, and reflects payment records other
+        parties (e.g. a study centre owner) may also be legally required to keep. See &quot;Deleting
+        your account&quot; below for exactly what is and isn&apos;t removed.
       </p>
     ),
   },
@@ -110,11 +113,36 @@ const SECTIONS = [
     icon: UserRound,
     title: 'Your rights',
     body: (
-      <p>
-        You can request access to, correction of, or deletion of your personal data by contacting
-        [PRIVACY CONTACT EMAIL]. [Add the specific statutory rights and complaint route that apply
-        in your operating jurisdiction.]
-      </p>
+      <div className="space-y-3">
+        <p>
+          You can request access to or correction of your personal data at any time by contacting
+          [PRIVACY CONTACT EMAIL]. [Add the specific statutory rights and complaint route that
+          apply in your operating jurisdiction.]
+        </p>
+        <div>
+          <p className="font-semibold text-foreground">Deleting your account</p>
+          <p className="mt-1">
+            You can request deletion from your account settings at any time. To protect everyone
+            on the platform from fraudulent deletion requests and to preserve records we and study
+            centre owners are legally required to keep, requests are reviewed by our team before
+            being carried out — this is usually quick, and you keep full access to your account
+            while a request is pending.
+          </p>
+          <p className="mt-2">Once a request is approved:</p>
+          <ul className="mt-1 list-disc space-y-1 pl-5">
+            <li>Your login is permanently disabled.</li>
+            <li>Your name, phone number, profile photo, bio and public contact email are removed.</li>
+            <li>
+              If you were a study centre owner, your listings are unpublished (existing students&apos;
+              bookings and reviews at those centres are unaffected).
+            </li>
+            <li>
+              Booking, payment and review records are kept for the retention period above, with your
+              personal details removed from them wherever the record itself doesn&apos;t require them.
+            </li>
+          </ul>
+        </div>
+      </div>
     ),
   },
   {

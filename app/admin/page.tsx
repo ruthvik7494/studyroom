@@ -11,6 +11,7 @@ const CARDS = [
   { key: 'openReports', label: 'Open review reports', href: '/admin/reviews', bg: 'bg-amber-100', fg: 'text-amber-600', icon: '📝' },
   { key: 'pendingClaims', label: 'Pending claims', href: '/admin/claims', bg: 'bg-rose-100', fg: 'text-rose-600', icon: '🛡️' },
   { key: 'newEnquiries', label: 'New enquiries', href: '/admin/enquiries', bg: 'bg-emerald-100', fg: 'text-emerald-600', icon: '✉️' },
+  { key: 'pendingDeletions', label: 'Pending account deletions', href: '/admin/account-deletions', bg: 'bg-slate-100', fg: 'text-slate-600', icon: '🗑️' },
 ] as const;
 
 const ACTIVITY_LABEL: Record<string, string> = {
@@ -25,6 +26,10 @@ const ACTIVITY_LABEL: Record<string, string> = {
   'auth.password_changed': 'Password changed',
   'user.account_status_changed': 'Account status changed',
   'review.responded': 'Owner responded to a review',
+  'account.deletion_requested': 'Account deletion requested',
+  'account.deletion_approved': 'Account deletion approved',
+  'account.deletion_rejected': 'Account deletion declined',
+  'account.deletion_cancelled': 'Account deletion request cancelled',
 };
 
 const QUICK_ACTIONS = [
@@ -50,7 +55,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* Pending actions */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {CARDS.map((c) => (
           <Link key={c.key} href={c.href as never}>
             <Card className="flex items-start gap-3 p-5 transition hover:shadow-md">

@@ -8,7 +8,7 @@ export interface SessionUser {
   id: string;
   email: string | null;
   role: Role;
-  accountStatus: 'active' | 'suspended';
+  accountStatus: 'active' | 'suspended' | 'deleted';
 }
 
 /**
@@ -30,22 +30,24 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     id: user.id,
     email: user.email ?? null,
     role: (profile?.role ?? 'student') as Role,
-    accountStatus: (profile?.account_status ?? 'active') as 'active' | 'suspended',
+    accountStatus: (profile?.account_status ?? 'active') as 'active' | 'suspended' | 'deleted',
   };
 }
 
 class AuthError extends Error {
-  constructor(public code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'SUSPENDED') {
+  constructor(public code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'SUSPENDED' | 'DELETED') {
     super(code);
     this.name = 'AuthError';
   }
 }
 
-/** Throws AuthError('UNAUTHENTICATED') if not signed in, or AuthError('SUSPENDED')
- * if the account has been suspended — a real, enforced block, not cosmetic. */
+/** Throws AuthError('UNAUTHENTICATED') if not signed in, AuthError('SUSPENDED')
+ * if suspended, or AuthError('DELETED') if the account was deleted by an
+ * admin — all real, enforced blocks, not cosmetic. */
 export async function requireUser(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) throw new AuthError('UNAUTHENTICATED');
+  if (user.accountStatus === 'deleted') throw new AuthError('DELETED');
   if (user.accountStatus === 'suspended') throw new AuthError('SUSPENDED');
   return user;
 }

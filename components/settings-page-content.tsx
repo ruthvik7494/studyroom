@@ -4,21 +4,26 @@ import { Card } from '@/components/ui/card';
 import { ProfileForm } from '@/features/auth/components/profile-form';
 import { OwnerProfileForm } from '@/features/auth/components/owner-profile-form';
 import { UpdatePasswordForm } from '@/features/auth/components/update-password-form';
+import { DeleteAccountSection } from '@/features/account/components/delete-account-section';
+import { getMyDeletionRequest } from '@/features/account/actions';
 
 /**
  * Shared between /admin/settings and /owner/settings — same personal-detail
  * and password-change capability students already have via /account/profile,
  * just placed here since admin/owner have their own sidebar area instead.
  * Owners additionally get a "public profile" card (photo, about, public
- * email) shown to students on their centre listing pages.
+ * email) shown to students on their centre listing pages, and a "delete my
+ * account" request (admin-only accounts can't request their own deletion
+ * here — see the role check below).
  */
 export async function SettingsPageContent() {
   const user = await requireUser();
   const db = await createClient();
 
-  const [{ data: profile }, { data: authUser }] = await Promise.all([
+  const [{ data: profile }, { data: authUser }, deletionRequest] = await Promise.all([
     db.from('profiles').select('full_name, phone, avatar_url, bio, public_email').eq('id', user.id).maybeSingle(),
     db.auth.getUser(),
+    user.role !== 'admin' ? getMyDeletionRequest() : Promise.resolve(null),
   ]);
 
   // Real check, not a guess: does this account have an actual email/password
@@ -71,6 +76,15 @@ export async function SettingsPageContent() {
           <UpdatePasswordForm redirectHome={false} />
         </div>
       </Card>
+
+      {user.role !== 'admin' && (
+        <div>
+          <h2 className="font-display text-lg font-bold text-destructive">Danger zone</h2>
+          <div className="mt-3">
+            <DeleteAccountSection initialRequest={deletionRequest} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
