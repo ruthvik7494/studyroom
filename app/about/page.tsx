@@ -75,12 +75,13 @@ export default async function AboutPage() {
     .map((r) => {
       const author = r.author as unknown as { full_name: string | null; avatar_url: string | null } | null;
       const centre = r.centres as unknown as { name: string; slug: string } | null;
+      const fullName = author?.full_name;
       // Only show testimonials with a real name attached (see app/page.tsx for why).
-      if (!centre || !author?.full_name) return null;
+      if (!centre || !fullName) return null;
       return {
         id: r.id,
-        name: author.full_name,
-        avatarUrl: author.avatar_url || `https://i.pravatar.cc/150?u=${r.id}`,
+        name: fullName,
+        avatarUrl: author?.avatar_url || `https://i.pravatar.cc/150?u=${r.id}`,
         rating: r.rating,
         body: r.body ?? '',
         centreName: centre.name,

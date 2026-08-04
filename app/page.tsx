@@ -51,18 +51,19 @@ export default async function HomePage() {
     .map((r) => {
       const author = r.author as unknown as { full_name: string | null; avatar_url: string | null } | null;
       const centre = r.centres as unknown as { name: string; slug: string } | null;
+      const fullName = author?.full_name;
       // Only ever show a testimonial with a real name attached — a
       // review from a profile with no name filled in isn't useful as
       // social proof, and previously fell back to a literal "Student"
       // (which then duplicated the hardcoded "Student" subtitle below it).
-      if (!centre || !author?.full_name) return null;
+      if (!centre || !fullName) return null;
       return {
         id: r.id,
-        name: author.full_name,
+        name: fullName,
         // A missing photo gets a consistent, realistic placeholder (seeded
         // by review id, so the same reviewer always gets the same face)
         // rather than a plain initial — matches the reference design.
-        avatarUrl: author.avatar_url || `https://i.pravatar.cc/150?u=${r.id}`,
+        avatarUrl: author?.avatar_url || `https://i.pravatar.cc/150?u=${r.id}`,
         rating: r.rating,
         body: r.body ?? '',
         centreName: centre.name,
