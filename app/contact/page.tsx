@@ -61,7 +61,7 @@ export default async function ContactPage() {
               Have questions, suggestions or need support? Reach out to us. We&apos;ll get back to you as soon as possible.
             </p>
 
-            <StaggerGroup delay={0.15} className="mt-6 grid grid-cols-2 gap-4">
+            <StaggerGroup trigger="load" delay={0.15} className="mt-6 grid grid-cols-2 gap-4">
               <StaggerItem className="flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-300 hover:bg-secondary/60">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base" aria-hidden>🎓</span>
                 <div>

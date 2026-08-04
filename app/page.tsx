@@ -114,7 +114,7 @@ export default async function HomePage() {
               Discover verified study rooms, reading halls, and coworking spaces that help you focus and achieve more.
             </p>
 
-            <StaggerGroup delay={0.15} className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <StaggerGroup trigger="load" delay={0.15} className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
               <StaggerItem className="inline-flex items-center gap-1.5">
                 <svg aria-hidden viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2d6a4f" strokeWidth="2"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5l-8-3Z" /></svg>
                 Verified Centres
@@ -134,7 +134,7 @@ export default async function HomePage() {
             </StaggerGroup>
 
             {/* Search — one real field: name/area/landmark. No date field. */}
-            <Reveal variant="plain" delay={0.35} margin="0px">
+            <Reveal variant="plain" trigger="load" delay={0.35}>
             <form action="/centres" method="get" className="mt-6 rounded-2xl border bg-card p-3 shadow-sm">
               <div className="grid gap-3 sm:grid-cols-[2fr_auto]">
                 <input name="q" type="text" placeholder="Search by name, area or landmark" className="h-11 rounded-lg border border-input bg-background px-3 text-sm" />

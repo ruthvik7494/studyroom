@@ -2,9 +2,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { EASE_OUT, DURATION } from '@/lib/motion';
+
+const navLinkClass = 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#2d6c4f] hover:text-white';
+const activeNavLinkClass = 'rounded-lg bg-[#2d6c4f] px-3 py-2 text-sm font-semibold text-white';
 
 const panelLinkClass = 'block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-[#2d6c4f] hover:text-white';
 const panelActiveLinkClass = 'block rounded-md bg-[#2d6c4f] px-3 py-2.5 text-sm font-semibold text-white';
@@ -36,28 +37,11 @@ export function DesktopNav({ role }: { role: 'student' | 'owner' | 'admin' | nul
   const items = buildItems(role);
   return (
     <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
-      {items.map((item) => {
-        const active = isActive(pathname, item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              'relative rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              active ? 'font-semibold text-white' : 'text-muted-foreground hover:bg-[#2d6c4f] hover:text-white',
-            )}
-          >
-            {active && (
-              <motion.span
-                layoutId="desktop-nav-pill"
-                className="absolute inset-0 rounded-lg bg-[#2d6c4f]"
-                transition={{ duration: DURATION.base, ease: EASE_OUT }}
-              />
-            )}
-            <span className="relative">{item.label}</span>
-          </Link>
-        );
-      })}
+      {items.map((item) => (
+        <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? activeNavLinkClass : navLinkClass}>
+          {item.label}
+        </Link>
+      ))}
     </nav>
   );
 }
@@ -100,17 +84,12 @@ export function MobileMenu({ role, email, signOutAction }: MobileMenuProps) {
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.nav
-            id="mobile-nav-panel"
-            aria-label="Primary mobile"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: DURATION.fast, ease: EASE_OUT }}
-            className="absolute inset-x-0 top-full border-b bg-background px-4 py-3 shadow-md"
-          >
+      {open && (
+        <nav
+          id="mobile-nav-panel"
+          aria-label="Primary mobile"
+          className="absolute inset-x-0 top-full border-b bg-background px-4 py-3 shadow-md"
+        >
           <div className="space-y-0.5">
             {items.map((item) => (
               <Link key={item.href} href={item.href} className={cn(isActive(pathname, item.href) ? panelActiveLinkClass : panelLinkClass)}>
@@ -145,9 +124,8 @@ export function MobileMenu({ role, email, signOutAction }: MobileMenuProps) {
               </Link>
             )}
           </div>
-          </motion.nav>
-        )}
-      </AnimatePresence>
+        </nav>
+      )}
     </div>
   );
 }
