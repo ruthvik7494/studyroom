@@ -1,8 +1,11 @@
 'use client';
 import { useState, useTransition } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { toggleSaved } from '@/features/saved/actions';
 
 export function SaveHeart({ centreId, initialSaved }: { centreId: string; initialSaved: boolean }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [saved, setSaved] = useState(initialSaved);
   const [pending, startTransition] = useTransition();
 
@@ -13,7 +16,13 @@ export function SaveHeart({ centreId, initialSaved }: { centreId: string; initia
     setSaved(next); // optimistic
     startTransition(async () => {
       const res = await toggleSaved({ centreId, save: next });
-      if (!res.ok) setSaved(!next); // rollback
+      if (!res.ok) {
+        setSaved(!next); // rollback
+        // Guests can see the heart on every card, same as the reference
+        // design — but saving needs an account, so send them to log in
+        // (and back to this exact page) instead of failing silently.
+        if (res.error.code === 'UNAUTHENTICATED') router.push(`/login?next=${encodeURIComponent(pathname)}`);
+      }
     });
   };
 

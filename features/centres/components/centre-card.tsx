@@ -17,14 +17,13 @@ export const STATUS_STYLE: Record<string, { dot: string; label: string }> = {
 
 interface CentreCardProps {
   centre: CentreListItem;
-  showSave?: boolean;
   isSaved?: boolean;
   /** Position within its list — used only to stagger the first-appearance
    * fade-up slightly per card. Optional; defaults to no stagger. */
   index?: number;
 }
 
-export function CentreCard({ centre, showSave, isSaved, index = 0 }: CentreCardProps) {
+export function CentreCard({ centre, isSaved, index = 0 }: CentreCardProps) {
   const status = STATUS_STYLE[centre.occupancy?.status ?? 'unknown']!;
   return (
     <motion.div
@@ -37,7 +36,7 @@ export function CentreCard({ centre, showSave, isSaved, index = 0 }: CentreCardP
     >
       <Card className="overflow-hidden transition-shadow duration-300 hover:-translate-y-1 hover:shadow-md">
         <Link href={`/centres/${centre.slug}`} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <div className="relative flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br from-secondary to-accent text-5xl">
+          <div className="relative flex h-52 items-center justify-center overflow-hidden bg-gradient-to-br from-secondary to-accent text-5xl">
             {centre.cover_url ? (
               <Image
                 src={centre.cover_url}
@@ -76,7 +75,7 @@ export function CentreCard({ centre, showSave, isSaved, index = 0 }: CentreCardP
               </span>
             )}
 
-            {showSave && <SaveHeart centreId={centre.id} initialSaved={!!isSaved} />}
+            <SaveHeart centreId={centre.id} initialSaved={!!isSaved} />
           </div>
 
           <div className="p-4">

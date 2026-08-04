@@ -121,7 +121,7 @@ export default async function CentresPage({ searchParams }: PageProps) {
             <CentreEmptyState />
           ) : filters.view === 'grid' ? (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
-              {result.items.map((c, i) => <CentreCard key={c.id} centre={c} showSave={!!viewer} isSaved={savedIds.has(c.id)} index={i} />)}
+              {result.items.map((c, i) => <CentreCard key={c.id} centre={c} isSaved={savedIds.has(c.id)} index={i} />)}
             </div>
           ) : (
             <div className="flex flex-col gap-3">

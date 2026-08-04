@@ -231,7 +231,7 @@ export default async function HomePage() {
           </Reveal>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((c, i) => (
-              <CentreCard key={c.slug} centre={c} showSave={!!viewer} isSaved={savedIds.has(c.id)} index={i} />
+              <CentreCard key={c.slug} centre={c} isSaved={savedIds.has(c.id)} index={i} />
             ))}
           </div>
           <div className="mt-6 text-center">
