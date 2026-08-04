@@ -1,12 +1,12 @@
 'use client';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { GraduationCap, Building2, ArrowRight } from 'lucide-react';
 import { chooseRole } from '../actions';
-import { Card } from '@/components/ui/card';
 
 const OPTIONS = [
-  { role: 'student' as const, emoji: '🎓', title: 'I’m a student', desc: 'Find, book and review study spaces.' },
-  { role: 'owner' as const, emoji: '🏫', title: 'I run a study space', desc: 'List and manage my centre.' },
+  { role: 'student' as const, Icon: GraduationCap, title: 'I\u2019m a student', desc: 'Find, book and review study spaces.' },
+  { role: 'owner' as const, Icon: Building2, title: 'I run a study space', desc: 'List and manage my centre.' },
 ];
 
 export function RoleSelect({ next }: { next: string }) {
@@ -26,23 +26,41 @@ export function RoleSelect({ next }: { next: string }) {
     });
 
   return (
-    <div className="mt-6 space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        {OPTIONS.map((o) => (
-          <button key={o.role} onClick={() => setSelected(o.role)} className="text-left"
-            aria-pressed={selected === o.role}>
-            <Card className={`p-5 transition ${selected === o.role ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}>
-              <span className="text-2xl" aria-hidden>{o.emoji}</span>
-              <p className="mt-2 font-display font-semibold">{o.title}</p>
-              <p className="text-sm text-muted-foreground">{o.desc}</p>
-            </Card>
-          </button>
-        ))}
+    <div className="mt-6 space-y-5">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {OPTIONS.map(({ role, Icon, title, desc }) => {
+          const active = selected === role;
+          return (
+            <button key={role} onClick={() => setSelected(role)} className="text-left" aria-pressed={active}>
+              <div
+                className={`rounded-2xl border-2 p-5 text-center transition-all duration-200 ${
+                  active ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30 hover:shadow-sm'
+                }`}
+              >
+                <span
+                  className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
+                    active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground/70'
+                  }`}
+                  aria-hidden
+                >
+                  <Icon className="h-6 w-6" />
+                </span>
+                <p className="mt-3 font-display font-bold">{title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
-      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-      <button onClick={confirm} disabled={!selected || pending}
-        className="w-full rounded-md bg-primary px-4 py-2.5 font-display text-sm font-bold text-primary-foreground disabled:opacity-50">
-        {pending ? 'Setting up…' : 'Continue'}
+
+      {error && <p className="text-center text-sm text-destructive" role="alert">{error}</p>}
+
+      <button
+        onClick={confirm}
+        disabled={!selected || pending}
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3.5 font-display text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-primary/40"
+      >
+        {pending ? 'Setting up…' : (<>Continue <ArrowRight className="h-4 w-4" /></>)}
       </button>
     </div>
   );
