@@ -77,7 +77,7 @@ export function CreateCentreForm({ amenities }: { amenities: Amenity[] }) {
       }
     }
 
-    router.push('/admin/centres');
+    router.push('/admin/centres/all');
     router.refresh();
   };
 

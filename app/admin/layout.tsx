@@ -16,7 +16,6 @@ const NAV: SidebarNavItem[] = [
   { href: '/admin/centres/all', label: 'All Centres', icon: icon('M4 6h16M4 12h16M4 18h10') },
   { href: '/admin/users', label: 'Users', icon: icon('M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 4a4 4 0 0 0 4-4V9a4 4 0 0 0-4-4') },
   { href: '/admin/bookings', label: 'Bookings', icon: icon('M8 3v3m8-3v3M4 8h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z') },
-  { href: '/admin/centres', label: 'Approvals', icon: icon('m9 12 2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z') },
   { href: '/admin/waitlist', label: 'Waitlist', icon: icon('M9 6a3 3 0 1 0 6 0 3 3 0 0 0-6 0Zm-6 14c0-3.3 2.7-6 6-6h.5M15 20h6m-3-3v6') },
   { href: '/admin/reviews', label: 'Moderation', icon: icon('M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z') },
   { href: '/admin/claims', label: 'Claims', icon: icon('M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z') },

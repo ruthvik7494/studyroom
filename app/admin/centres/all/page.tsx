@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getAllCentres } from '@/features/admin/services/admin.service';
+import { CentreModerationActions } from '@/features/admin/components/centre-moderation-actions';
 import { DeleteCentreButton } from '@/features/admin/components/delete-centre-button';
 import { RestoreCentreButton } from '@/features/admin/components/restore-centre-button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -48,27 +49,33 @@ function SearchIcon() {
   );
 }
 
-interface PageProps { searchParams: Promise<{ q?: string; page?: string; archived?: string }> }
+interface PageProps { searchParams: Promise<{ q?: string; page?: string; tab?: string }> }
 
 export default async function AllCentresPage({ searchParams }: PageProps) {
-  const { q, page: pageRaw, archived } = await searchParams;
+  const { q, page: pageRaw, tab: tabRaw } = await searchParams;
   const page = Math.max(1, Number(pageRaw) || 1);
-  const showArchived = archived === '1';
+  const tab = tabRaw === 'pending' ? 'pending' : tabRaw === 'archived' ? 'archived' : 'active';
 
   const db = await createClient();
-  const result = await getAllCentres(db, { q, page, pageSize: PAGE_SIZE, showArchived });
+  const result = await getAllCentres(db, {
+    q,
+    page,
+    pageSize: PAGE_SIZE,
+    showArchived: tab === 'archived',
+    status: tab === 'pending' ? 'pending_review' : undefined,
+  });
 
   const hrefForPage = (p: number) => {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
-    if (showArchived) params.set('archived', '1');
+    if (tab !== 'active') params.set('tab', tab);
     params.set('page', String(p));
     return `/admin/centres/all?${params.toString()}`;
   };
-  const hrefForTab = (archivedTab: boolean) => {
+  const hrefForTab = (t: 'active' | 'pending' | 'archived') => {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
-    if (archivedTab) params.set('archived', '1');
+    if (t !== 'active') params.set('tab', t);
     return `/admin/centres/all?${params.toString()}`;
   };
 
@@ -78,14 +85,20 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
 
       <div className="mb-4 flex gap-1">
         <Link
-          href={hrefForTab(false)}
-          className={`rounded-md px-3 py-1.5 text-sm font-semibold ${!showArchived ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+          href={hrefForTab('active')}
+          className={`rounded-md px-3 py-1.5 text-sm font-semibold ${tab === 'active' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
         >
           Active
         </Link>
         <Link
-          href={hrefForTab(true)}
-          className={`rounded-md px-3 py-1.5 text-sm font-semibold ${showArchived ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+          href={hrefForTab('pending')}
+          className={`rounded-md px-3 py-1.5 text-sm font-semibold ${tab === 'pending' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+        >
+          Pending Review
+        </Link>
+        <Link
+          href={hrefForTab('archived')}
+          className={`rounded-md px-3 py-1.5 text-sm font-semibold ${tab === 'archived' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
         >
           Deleted
         </Link>
@@ -95,7 +108,7 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
         {/* Search — same GET form/behavior, redesigned as an inset pill search bar */}
         <div className="border-b p-4">
           <form action="/admin/centres/all" method="get" className="relative max-w-md">
-            {showArchived && <input type="hidden" name="archived" value="1" />}
+            {tab !== 'active' && <input type="hidden" name="tab" value={tab} />}
             <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
               <SearchIcon />
             </span>
@@ -114,12 +127,12 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
 
         {result.items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="text-3xl" aria-hidden>{showArchived ? '🗑️' : '🏢'}</span>
+            <span className="text-3xl" aria-hidden>{tab === 'archived' ? '🗑️' : tab === 'pending' ? '✅' : '🏢'}</span>
             <p className="mt-2 font-display font-semibold">
-              {q ? 'No centres match that search' : showArchived ? 'Nothing deleted' : 'No centres yet'}
+              {q ? 'No centres match that search' : tab === 'archived' ? 'Nothing deleted' : tab === 'pending' ? 'Queue is clear' : 'No centres yet'}
             </p>
             <p className="text-sm text-muted-foreground">
-              {q ? 'Try a different name.' : showArchived ? 'Deleted listings will show up here.' : 'Use Create Centre to add the first one.'}
+              {q ? 'Try a different name.' : tab === 'archived' ? 'Deleted listings will show up here.' : tab === 'pending' ? 'No listings are waiting for review.' : 'Use Create Centre to add the first one.'}
             </p>
           </div>
         ) : (
@@ -154,7 +167,9 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
                     <TableCell><Badge variant={STATUS_VARIANT[c.status] ?? 'secondary'}>{c.status}</Badge></TableCell>
                     <TableCell className="pr-6 text-right">
                       <div className="flex items-center justify-end gap-3">
-                        {showArchived ? (
+                        {c.status === 'pending_review' ? (
+                          <CentreModerationActions centreId={c.id} />
+                        ) : tab === 'archived' ? (
                           <RestoreCentreButton centreId={c.id} />
                         ) : (
                           <>

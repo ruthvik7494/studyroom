@@ -101,7 +101,7 @@ export interface AdminCentreListItem {
   owner: { full_name: string | null } | null;
 }
 
-export interface AdminCentreSearch { q?: string; page: number; pageSize: number; showArchived?: boolean }
+export interface AdminCentreSearch { q?: string; page: number; pageSize: number; showArchived?: boolean; status?: 'pending_review' }
 export interface AdminCentrePage {
   items: AdminCentreListItem[]; total: number; page: number; pageSize: number; totalPages: number;
 }
@@ -120,7 +120,7 @@ export async function getAllCentres(db: DB, params: AdminCentreSearch): Promise<
     .select('id, name, slug, area, address, status, created_at, owner:owner_id(full_name)', { count: 'exact' })
     .order('created_at', { ascending: false });
 
-  query = params.showArchived ? query.eq('status', 'archived') : query.neq('status', 'archived');
+  query = params.status ? query.eq('status', params.status) : params.showArchived ? query.eq('status', 'archived') : query.neq('status', 'archived');
 
   if (params.q) {
     // Same PostgREST filter-character sanitisation used by the public search.
