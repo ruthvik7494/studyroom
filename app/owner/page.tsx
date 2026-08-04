@@ -7,6 +7,7 @@ import { formatINR } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { BookingStatusBadge, PaymentStatusBadge } from '@/components/booking-status-badge';
 import { getOwnerMetrics, getOwnerBookings } from '@/features/owner/services/bookings.service';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Dashboard · Owner', ...noindex };
 
@@ -81,7 +82,10 @@ export default async function OwnerDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Dashboard Overview</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-display text-2xl font-bold">Dashboard Overview</h1>
+          <RefreshButton label="Refresh dashboard" />
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">Bookings, occupancy and revenue across your centres.</p>
       </div>
 

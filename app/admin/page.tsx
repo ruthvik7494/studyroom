@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { formatINR } from '@/lib/utils';
 import { DonutChart, DonutLegend } from '@/components/ui/donut-chart';
 import { Sparkline } from '@/components/ui/sparkline';
+import { RefreshButton } from '@/components/refresh-button';
 
 const CARDS = [
   { key: 'pendingCentres', label: 'Listings awaiting approval', href: '/admin/centres/all?tab=pending', bg: 'bg-violet-100', fg: 'text-violet-600', icon: '📋' },
@@ -178,7 +179,10 @@ export default async function AdminOverviewPage() {
       <Card className="p-5">
         <div className="mb-3 flex items-center justify-between">
           <p className="flex items-center gap-1.5 font-display font-bold"><span aria-hidden>🕐</span> Recent Activity</p>
-          <Link href="/admin/audit" className="text-xs font-semibold text-primary hover:underline">View all activity</Link>
+          <div className="flex items-center gap-2">
+            <RefreshButton label="Refresh activity" />
+            <Link href="/admin/audit" className="text-xs font-semibold text-primary hover:underline">View all activity</Link>
+          </div>
         </div>
         {activity.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">No activity yet.</p>

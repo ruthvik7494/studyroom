@@ -5,6 +5,7 @@ import { DeletionRequestActions } from '@/features/admin/components/deletion-req
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { noindex } from '@/lib/seo';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Account Deletions · Admin', ...noindex };
 
@@ -14,7 +15,10 @@ export default async function AdminAccountDeletionsPage() {
 
   return (
     <section aria-labelledby="deletions-heading">
-      <h2 id="deletions-heading" className="mb-1 font-display text-lg font-bold">Account Deletions</h2>
+      <div className="mb-1 flex items-center gap-2">
+        <h2 id="deletions-heading" className="font-display text-lg font-bold">Account Deletions</h2>
+        <RefreshButton label="Refresh account deletions" />
+      </div>
       <p className="mb-4 text-sm text-muted-foreground">
         Requested by students and owners from their own dashboard. Approving is permanent — it disables the
         login and removes personal info. Booking, payment and review records are kept, not deleted.

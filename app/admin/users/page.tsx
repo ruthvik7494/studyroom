@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RoleSelect } from '@/features/admin/components/role-select';
 import { AccountStatusToggle } from '@/features/admin/components/account-status-toggle';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Users', ...noindex };
 
@@ -44,7 +45,10 @@ export default async function AdminUsersPage({
   return (
     <div className="max-w-4xl">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-display text-xl font-bold">Users</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-display text-xl font-bold">Users</h1>
+          <RefreshButton label="Refresh users" />
+        </div>
         <a
           href={`/api/admin/users/export${roleFilter ? `?role=${roleFilter}` : ''}`}
           className="rounded-md border px-3 py-1.5 text-sm font-semibold hover:bg-secondary"

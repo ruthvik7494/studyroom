@@ -5,6 +5,7 @@ import { noindex } from '@/lib/seo';
 import { Card } from '@/components/ui/card';
 import { formatINR } from '@/lib/utils';
 import { getOwnerCustomers } from '@/features/owner/services/bookings.service';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Customers', ...noindex };
 
@@ -17,7 +18,10 @@ export default async function OwnerCustomersPage() {
 
   return (
     <div className="max-w-4xl">
-      <h1 className="font-display text-xl font-bold">Customers</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="font-display text-xl font-bold">Customers</h1>
+        <RefreshButton label="Refresh customers" />
+      </div>
       <p className="mt-1 text-sm text-muted-foreground">
         Everyone who has booked across your centres, by lifetime spend.
       </p>

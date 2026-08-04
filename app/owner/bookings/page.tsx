@@ -6,6 +6,7 @@ import { formatINR } from '@/lib/utils';
 import { BookingStatusBadge, PaymentStatusBadge } from '@/components/booking-status-badge';
 import { getOwnerBookings } from '@/features/owner/services/bookings.service';
 import { OwnerBookingRowActions } from '@/features/owner/components/owner-booking-row-actions';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Bookings · Owner', ...noindex };
 
@@ -32,7 +33,10 @@ export default async function OwnerBookingsPage({
 
   return (
     <div className="max-w-5xl">
-      <h1 className="font-display text-xl font-bold">Bookings</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="font-display text-xl font-bold">Bookings</h1>
+        <RefreshButton label="Refresh bookings" />
+      </div>
       <p className="mt-1 text-sm text-muted-foreground">Search, filter, manage and export your bookings.</p>
 
       <form className="mt-5 flex flex-wrap items-center gap-2">

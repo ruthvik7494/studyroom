@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requireRole } from '@/lib/auth/rbac';
 import { noindex } from '@/lib/seo';
 import { Card } from '@/components/ui/card';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Enquiries', ...noindex };
 
@@ -20,7 +21,10 @@ export default async function OwnerEnquiriesPage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="font-display text-2xl font-bold">Enquiries</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="font-display text-2xl font-bold">Enquiries</h1>
+        <RefreshButton label="Refresh enquiries" />
+      </div>
       <p className="mt-1 text-sm text-muted-foreground">Messages from students interested in your centres.</p>
 
       {!enquiries || enquiries.length === 0 ? (

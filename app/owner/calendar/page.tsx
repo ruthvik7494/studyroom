@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/auth/rbac';
 import { noindex } from '@/lib/seo';
 import { Card } from '@/components/ui/card';
 import { getOwnerCalendar } from '@/features/owner/services/bookings.service';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Calendar', ...noindex };
 
@@ -60,7 +61,10 @@ export default async function OwnerCalendarPage({
     <div className="max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-xl font-bold">Calendar</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-xl font-bold">Calendar</h1>
+            <RefreshButton label="Refresh calendar" />
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">Bookings across your centres, by day.</p>
         </div>
         <div className="flex items-center gap-2 text-sm">

@@ -3,6 +3,7 @@ import { getOpenReports } from '@/features/admin/services/admin.service';
 import { ReviewModerationActions } from '@/features/admin/components/review-moderation-actions';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { RefreshButton } from '@/components/refresh-button';
 
 export default async function AdminReviewsPage() {
   const db = await createClient();
@@ -10,7 +11,10 @@ export default async function AdminReviewsPage() {
 
   return (
     <section aria-labelledby="moderation-heading">
-      <h2 id="moderation-heading" className="mb-4 font-display text-lg font-bold">Reported reviews</h2>
+      <div className="mb-4 flex items-center gap-2">
+        <h2 id="moderation-heading" className="font-display text-lg font-bold">Reported reviews</h2>
+        <RefreshButton label="Refresh reported reviews" />
+      </div>
 
       {reports.length === 0 ? (
         <Card className="flex flex-col items-center justify-center py-16 text-center">

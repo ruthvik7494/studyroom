@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PaginationBar } from '@/components/ui/pagination-bar';
 import { noindex } from '@/lib/seo';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'All Centres', ...noindex };
 
@@ -81,7 +82,10 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
 
   return (
     <section aria-labelledby="all-centres-heading">
-      <h2 id="all-centres-heading" className="mb-4 font-display text-lg font-bold">All Centres</h2>
+      <div className="mb-4 flex items-center gap-2">
+        <h2 id="all-centres-heading" className="font-display text-lg font-bold">All Centres</h2>
+        <RefreshButton label="Refresh centres" />
+      </div>
 
       <div className="mb-4 flex gap-1">
         <Link

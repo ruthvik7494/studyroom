@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getWaitlists, getCentreOptions } from '@/features/admin/services/waitlist.service';
 import { WaitlistControls } from '@/features/admin/components/waitlist-controls';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Waitlist · Admin', ...noindex };
 
@@ -24,7 +25,10 @@ export default async function AdminWaitlistPage({
 
   return (
     <div>
-      <h1 className="font-display text-xl font-bold">Waitlist management</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="font-display text-xl font-bold">Waitlist management</h1>
+        <RefreshButton label="Refresh waitlist" />
+      </div>
       <p className="mt-1 text-sm text-muted-foreground">{totalWaiting} students waiting across {groups.length} resources.</p>
 
       <form className="mt-5 flex flex-wrap items-center gap-2">

@@ -3,6 +3,7 @@ import { getAuditLog } from '@/features/admin/services/admin.service';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { RefreshButton } from '@/components/refresh-button';
 
 export default async function AdminAuditPage() {
   const db = await createClient();
@@ -10,7 +11,10 @@ export default async function AdminAuditPage() {
 
   return (
     <section aria-labelledby="audit-heading">
-      <h2 id="audit-heading" className="mb-4 font-display text-lg font-bold">Audit log</h2>
+      <div className="mb-4 flex items-center gap-2">
+        <h2 id="audit-heading" className="font-display text-lg font-bold">Audit log</h2>
+        <RefreshButton label="Refresh audit log" />
+      </div>
       {entries.length === 0 ? (
         <Card className="py-16 text-center text-sm text-muted-foreground">No audit entries yet.</Card>
       ) : (

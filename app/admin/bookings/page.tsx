@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { BookingStatusBadge, PaymentStatusBadge } from '@/components/booking-status-badge';
 import { getBookingMetrics, searchBookings, BOOKING_STATUSES, type BookingStatus } from '@/features/admin/services/bookings.service';
 import { BookingFilters } from '@/features/admin/components/booking-filters';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Bookings · Admin', ...noindex };
 
@@ -41,7 +42,10 @@ export default async function AdminBookingsPage({
 
   return (
     <div>
-      <h1 className="font-display text-xl font-bold">Booking management</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="font-display text-xl font-bold">Booking management</h1>
+        <RefreshButton label="Refresh bookings" />
+      </div>
       <p className="mt-1 text-sm text-muted-foreground">Search, filter, and manage every booking.</p>
 
       {/* Metrics */}

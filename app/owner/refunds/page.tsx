@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatINR } from '@/lib/utils';
 import { RefundActions } from '@/features/refunds/components/refund-actions';
 import { noindex } from '@/lib/seo';
+import { RefreshButton } from '@/components/refresh-button';
 
 export const metadata: Metadata = { title: 'Refund requests', ...noindex };
 
@@ -37,7 +38,10 @@ export default async function OwnerRefundsPage() {
 
   return (
     <div className="max-w-5xl">
-      <h1 className="font-display text-2xl font-bold">Refund requests</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="font-display text-2xl font-bold">Refund requests</h1>
+        <RefreshButton label="Refresh refund requests" />
+      </div>
       <p className="mt-1 text-sm text-muted-foreground">Review and process refund requests for your centres.</p>
 
       <div className="mt-6 space-y-3">
