@@ -63,7 +63,7 @@ export default async function AboutPage() {
       .select('id, rating, body, author:author_id(full_name, avatar_url), centres(name, slug)')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
-      .limit(6),
+      .limit(20),
     getServiceArea(db),
   ]);
 
@@ -75,18 +75,20 @@ export default async function AboutPage() {
     .map((r) => {
       const author = r.author as unknown as { full_name: string | null; avatar_url: string | null } | null;
       const centre = r.centres as unknown as { name: string; slug: string } | null;
-      if (!centre) return null;
+      // Only show testimonials with a real name attached (see app/page.tsx for why).
+      if (!centre || !author?.full_name) return null;
       return {
         id: r.id,
-        name: author?.full_name ?? 'Student',
-        avatarUrl: author?.avatar_url ?? null,
+        name: author.full_name,
+        avatarUrl: author.avatar_url || `https://i.pravatar.cc/150?u=${r.id}`,
         rating: r.rating,
         body: r.body ?? '',
         centreName: centre.name,
         centreSlug: centre.slug,
       };
     })
-    .filter((t): t is Testimonial => t !== null);
+    .filter((t): t is Testimonial => t !== null)
+    .slice(0, 6);
 
   const { data: heroPhoto } = await db
     .from('centres')
@@ -227,7 +229,7 @@ export default async function AboutPage() {
             <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">What Students Say</p>
             <h2 className="mx-auto mt-2 max-w-lg font-display text-2xl font-extrabold sm:text-3xl">Loved by students{serviceArea.city ? ` across ${serviceArea.city}` : ''}.</h2>
           </Reveal>
-          <div className="mx-auto mt-8 max-w-2xl">
+          <div className="mx-auto mt-8 max-w-5xl">
             <TestimonialCarousel items={testimonials} />
           </div>
         </div>

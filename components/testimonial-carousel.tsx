@@ -1,5 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { EASE_OUT, DURATION } from '@/lib/motion';
 
 export interface Testimonial {
   id: string;
@@ -11,46 +13,83 @@ export interface Testimonial {
   centreSlug: string;
 }
 
-export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
-  const [index, setIndex] = useState(0);
-  if (items.length === 0) return null;
+const PER_PAGE = 3;
+const AUTO_ADVANCE_MS = 6000;
 
-  const t = items[index]!;
-  const prev = () => setIndex((i) => (i - 1 + items.length) % items.length);
-  const next = () => setIndex((i) => (i + 1) % items.length);
-  const initial = (t.name || 'S').charAt(0).toUpperCase();
+function chunk<T>(items: T[], size: number): T[][] {
+  const pages: T[][] = [];
+  for (let i = 0; i < items.length; i += size) pages.push(items.slice(i, i + size));
+  return pages;
+}
+
+/**
+ * Testimonial slider — a page of up to 3 cards at a time, with dot
+ * navigation below and a soft crossfade+slide between pages. Auto-advances
+ * every 6s when there's more than one page, pausing while the person's
+ * pointer is over it so it doesn't shift mid-read.
+ */
+export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
+  const pages = chunk(items, PER_PAGE);
+  const [page, setPage] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (pages.length <= 1 || paused) return;
+    const id = setInterval(() => setPage((p) => (p + 1) % pages.length), AUTO_ADVANCE_MS);
+    return () => clearInterval(id);
+  }, [pages.length, paused]);
+
+  if (items.length === 0) return null;
+  const current = pages[Math.min(page, pages.length - 1)] ?? [];
 
   return (
-    <div className="relative rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
-      {items.length > 1 && (
-        <div className="absolute right-6 top-6 flex gap-2">
-          <button type="button" onClick={prev} aria-label="Previous testimonial" className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80">←</button>
-          <button type="button" onClick={next} aria-label="Next testimonial" className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90">→</button>
-        </div>
-      )}
-
-      <div className="flex items-center gap-3">
-        {t.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={t.avatarUrl} alt="" className="h-12 w-12 rounded-full object-cover" />
-        ) : (
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">{initial}</span>
-        )}
-        <div>
-          <p className="font-display font-bold">{t.name}</p>
-          <p className="text-sm text-muted-foreground">Student</p>
-        </div>
+    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <div className="relative overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={page}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: DURATION.base, ease: EASE_OUT }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {current.map((t) => (
+              <div key={t.id} className="flex flex-col rounded-2xl border bg-card p-5 shadow-sm">
+                <p className="text-brand-gold2" aria-label={`${t.rating} out of 5 stars`}>
+                  {'★'.repeat(t.rating)}<span className="text-muted-foreground/30">{'★'.repeat(5 - t.rating)}</span>
+                </p>
+                {t.body && <p className="mt-3 flex-1 text-sm leading-relaxed text-foreground/80">&ldquo;{t.body}&rdquo;</p>}
+                <div className="mt-5 flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={t.avatarUrl ?? undefined} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold">{t.name}</p>
+                    <a href={`/centres/${t.centreSlug}`} className="block truncate text-xs text-muted-foreground hover:text-primary hover:underline">
+                      {t.centreName}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      <p className="mt-6 font-display text-lg font-bold text-brand-gold2 sm:text-xl" aria-label={`${t.rating} out of 5 stars`}>
-        {'★'.repeat(t.rating)}<span className="text-muted-foreground/30">{'★'.repeat(5 - t.rating)}</span>
-      </p>
-      {t.body && <p className="mt-3 text-sm leading-relaxed text-foreground/80">&ldquo;{t.body}&rdquo;</p>}
-
-      <a href={`/centres/${t.centreSlug}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold hover:underline">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground" aria-hidden>★</span>
-        {t.centreName}
-      </a>
+      {pages.length > 1 && (
+        <div className="mt-6 flex justify-center gap-2">
+          {pages.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setPage(i)}
+              aria-label={`Show testimonials ${i + 1} of ${pages.length}`}
+              aria-current={i === page}
+              className={`h-2 rounded-full transition-all duration-300 ${i === page ? 'w-6 bg-primary' : 'w-2 bg-secondary hover:bg-secondary-foreground/30'}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

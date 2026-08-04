@@ -42,7 +42,7 @@ export default async function HomePage() {
       .select('id, rating, body, author:author_id(full_name, avatar_url), centres(name, slug)')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
-      .limit(6),
+      .limit(20),
     db.from('centres').select('rating').eq('is_published', true).gt('reviews_count', 0),
     getServiceArea(db),
   ]);
@@ -51,18 +51,26 @@ export default async function HomePage() {
     .map((r) => {
       const author = r.author as unknown as { full_name: string | null; avatar_url: string | null } | null;
       const centre = r.centres as unknown as { name: string; slug: string } | null;
-      if (!centre) return null;
+      // Only ever show a testimonial with a real name attached — a
+      // review from a profile with no name filled in isn't useful as
+      // social proof, and previously fell back to a literal "Student"
+      // (which then duplicated the hardcoded "Student" subtitle below it).
+      if (!centre || !author?.full_name) return null;
       return {
         id: r.id,
-        name: author?.full_name ?? 'Student',
-        avatarUrl: author?.avatar_url ?? null,
+        name: author.full_name,
+        // A missing photo gets a consistent, realistic placeholder (seeded
+        // by review id, so the same reviewer always gets the same face)
+        // rather than a plain initial — matches the reference design.
+        avatarUrl: author.avatar_url || `https://i.pravatar.cc/150?u=${r.id}`,
         rating: r.rating,
         body: r.body ?? '',
         centreName: centre.name,
         centreSlug: centre.slug,
       };
     })
-    .filter((t): t is Testimonial => t !== null);
+    .filter((t): t is Testimonial => t !== null)
+    .slice(0, 6);
 
   const avgRating = ratingRows && ratingRows.length > 0
     ? (ratingRows.reduce((s, r) => s + Number(r.rating), 0) / ratingRows.length).toFixed(1)
@@ -288,7 +296,7 @@ export default async function HomePage() {
 
       {/* What Students Are Saying */}
       {testimonials.length > 0 && (
-        <section className="mx-auto max-w-3xl px-6 py-14">
+        <section className="mx-auto max-w-5xl px-6 py-14">
           <Reveal className="text-center">
             <h2 className="font-display text-2xl font-extrabold sm:text-3xl">What Students Are Saying</h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Real reviews from students who&apos;ve actually studied at these centres.</p>
