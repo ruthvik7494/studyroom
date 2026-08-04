@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { submitReview } from '../actions';
  * the server still enforces auth + one-per-centre + no-self-review.
  */
 export function ReviewForm({ centreId }: { centreId: string }) {
+  const router = useRouter();
   const [done, setDone] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [hover, setHover] = useState(0);
@@ -23,7 +25,14 @@ export function ReviewForm({ centreId }: { centreId: string }) {
   const onSubmit = async (values: ReviewInput) => {
     setServerError(null);
     const res = await submitReview(values);
-    if (res.ok) { setDone(true); return; }
+    if (res.ok) {
+      setDone(true);
+      // The centre's star rating/review count (and the review list) are
+      // rendered server-side higher up this page — refresh so they reflect
+      // this review immediately instead of waiting for a manual reload.
+      router.refresh();
+      return;
+    }
     setServerError(res.error.message);
   };
 
