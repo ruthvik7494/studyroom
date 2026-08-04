@@ -48,7 +48,7 @@ export default async function HomePage() {
   ]);
 
   const testimonials: Testimonial[] = (testimonialRows ?? [])
-    .map((r) => {
+    .map((r): Testimonial | null => {
       const author = r.author as unknown as { full_name: string | null; avatar_url: string | null } | null;
       const centre = r.centres as unknown as { name: string; slug: string } | null;
       const fullName = author?.full_name;
