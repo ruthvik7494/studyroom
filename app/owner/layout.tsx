@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
-import { requireRole } from '@/lib/auth/rbac';
+import { redirect } from 'next/navigation';
+import { getSessionUser } from '@/lib/auth/rbac';
 import { signOut } from '@/features/auth/actions';
 import { noindex } from '@/lib/seo';
 import { DashboardShell, type SidebarNavItem } from '@/components/dashboard-shell';
+import { AccountBlockedScreen } from '@/components/account-blocked-screen';
 
 export const metadata: Metadata = { title: 'Owner', ...noindex };
 
@@ -23,7 +25,11 @@ const NAV: SidebarNavItem[] = [
 ];
 
 export default async function OwnerLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireRole('owner'); // server gate for the whole /owner section, unchanged
+  const user = await getSessionUser();
+  if (!user) redirect('/login?next=/owner');
+  if (user.accountStatus !== 'active') return <AccountBlockedScreen status={user.accountStatus} />;
+  if (user.role !== 'owner' && user.role !== 'admin') redirect('/'); // same "admin satisfies any role" rule requireRole used
+
   return (
     <DashboardShell
       brandLabel="Owner Panel"

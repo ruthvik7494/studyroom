@@ -39,6 +39,23 @@ export async function signInWithPassword(raw: unknown): Promise<Result<{ ok: tru
       await db.rpc('record_login_failure', { p_email: input.email });
       throw new ActionError('UNAUTHENTICATED', 'Wrong email or password.');
     }
+
+    // Credentials were correct — but a suspended/deleted account's login
+    // isn't removed (see 0049_account_deletion_requests.sql), so this is
+    // caught here rather than only surfacing once they reach a dashboard.
+    const { data: { user } } = await db.auth.getUser();
+    if (user) {
+      const { data: profile } = await db.from('profiles').select('account_status').eq('id', user.id).maybeSingle();
+      if (profile?.account_status === 'deleted') {
+        await db.auth.signOut();
+        throw new ActionError('FORBIDDEN', 'This account has been deleted. Contact us if you think this is a mistake.');
+      }
+      if (profile?.account_status === 'suspended') {
+        await db.auth.signOut();
+        throw new ActionError('FORBIDDEN', 'This account has been suspended. Contact us if you think this is a mistake.');
+      }
+    }
+
     await db.rpc('record_login_success');
     return { ok: true as const };
   });

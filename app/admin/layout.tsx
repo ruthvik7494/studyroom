@@ -4,6 +4,7 @@ import { getSessionUser } from '@/lib/auth/rbac';
 import { signOut } from '@/features/auth/actions';
 import { noindex } from '@/lib/seo';
 import { DashboardShell, type SidebarNavItem } from '@/components/dashboard-shell';
+import { AccountBlockedScreen } from '@/components/account-blocked-screen';
 
 export const metadata: Metadata = { title: 'Admin', ...noindex };
 
@@ -34,6 +35,7 @@ const NAV: SidebarNavItem[] = [
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
   if (!user) redirect('/login?next=/admin');
+  if (user.accountStatus !== 'active') return <AccountBlockedScreen status={user.accountStatus} />;
   if (user.role !== 'admin') redirect('/');
 
   return (
