@@ -38,6 +38,7 @@ export default async function AdminEmailLogsPage({ searchParams }: PageProps) {
       <p className="mb-4 text-sm text-muted-foreground">
         Every transactional email attempt — signup confirmations, booking updates, refund notices and more —
         is recorded here, whether it actually sent, failed, or was queued (no email provider configured).
+        Logs older than 60 days are automatically deleted daily.
       </p>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

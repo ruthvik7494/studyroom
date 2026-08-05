@@ -15,6 +15,7 @@ export default async function AdminAuditPage() {
         <h2 id="audit-heading" className="font-display text-lg font-bold">Audit log</h2>
         <RefreshButton label="Refresh audit log" />
       </div>
+      <p className="mb-4 text-sm text-muted-foreground">Entries older than 60 days are automatically deleted daily.</p>
       {entries.length === 0 ? (
         <Card className="py-16 text-center text-sm text-muted-foreground">No audit entries yet.</Card>
       ) : (
