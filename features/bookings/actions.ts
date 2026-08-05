@@ -6,11 +6,38 @@ import { action } from '@/lib/auth/action';
 import { ActionError, type Result } from '@/lib/result';
 import { bookingSchema, cancelSchema, rescheduleSchema, waitlistSchema, availabilitySchema } from './schema';
 import { priceForPeriod, PERIOD_DAYS } from './pricing';
-import { notifyBooking } from '@/features/notifications/notify';
+import { notifyBooking, notifyOwnerOfBooking, type BookingEvent } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
 import { rateLimit } from '@/lib/rate-limit';
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+type DB = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * Looks up a centre's owner + the student's name and notifies the owner
+ * (in-app + email) — used by cancel/reschedule, which previously only ever
+ * told the student, never the centre owner whose seat it is.
+ * Best-effort: swallows lookup errors so a notification hiccup never fails
+ * the booking mutation that triggered it.
+ */
+async function notifyOwnerForCentre(db: DB, centreId: string, studentId: string, event: BookingEvent): Promise<void> {
+  try {
+    const [{ data: centre }, { data: studentProfile }] = await Promise.all([
+      db.from('centres').select('name, owner_id').eq('id', centreId).maybeSingle(),
+      db.from('profiles').select('full_name').eq('id', studentId).maybeSingle(),
+    ]);
+    if (!centre?.owner_id) return;
+    const ownerEmail = await getUserEmail(centre.owner_id);
+    await notifyOwnerOfBooking(centre.owner_id, event, {
+      email: ownerEmail,
+      studentName: studentProfile?.full_name ?? 'A student',
+      centreName: centre.name,
+    });
+  } catch {
+    /* non-fatal — the booking mutation itself already succeeded */
+  }
+}
 
 /** Today's date as seen in IST — plain toISOString() is UTC-based and can be
  * a day behind near midnight IST (e.g. 1 AM IST is still the previous UTC day). */
@@ -183,6 +210,11 @@ export async function cancelBooking(raw: unknown): Promise<Result<{ ok: true }>>
     }
     // Notify the user their cancellation went through (in-app + email).
     await notifyBooking(user.id, 'cancelled', { email: await getUserEmail(user.id) });
+
+    // ...and now the centre owner, who previously got no email for this at all.
+    const { data: cancelled } = await db.from('bookings').select('centre_id').eq('id', input.bookingId).maybeSingle();
+    if (cancelled?.centre_id) await notifyOwnerForCentre(db, cancelled.centre_id, user.id, 'cancelled');
+
     revalidatePath('/account');
     return { ok: true as const };
   });
@@ -224,6 +256,7 @@ export async function rescheduleBooking(raw: unknown): Promise<Result<{ id: stri
         throw groupErr;
       }
       await notifyBooking(user.id, 'rescheduled', { email: await getUserEmail(user.id) });
+      await notifyOwnerForCentre(db, old.centre_id, user.id, 'rescheduled');
       revalidatePath('/account');
       return { id: groupId as string, isGroup: true };
     }
@@ -249,6 +282,7 @@ export async function rescheduleBooking(raw: unknown): Promise<Result<{ id: stri
     await db.from('bookings').update({ rescheduled_from: old.id }).eq('id', newId as string);
 
     await notifyBooking(user.id, 'rescheduled', { email: await getUserEmail(user.id) });
+    await notifyOwnerForCentre(db, old.centre_id, user.id, 'rescheduled');
     revalidatePath('/account');
     return { id: newId as string, isGroup: false };
   });

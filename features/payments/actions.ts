@@ -5,7 +5,7 @@ import { requireUser } from '@/lib/auth/rbac';
 import { action } from '@/lib/auth/action';
 import { ActionError, type Result } from '@/lib/result';
 import { createOrder, verifyPaymentSignature, razorpayConfigured, publishableKey } from '@/lib/razorpay';
-import { notifyBooking } from '@/features/notifications/notify';
+import { notifyBooking, notifyOwnerOfBooking } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
 import { z } from 'zod';
 
@@ -107,11 +107,26 @@ export async function confirmPayment(raw: unknown): Promise<Result<{ ok: true }>
 
     query = input.groupId ? query.eq('booking_group_id', input.groupId) : query.eq('id', input.bookingId!);
 
-    const { data: updated, error } = await query.select('user_id');
+    const { data: updated, error } = await query.select('user_id, centre_id, centres(name, owner_id)');
     if (error) throw error;
     if (updated && updated.length > 0) {
       const email = await getUserEmail(user.id);
       await notifyBooking(user.id, 'confirmed', { email });
+
+      // Owner previously got no email when a booking at their centre was
+      // paid for — only the student did. Notify the owner too.
+      const centre = updated[0]!.centres as unknown as { name: string; owner_id: string | null } | null;
+      if (centre?.owner_id) {
+        const [ownerEmail, { data: studentProfile }] = await Promise.all([
+          getUserEmail(centre.owner_id),
+          db.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
+        ]);
+        await notifyOwnerOfBooking(centre.owner_id, 'confirmed', {
+          email: ownerEmail,
+          studentName: studentProfile?.full_name ?? 'A student',
+          centreName: centre.name,
+        });
+      }
     }
     revalidatePath('/account');
     return { ok: true as const };

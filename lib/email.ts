@@ -7,12 +7,6 @@ const RESEND_API_KEY = resendEnv.apiKey;
 const EMAIL_FROM = resendEnv.from;
 
 export const emailConfigured = Boolean(RESEND_API_KEY);
-console.log("RESEND_API_KEY exists:", !!RESEND_API_KEY);
-console.log("Email configured:", emailConfigured);
-
-/** Email only actually sends when a Resend key is present. Otherwise we log the
- * message as 'queued' so the product works in dev and nothing is lost. */
-// export const emailConfigured = Boolean(RESEND_API_KEY);
 
 interface SendArgs { to: string; subject: string; html: string; template: string }
 
@@ -33,15 +27,12 @@ export async function sendEmail({ to, subject, html, template }: SendArgs): Prom
       body: JSON.stringify({ from: EMAIL_FROM, to, subject, html }),
     });
 
-    console.log("Sending email to:", to);
-    console.log("Subject:", subject);
-    console.log("Resend status:", res.status);
-
     if (!res.ok) {
+      // A Response body can only be read once — this used to call
+      // res.text() twice, which throws on the second call and meant the
+      // real error from Resend never made it into email_logs.
       const errorText = await res.text();
-      console.log("Resend API Error:", errorText);
-
-      await logEmail(to, template, 'failed', null, (await res.text()).slice(0, 300));
+      await logEmail(to, template, 'failed', null, errorText.slice(0, 300));
       return false;
     }
     const data = (await res.json()) as { id?: string };

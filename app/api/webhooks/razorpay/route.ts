@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { admin } from '@/lib/supabase/admin';
 import { verifyWebhookSignature } from '@/lib/razorpay';
-import { notifyBooking } from '@/features/notifications/notify';
+import { notifyBooking, notifyOwnerOfBooking } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
 import { rateLimit, clientKey } from '@/lib/rate-limit';
 
@@ -51,11 +51,29 @@ export async function POST(req: NextRequest) {
         .update({ payment: 'paid', status: 'confirmed', razorpay_payment_id: paymentId ?? null })
         .eq('razorpay_order_id', orderId)
         .neq('status', 'confirmed')
-        .select('user_id');
+        .select('user_id, centre_id, centres(name, owner_id)');
       const first = updated?.[0];
       if (first) {
         const email = await getUserEmail(first.user_id);
         await notifyBooking(first.user_id, 'confirmed', { email });
+
+        // Same booking-confirmed event, but the checkout-confirm race can be
+        // won by either this webhook or features/payments/actions.ts — the
+        // owner notification lives in both paths for the same reason the
+        // student one already did (`neq('status','confirmed')` above makes
+        // this fire exactly once regardless of which path wins).
+        const centre = first.centres as unknown as { name: string; owner_id: string | null } | null;
+        if (centre?.owner_id) {
+          const [ownerEmail, { data: studentProfile }] = await Promise.all([
+            getUserEmail(centre.owner_id),
+            admin.from('profiles').select('full_name').eq('id', first.user_id).maybeSingle(),
+          ]);
+          await notifyOwnerOfBooking(centre.owner_id, 'confirmed', {
+            email: ownerEmail,
+            studentName: studentProfile?.full_name ?? 'A student',
+            centreName: centre.name,
+          });
+        }
       }
     }
   }

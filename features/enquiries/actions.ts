@@ -53,25 +53,13 @@ export async function submitEnquiry(raw: unknown): Promise<Result<{ id: string }
     const centreName = centre?.name ?? 'the centre';
 
     // Confirmation to the student
-    // void sendEmail({
-    //   to: input.email,
-    //   template: 'enquiry_confirmation',
-    //   subject: `Your enquiry to ${centreName}`,
-    //   html: `<p>Hi ${escapeHtml(input.name)},</p><p>We’ve passed your enquiry to <strong>${escapeHtml(centreName)}</strong>. They’ll reply to you by email.</p><p style="color:#666">Your message: ${escapeHtml(input.message)}</p><p>— StudyNook</p>`,
-    // });
-
-
-    // Confirmation to the student
-    console.log("About to send confirmation email:", input.email);
-
     const sent = await sendEmail({
       to: input.email,
       template: 'enquiry_confirmation',
       subject: `Your enquiry to ${centreName}`,
       html: `<p>Hi ${escapeHtml(input.name)},</p><p>We’ve passed your enquiry to <strong>${escapeHtml(centreName)}</strong>. They’ll reply to you by email.</p><p style="color:#666">Your message: ${escapeHtml(input.message)}</p><p>— StudyNook</p>`,
     });
-
-    console.log("Confirmation email result:", sent);
+    if (!sent) console.error('[enquiries] confirmation email did not send', input.email);
 
     // Notification to the owner (look up their email via admin API)
     if (centre?.owner_id) {

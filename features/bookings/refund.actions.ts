@@ -7,7 +7,7 @@ import { action } from '@/lib/auth/action';
 import { ActionError, type Result } from '@/lib/result';
 import { createRefund } from '@/lib/razorpay';
 import { refundSchema } from './schema';
-import { notifyBooking } from '@/features/notifications/notify';
+import { notifyBooking, notifyOwnerOfBooking, notifyAdmins } from '@/features/notifications/notify';
 import { getUserEmail } from '@/lib/email';
 
 /**
@@ -80,10 +80,39 @@ export async function refundBooking(raw: unknown): Promise<Result<{ refundId: st
 
     // Notify the student (in-app + email).
     const { data: bkUser } = await admin.from('bookings').select('user_id').eq('id', bk.id).maybeSingle();
+    let studentName = 'A student';
     if (bkUser?.user_id) {
-      const email = await getUserEmail(bkUser.user_id);
+      const [email, { data: studentProfile }] = await Promise.all([
+        getUserEmail(bkUser.user_id),
+        admin.from('profiles').select('full_name').eq('id', bkUser.user_id).maybeSingle(),
+      ]);
+      studentName = studentProfile?.full_name ?? studentName;
       await notifyBooking(bkUser.user_id, 'refunded', { email });
     }
+
+    const { data: centreInfo } = await admin.from('centres').select('name, owner_id').eq('id', bk.centre_id).maybeSingle();
+
+    // Tell the owner too — unless they're the one who just issued this
+    // refund themselves, in which case they already know.
+    if (centreInfo?.owner_id && user.role === 'admin') {
+      const ownerEmail = await getUserEmail(centreInfo.owner_id);
+      await notifyOwnerOfBooking(centreInfo.owner_id, 'refunded', {
+        email: ownerEmail, studentName, centreName: centreInfo.name,
+      });
+    }
+
+    // Admin oversight: only when an OWNER initiated the refund — money
+    // going out on the owner's own say-so is worth central visibility. An
+    // admin-initiated refund doesn't need to notify admins about their own
+    // action. Deliberately not sent for every refund (see notifyAdmins).
+    if (user.role === 'owner') {
+      await notifyAdmins(
+        'admin_refund_alert',
+        `Refund issued: ₹${amount}${isPartial ? ' (partial)' : ''} — ${centreInfo?.name ?? 'a centre'}`,
+        `<p>Owner-initiated refund of <strong>₹${amount}</strong>${isPartial ? ' (partial)' : ''} for ${studentName}'s booking at <strong>${centreInfo?.name ?? 'a centre'}</strong>.</p><p>Reason: ${input.reason ?? '—'}</p>`,
+      );
+    }
+
     revalidatePath('/admin');
     return { refundId: refund.id };
   });

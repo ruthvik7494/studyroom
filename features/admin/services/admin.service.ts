@@ -99,6 +99,35 @@ export async function getAuditLog(db: DB, limit = 100): Promise<AuditEntry[]> {
   return (data ?? []) as unknown as AuditEntry[];
 }
 
+export interface EmailLogEntry {
+  id: string;
+  to_email: string;
+  template: string;
+  status: string;
+  provider_id: string | null;
+  error: string | null;
+  created_at: string;
+}
+
+/**
+ * Recent transactional email attempts (sent/failed/queued) — every call to
+ * sendEmail() in lib/email.ts logs here regardless of outcome, so this is
+ * the one place to check "did that email actually go out" without opening
+ * Supabase directly. ?status= filters, ?q= searches the recipient address.
+ */
+export async function getEmailLogs(db: DB, opts: { status?: string; q?: string; limit?: number } = {}): Promise<EmailLogEntry[]> {
+  let query = db
+    .from('email_logs')
+    .select('id, to_email, template, status, provider_id, error, created_at')
+    .order('created_at', { ascending: false })
+    .limit(opts.limit ?? 100);
+  if (opts.status && ['sent', 'failed', 'queued'].includes(opts.status)) query = query.eq('status', opts.status);
+  if (opts.q) query = query.ilike('to_email', `%${opts.q}%`);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
 export interface PendingClaim {
   id: string; evidence: string | null; created_at: string;
   centre: { id: string; name: string; slug: string; owner_id: string | null } | null;

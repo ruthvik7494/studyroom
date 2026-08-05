@@ -1,6 +1,6 @@
 import 'server-only';
 import { admin } from '@/lib/supabase/admin';
-import { sendEmail } from '@/lib/email';
+import { sendEmail, getUserEmail } from '@/lib/email';
 
 /** Booking lifecycle events that generate a notification + email. */
 export type BookingEvent =
@@ -45,6 +45,64 @@ export async function notifyBooking(
       html: `<p>${c.body}</p><p><a href="${process.env.NEXT_PUBLIC_SITE_URL ?? ''}${opts.url ?? '/account'}">View in StudyNook</a></p>`,
     });
   }
+}
+
+/**
+ * Owner-facing copy for the same booking lifecycle events — the centre
+ * owner previously got NO email for any of these (new booking, payment,
+ * cancellation, refund, reschedule); they only found out by checking their
+ * dashboard. This closes that gap.
+ */
+const OWNER_COPY: Record<BookingEvent, { kind: string; title: string; body: (student: string, centre: string) => string }> = {
+  created: { kind: 'owner_booking_created', title: 'New booking received', body: (s, c) => `${s} just reserved a seat at ${c}. Payment is pending.` },
+  confirmed: { kind: 'owner_booking_confirmed', title: 'Booking confirmed & paid', body: (s, c) => `${s}'s booking at ${c} is confirmed and paid.` },
+  cancelled: { kind: 'owner_booking_cancelled', title: 'Booking cancelled', body: (s, c) => `${s} cancelled their booking at ${c}.` },
+  refunded: { kind: 'owner_booking_refunded', title: 'Refund processed', body: (s, c) => `A refund was processed for ${s}'s booking at ${c}.` },
+  rescheduled: { kind: 'owner_booking_rescheduled', title: 'Booking rescheduled', body: (s, c) => `${s} rescheduled their booking at ${c}.` },
+  completed: { kind: 'owner_booking_completed', title: 'Session completed', body: (s, c) => `${s}'s session at ${c} is complete.` },
+  no_show: { kind: 'owner_booking_no_show', title: 'Student no-show', body: (s, c) => `${s} was marked as a no-show at ${c}.` },
+  waitlist_promoted: { kind: 'owner_waitlist_promoted', title: 'Waitlist seat claimed', body: (s, c) => `${s} claimed a seat off the waitlist at ${c}.` },
+};
+
+/** Tell a centre owner about a booking event at their centre (in-app + email). */
+export async function notifyOwnerOfBooking(
+  ownerId: string,
+  event: BookingEvent,
+  opts: { email?: string | null; studentName: string; centreName: string; url?: string },
+): Promise<void> {
+  const c = OWNER_COPY[event];
+  const body = c.body(opts.studentName, opts.centreName);
+  try {
+    await admin.from('notifications').insert({
+      user_id: ownerId, kind: c.kind, title: c.title, body, url: opts.url ?? '/owner/bookings',
+    });
+  } catch {
+    /* in-app insert failed — non-fatal */
+  }
+  if (opts.email) {
+    void sendEmail({
+      to: opts.email,
+      template: c.kind,
+      subject: c.title,
+      html: `<p>${body}</p><p><a href="${process.env.NEXT_PUBLIC_SITE_URL ?? ''}${opts.url ?? '/owner/bookings'}">View in StudyNook</a></p>`,
+    });
+  }
+}
+
+/**
+ * Low-volume oversight email to every admin. Deliberately used sparingly
+ * (financial/exception events only, e.g. refunds) — CC'ing admins on every
+ * routine booking would drown their inbox on a busy marketplace. Fetches
+ * fresh each call rather than caching, since who's an admin can change.
+ */
+export async function notifyAdmins(template: string, subject: string, html: string): Promise<void> {
+  const { data: admins } = await admin.from('profiles').select('id').eq('role', 'admin');
+  await Promise.all(
+    (admins ?? []).map(async (a) => {
+      const email = await getUserEmail(a.id);
+      if (email) void sendEmail({ to: email, template, subject, html });
+    }),
+  );
 }
 
 /** Listing moderation outcomes an owner is told about. */
