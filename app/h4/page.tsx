@@ -96,7 +96,7 @@ export default async function Theme4Page() {
           {featured.map((centre) => (
             <div key={centre.id} className="group rounded-2xl bg-white border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:border-teal-200 transition duration-300">
               <div className="relative h-48 w-full bg-slate-100 overflow-hidden">
-                {centre.coverUrl && <Image src={centre.coverUrl} alt={centre.name} fill className="object-cover group-hover:scale-105 transition duration-500" />}
+                {centre.cover_url && <Image src={centre.cover_url} alt={centre.name} fill className="object-cover group-hover:scale-105 transition duration-500" />}
                 <span className="absolute top-3 right-3 rounded-full bg-white/90 backdrop-blur-md px-3 py-1 text-xs font-bold text-slate-900 shadow-sm border border-slate-100">
                   ★ {centre.rating.toFixed(1)}
                 </span>
@@ -104,7 +104,7 @@ export default async function Theme4Page() {
               <div className="p-5">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100 uppercase tracking-wide">
-                    {centre.spaceType?.replace('_', ' ') || 'Study Hall'}
+                    {centre.space_type?.replace('_', ' ') || 'Study Hall'}
                   </span>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mt-2 group-hover:text-teal-600 transition">{centre.name}</h3>

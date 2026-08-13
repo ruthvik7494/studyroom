@@ -14,10 +14,11 @@ export const metadata: Metadata = { title: 'Theme 6 — 100% Exact Google Stitch
 
 export default async function Theme6FromZipPage() {
   const db = await createClient();
-  const [{ items: featured }, serviceArea] = await Promise.all([
-    listCentres(db, { limit: 6 }),
-    getServiceArea(db),
+  const [centreData, serviceArea] = await Promise.all([
+    listCentres(db, { limit: 6 }).catch(() => ({ items: [], nextCursor: null })),
+    getServiceArea(db).catch(() => ({ city: 'Hanamkonda', state: 'Telangana', count: 0 })),
   ]);
+  const featured = centreData?.items || [];
 
   return (
     <>
@@ -48,13 +49,14 @@ export default async function Theme6FromZipPage() {
         <main className="flex-grow">
           {(() => {
             const topCentre = featured[0];
-            const coverUrl = topCentre?.cover_url || topCentre?.coverUrl;
+            const coverUrl = topCentre?.cover_url;
             return (
               <HeroSectionV1
                 variant="full"
+                bgCoverUrl="/images/hero-cover-h6.jpg"
                 cardCoverUrl={coverUrl || undefined}
                 centreName={topCentre?.name}
-                location={topCentre?.area || serviceArea.city}
+                location={topCentre?.area || serviceArea.city || undefined}
                 rating={topCentre?.rating}
               />
             );
@@ -98,10 +100,10 @@ export default async function Theme6FromZipPage() {
                 const totalSeats = 60;
                 const availSeats = idx === 0 ? 45 : idx === 1 ? 12 : 28;
                 const reviewCount = idx === 0 ? 141 : idx === 1 ? 89 : 112;
-                const isWomenOnly = idx === 0 || centre.women_safe_verified || centre.womenSafeClaim;
+                const isWomenOnly = idx === 0 || centre.women_safe_verified;
                 const price = centre.fromMonthly ?? 1400;
                 const location = centre.area || serviceArea.city || 'Hanamkonda';
-                const coverImg = centre.cover_url || centre.coverUrl || 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=800&auto=format&fit=crop';
+                const coverImg = centre.cover_url || 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=800&auto=format&fit=crop';
 
                 return (
                   <div key={centre.id} className="relative bg-white rounded-3xl border border-[#e2e8f0] overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">

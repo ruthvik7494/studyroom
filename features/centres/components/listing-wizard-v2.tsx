@@ -1228,11 +1228,11 @@ export function ListingWizardV2(props: Props) {
                   <div className="space-y-3 text-xs">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-[#565e74]">Business Logo:</span>
-                      <span className="font-bold text-[#16a34a]">{logoFile ? `✓ Selected (${logoFile.name})` : props.defaults?.logoUrl ? '✓ Saved' : 'Not uploaded'}</span>
+                      <span className="font-bold text-[#16a34a]">{logoFile ? `✓ Selected (${logoFile.name})` : props.photos?.logoUrl ? '✓ Saved' : 'Not uploaded'}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-[#565e74]">Cover Image:</span>
-                      <span className="font-bold text-[#16a34a]">{coverFile ? `✓ Selected (${coverFile.name})` : props.defaults?.coverUrl ? '✓ Saved' : 'Not uploaded'}</span>
+                      <span className="font-bold text-[#16a34a]">{coverFile ? `✓ Selected (${coverFile.name})` : props.photos?.coverUrl ? '✓ Saved' : 'Not uploaded'}</span>
                     </div>
                     <div>
                       <span className="font-semibold text-[#565e74] block mb-1">Gallery Categories Picked:</span>

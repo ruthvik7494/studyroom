@@ -53,14 +53,14 @@ export default async function EditListingPage({ params }: PageProps) {
         mode="edit"
         centreId={id}
         amenities={amenities ?? []}
-        photos={{ logoUrl: centre.logo_url, coverUrl: centre.cover_url, coverImageId: coverImage?.id ?? null, gallery }}
+        photos={{ logoUrl: centre.logo_url, coverUrl: centre.cover_url, coverImageId: coverImage?.id ?? null, gallery: gallery.map(g => ({ ...g, url: g.storagePath, category: g.category ?? null })) }}
         defaults={{
           name: centre.name,
-          address: centre.address,
-          city: centre.city,
-          state: centre.state,
-          country: centre.country,
-          postcode: centre.postcode,
+          address: centre.address ?? undefined,
+          city: centre.city ?? undefined,
+          state: centre.state ?? undefined,
+          country: centre.country ?? undefined,
+          postcode: centre.postcode ?? undefined,
           spaceType: (centre.space_type as CentreUpsert['spaceType']) ?? 'study_hall',
           lat: centre.lat ?? undefined,
           lng: centre.lng ?? undefined,

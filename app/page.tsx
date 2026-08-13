@@ -22,7 +22,7 @@ import { IconCard } from '@/components/motion/icon-card';
 
 export async function generateMetadata(): Promise<Metadata> {
   const db = await createClient();
-  const { city } = await getServiceArea(db);
+  const { city } = await getServiceArea(db).catch(() => ({ city: 'Hanamkonda', state: 'Telangana', count: 0 }));
   return {
     title: city ? `StudyNook — find & book study spaces in ${city}` : 'StudyNook — find & book study spaces',
     description: 'Discover, compare and book study halls, reading rooms and coworking spaces near you. Live availability, verified reviews, transparent prices.',
@@ -32,33 +32,42 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const db = await createClient();
-  const viewer = await getSessionUser();
-  const [{ items: featured }, popularAreas, { count: centresCount }, { count: studentsCount }, { data: testimonialRows }, { data: ratingRows }, serviceArea] = await Promise.all([
-    listCentres(db, { limit: 6 }),
-    getPopularAreas(db, 3),
-    db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
-    admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
-    admin.from('reviews')
+  const viewer = await getSessionUser().catch(() => null);
+  const [
+    featuredRes,
+    popularAreas,
+    centresCountRes,
+    studentsCountRes,
+    testimonialRowsRes,
+    ratingRowsRes,
+    serviceArea
+  ] = await Promise.all([
+    listCentres(db, { limit: 6 }).catch(() => ({ items: [], nextCursor: null })),
+    getPopularAreas(db, 3).catch(() => []),
+    Promise.resolve(db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true)).catch(() => ({ count: 0 })),
+    Promise.resolve(admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student')).catch(() => ({ count: 0 })),
+    Promise.resolve(admin.from('reviews')
       .select('id, rating, body, author:author_id(full_name, avatar_url), centres(name, slug)')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
-      .limit(20),
-    db.from('centres').select('rating').eq('is_published', true).gt('reviews_count', 0),
-    getServiceArea(db),
+      .limit(20)).catch(() => ({ data: [] })),
+    Promise.resolve(db.from('centres').select('rating').eq('is_published', true).gt('reviews_count', 0)).catch(() => ({ data: [] })),
+    getServiceArea(db).catch(() => ({ city: 'Hanamkonda', state: 'Telangana', count: 0 })),
   ]);
 
+  const featured = featuredRes?.items || [];
+  const centresCount = centresCountRes?.count ?? 0;
+  const studentsCount = studentsCountRes?.count ?? 0;
+  const testimonialRows = testimonialRowsRes?.data || [];
+  const ratingRows = ratingRowsRes?.data || [];
+
   const testimonials: Testimonial[] = (testimonialRows ?? [])
-    .map((r): Testimonial | null => {
+    .map((r: any): Testimonial | null => {
       const author = r.author as unknown as { full_name: string | null; avatar_url: string | null } | null;
       const centre = r.centres as unknown as { name: string; slug: string } | null;
       if (!centre) return null;
       return {
         id: r.id,
-        // A real name is used whenever it's on file. When it isn't, this
-        // says so once — "Verified Student" — instead of falling back to a
-        // bare "Student" that then duplicated the (also hardcoded) subtitle
-        // underneath it. The centre name below covers that subtitle role
-        // now, with real data either way.
         name: author?.full_name || 'Verified Student',
         avatarUrl: author?.avatar_url ?? null,
         rating: r.rating,
@@ -67,22 +76,22 @@ export default async function HomePage() {
         centreSlug: centre.slug,
       };
     })
-    .filter((t): t is Testimonial => t !== null)
+    .filter((t: Testimonial | null): t is Testimonial => t !== null)
     .slice(0, 6);
 
   const avgRating = ratingRows && ratingRows.length > 0
-    ? (ratingRows.reduce((s, r) => s + Number(r.rating), 0) / ratingRows.length).toFixed(1)
+    ? (ratingRows.reduce((s: number, r: any) => s + Number(r.rating), 0) / ratingRows.length).toFixed(1)
     : null;
 
   let savedIds = new Set<string>();
   if (viewer) {
-    const { data: savedRows } = await db.from('saved_listings').select('centre_id').eq('user_id', viewer.id);
-    savedIds = new Set((savedRows ?? []).map((r) => r.centre_id));
+    const { data: savedRows } = await Promise.resolve(db.from('saved_listings').select('centre_id').eq('user_id', viewer.id)).catch(() => ({ data: [] }));
+    savedIds = new Set((savedRows ?? []).map((r: any) => r.centre_id));
   }
 
   let heroAmenities: string[] = [];
   if (featured[0]) {
-    const { data: amenityRows } = await db.from('centre_amenities').select('amenities(label)').eq('centre_id', featured[0].id);
+    const { data: amenityRows } = await Promise.resolve(db.from('centre_amenities').select('amenities(label)').eq('centre_id', featured[0].id)).catch(() => ({ data: [] }));
     heroAmenities = ((amenityRows ?? []) as unknown as Array<{ amenities: { label: string } | null }>)
       .map((r) => r.amenities?.label)
       .filter((l): l is string => !!l);

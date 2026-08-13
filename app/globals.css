@@ -68,7 +68,8 @@ html {
 
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground antialiased; }
+  body { @apply bg-background text-foreground antialiased font-sans; }
+  h1, h2, h3, h4, h5, h6 { font-family: var(--font-lexend), 'Lexend', sans-serif; }
   /* Visible keyboard-focus ring on every interactive element, site-wide —
      :focus-visible so it only shows for keyboard/AT users, not mouse clicks. */
   a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,

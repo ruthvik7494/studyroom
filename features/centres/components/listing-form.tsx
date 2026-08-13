@@ -117,17 +117,17 @@ export function ListingForm(props: Props) {
         <div>
           <Label htmlFor="priceHourly">Price (₹ / hour)</Label>
           <Input id="priceHourly" type="number" min={1} aria-invalid={!!errors.priceHourly} {...register('priceHourly')} />
-          {errors.priceHourly && <p className="mt-1 text-xs text-destructive">{errors.priceHourly.message}</p>}
+          {errors.priceHourly && <p className="mt-1 text-xs text-destructive">{String(errors.priceHourly.message)}</p>}
         </div>
         <div>
           <Label htmlFor="priceDaily">Price (₹ / day)</Label>
           <Input id="priceDaily" type="number" min={1} aria-invalid={!!errors.priceDaily} {...register('priceDaily')} />
-          {errors.priceDaily && <p className="mt-1 text-xs text-destructive">{errors.priceDaily.message}</p>}
+          {errors.priceDaily && <p className="mt-1 text-xs text-destructive">{String(errors.priceDaily.message)}</p>}
         </div>
         <div>
           <Label htmlFor="priceMonthly">Price (₹ / month)</Label>
           <Input id="priceMonthly" type="number" min={1} aria-invalid={!!errors.priceMonthly} {...register('priceMonthly')} />
-          {errors.priceMonthly && <p className="mt-1 text-xs text-destructive">{errors.priceMonthly.message}</p>}
+          {errors.priceMonthly && <p className="mt-1 text-xs text-destructive">{String(errors.priceMonthly.message)}</p>}
         </div>
       </div>
       <p className="text-xs text-muted-foreground">

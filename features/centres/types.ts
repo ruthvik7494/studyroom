@@ -26,6 +26,7 @@ export interface CentreAmenity {
 }
 
 export interface CentreDetail extends Centre {
+  fromMonthly?: number | null;
   resources: Resource[];
   occupancy: CentreListItem['occupancy'];
   gallery: CentreImage[];

@@ -80,12 +80,12 @@ export default async function Theme2Page() {
           {featured.map((centre) => (
             <div key={centre.id} className="rounded-xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition overflow-hidden">
               <div className="relative h-44 w-full bg-slate-100">
-                {centre.coverUrl && <Image src={centre.coverUrl} alt={centre.name} fill className="object-cover" />}
+                {centre.cover_url && <Image src={centre.cover_url} alt={centre.name} fill className="object-cover" />}
               </div>
               <div className="p-5">
-                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">{centre.spaceType?.replace('_', ' ') || 'Study Hall'}</span>
+                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">{centre.space_type?.replace('_', ' ') || 'Study Hall'}</span>
                 <h3 className="text-lg font-bold text-slate-900 mt-1">{centre.name}</h3>
-                <p className="text-xs text-slate-500 mt-1">📍 {centre.address}</p>
+                <p className="text-xs text-slate-500 mt-1">📍 {centre.area}</p>
                 <div className="mt-4 flex items-center justify-between pt-4 border-t border-slate-100">
                   <span className="text-sm font-bold text-slate-900">★ {centre.rating.toFixed(1)} rating</span>
                   <Link href={`/centres/${centre.slug}`} className="px-3 py-1.5 text-xs font-bold rounded bg-indigo-600 hover:bg-indigo-700 text-white transition">

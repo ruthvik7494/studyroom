@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 interface HeroSectionV1Props {
   variant?: 'split' | 'full';
   bgCoverUrl?: string;
@@ -28,12 +30,12 @@ export function HeroSectionV1({
         {/* Full-Scale Background Image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          className="absolute inset-0 w-full h-full object-cover opacity-40 scale-105"
+          className="absolute inset-0 w-full h-full object-cover opacity-85 transition-opacity duration-300"
           alt={centreName}
           src={heroBg}
         />
-        {/* Gradient Overlay for Readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-transparent" />
+        {/* Gradient Overlay for Readability (Dark on left for text, completely transparent on right for bright image) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/40 to-transparent" />
 
         <div className="relative z-10 max-w-[1280px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Content Aligned to the Left / Right balance */}

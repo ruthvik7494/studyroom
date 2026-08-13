@@ -123,9 +123,9 @@ export default async function Theme5Page() {
           {featured.map((centre) => (
             <div key={centre.id} className="group rounded-3xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col">
               <div className="relative h-56 w-full bg-slate-100 overflow-hidden">
-                {centre.coverUrl && <Image src={centre.coverUrl} alt={centre.name} fill className="object-cover group-hover:scale-105 transition duration-700" />}
+                {centre.cover_url && <Image src={centre.cover_url} alt={centre.name} fill className="object-cover group-hover:scale-105 transition duration-700" />}
                 <div className="absolute top-4 left-4 rounded-full bg-slate-950/80 backdrop-blur-md px-3 py-1 text-xs font-bold text-white">
-                  {centre.spaceType?.replace('_', ' ').toUpperCase() || 'STUDY HALL'}
+                  {centre.space_type?.replace('_', ' ').toUpperCase() || 'STUDY HALL'}
                 </div>
                 <div className="absolute top-4 right-4 rounded-full bg-white px-3 py-1 text-xs font-extrabold text-slate-900 shadow-md">
                   ★ {centre.rating.toFixed(1)}
@@ -135,7 +135,7 @@ export default async function Theme5Page() {
                 <div>
                   <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-emerald-600 transition">{centre.name}</h3>
                   <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                    <span>📍</span> {centre.address}
+                    <span>📍</span> {centre.area}
                   </p>
                 </div>
 

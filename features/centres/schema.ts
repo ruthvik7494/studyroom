@@ -123,13 +123,12 @@ const flexibleWebsiteUrl = () =>
   z.string().trim().max(200).optional().or(z.literal(''))
     .refine(
       (v) => {
-        if (!v) return true;
-        const cleaned = v.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0];
-        return /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(cleaned);
+        const cleaned = (v || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0];
+        return !cleaned || /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(cleaned);
       },
       { message: 'Enter a valid website (e.g. example.com or studycentre.in)' }
     )
-    .transform((v) => (v ? withHttps(v) : v));
+    .transform((v) => (v ? withHttps(v) : undefined));
 
 export const centreUpsertSchema = z.object({
   name: z.string().trim().min(1, 'Centre Name is required').default('Test Centre'),

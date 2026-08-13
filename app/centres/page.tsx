@@ -112,44 +112,60 @@ export default async function CentresPage({ searchParams }: PageProps) {
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        {/* Left — search, results, pagination */}
-        <div>
-          <CentreSearchBar filters={filters} />
+      {/* Main Search & Listings Area */}
+      <div>
+        <CentreSearchBar filters={filters} />
 
-          {result.items.length === 0 ? (
-            <CentreEmptyState />
-          ) : filters.view === 'grid' ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
-              {result.items.map((c, i) => <CentreCard key={c.id} centre={c} isSaved={savedIds.has(c.id)} index={i} />)}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {result.items.map((c) => <CentreListRow key={c.id} centre={c} />)}
-            </div>
-          )}
+        {result.items.length === 0 ? (
+          <CentreEmptyState />
+        ) : filters.view === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {result.items.map((c, i) => <CentreCard key={c.id} centre={c} isSaved={savedIds.has(c.id)} index={i} />)}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {result.items.map((c) => <CentreListRow key={c.id} centre={c} />)}
+          </div>
+        )}
 
-          <PaginationBar page={result.page} totalPages={result.totalPages} hrefForPage={hrefForPage} />
-        </div>
+        <PaginationBar page={result.page} totalPages={result.totalPages} hrefForPage={hrefForPage} />
+      </div>
 
-        {/* Right — list-your-centre CTA, help */}
-        <div className="space-y-4">
-          <Card className="bg-primary/5 p-4">
-            <p className="font-display font-bold">List your study space</p>
-            <p className="mt-1 text-sm text-muted-foreground">Reach students looking for the perfect place to study.</p>
-            <Link href="/owner/centres/new" className="mt-3 block rounded-lg bg-primary py-2 text-center text-sm font-bold text-primary-foreground hover:bg-primary/90">
-              List your centre
+      {/* Bottom Callout Section: List Your Space & Help — After all listings */}
+      <div className="mt-12 grid gap-6 sm:grid-cols-2">
+        <Card className="bg-primary/5 border border-primary/20 p-6 flex flex-col justify-between rounded-2xl shadow-xs">
+          <div>
+            <h3 className="font-display text-lg font-bold text-foreground">List your study space</h3>
+            <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+              Reach students looking for the perfect place to study.
+            </p>
+          </div>
+          <div className="mt-5">
+            <Link
+              href="/owner/centres/new"
+              className="inline-block rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90 shadow-xs"
+            >
+              List your centre →
             </Link>
-          </Card>
+          </div>
+        </Card>
 
-          <Card className="p-4">
-            <p className="font-semibold">Need help?</p>
-            <p className="mt-1 text-sm text-muted-foreground">Our support team is here to help you find the perfect study space.</p>
-            <div className="mt-3 space-y-2 text-sm">
-              <a href="mailto:support@studynook.app" className="flex items-center gap-2 hover:underline">✉ Email support</a>
-            </div>
-          </Card>
-        </div>
+        <Card className="p-6 border border-border flex flex-col justify-between rounded-2xl shadow-xs">
+          <div>
+            <h3 className="font-display text-lg font-bold text-foreground">Need help?</h3>
+            <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+              Our support team is here to help you find the perfect study space.
+            </p>
+          </div>
+          <div className="mt-5">
+            <a
+              href="mailto:support@studynook.app"
+              className="inline-flex items-center gap-2 rounded-xl border border-input bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-secondary"
+            >
+              ✉ Email support
+            </a>
+          </div>
+        </Card>
       </div>
 
       {/* Trust strip */}

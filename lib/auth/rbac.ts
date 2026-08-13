@@ -16,22 +16,26 @@ export interface SessionUser {
  * Role comes from profiles.role (single source of truth, enforced in RLS too).
  */
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, account_status')
-    .eq('id', user.id)
-    .single();
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, account_status')
+      .eq('id', user.id)
+      .single();
 
-  return {
-    id: user.id,
-    email: user.email ?? null,
-    role: (profile?.role ?? 'student') as Role,
-    accountStatus: (profile?.account_status ?? 'active') as 'active' | 'suspended' | 'deleted',
-  };
+    return {
+      id: user.id,
+      email: user.email ?? null,
+      role: (profile?.role ?? 'student') as Role,
+      accountStatus: (profile?.account_status ?? 'active') as 'active' | 'suspended' | 'deleted',
+    };
+  } catch {
+    return null;
+  }
 }
 
 class AuthError extends Error {

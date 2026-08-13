@@ -45,15 +45,16 @@ export default async function CentreDetailV2Page({ params }: PageProps) {
   const fullAddress = [centre.address, centre.city, centre.state, centre.postcode].filter(Boolean).join(', ');
 
   const galleryImages = (centre.gallery || [])
-    .map((item) => {
+    .map((item, idx) => {
       const url = typeof item === 'string' ? item : (item as { url?: string })?.url || '';
-      if (!url) return '';
-      return url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listing-images/${url}`;
+      if (!url) return null;
+      const fullUrl = url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listing-images/${url}`;
+      return { id: `img-${idx}`, url: fullUrl, storage_path: fullUrl, alt: centre.name, is_cover: idx === 0, sort_order: idx };
     })
-    .filter(Boolean);
+    .filter((img): img is NonNullable<typeof img> => img !== null);
 
-  if (centre.cover_url && !galleryImages.includes(centre.cover_url)) {
-    galleryImages.unshift(centre.cover_url);
+  if (centre.cover_url && !galleryImages.some((img) => img.url === centre.cover_url)) {
+    galleryImages.unshift({ id: 'img-cover', url: centre.cover_url, storage_path: centre.cover_url, alt: centre.name, is_cover: true, sort_order: -1 });
   }
 
   return (
@@ -93,7 +94,7 @@ export default async function CentreDetailV2Page({ params }: PageProps) {
 
             <div className="flex items-center gap-2">
               <SaveButton centreId={centre.id} initialSaved={saved} />
-              <ShareButton title={centre.name} text={`Check out ${centre.name} on StudyNook`} />
+              <ShareButton title={centre.name} url={`https://studynook.app/centres/${centre.slug}`} />
             </div>
           </div>
 
@@ -134,7 +135,7 @@ export default async function CentreDetailV2Page({ params }: PageProps) {
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
             <h2 className="text-xl font-bold font-['Lexend',sans-serif] text-slate-900">Centre Photos</h2>
             {galleryImages.length > 0 ? (
-              <GalleryLightbox images={galleryImages} title={centre.name} />
+              <GalleryLightbox images={galleryImages} />
             ) : (
               <div className="h-48 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 text-sm font-medium">
                 No photos uploaded yet
@@ -191,10 +192,10 @@ export default async function CentreDetailV2Page({ params }: PageProps) {
                 {reviews.map((rev) => (
                   <div key={rev.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 text-sm">{rev.userName || 'Anonymous Student'}</span>
+                      <span className="font-bold text-slate-900 text-sm">{rev.author?.full_name || 'Anonymous Student'}</span>
                       <span className="text-amber-500 font-bold text-xs">★ {rev.rating}</span>
                     </div>
-                    {rev.comment && <p className="text-xs text-slate-600 leading-relaxed">{rev.comment}</p>}
+                    {rev.body && <p className="text-xs text-slate-600 leading-relaxed">{rev.body}</p>}
                   </div>
                 ))}
               </div>
@@ -238,7 +239,7 @@ export default async function CentreDetailV2Page({ params }: PageProps) {
             {/* Quick Enquiry Box */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
               <h3 className="text-base font-bold font-['Lexend',sans-serif] text-slate-900">Have Questions?</h3>
-              <EnquiryForm centreId={centre.id} centreName={centre.name} />
+              <EnquiryForm centreId={centre.id} />
             </div>
           </div>
         </div>

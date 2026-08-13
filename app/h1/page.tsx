@@ -68,7 +68,7 @@ export default async function Theme1Page() {
           {featured.map((centre) => (
             <div key={centre.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 overflow-hidden hover:border-emerald-500/50 transition group">
               <div className="relative h-48 w-full bg-slate-800">
-                {centre.coverUrl && <Image src={centre.coverUrl} alt={centre.name} fill className="object-cover group-hover:scale-105 transition duration-500" />}
+                {centre.cover_url && <Image src={centre.cover_url} alt={centre.name} fill className="object-cover group-hover:scale-105 transition duration-500" />}
                 <span className="absolute top-3 right-3 rounded-full bg-slate-950/80 backdrop-blur-md px-3 py-1 text-xs font-bold text-emerald-400">
                   ★ {centre.rating.toFixed(1)}
                 </span>

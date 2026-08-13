@@ -62,7 +62,7 @@ export default async function Theme3Page() {
           {featured.map((centre) => (
             <div key={centre.id} className="rounded-2xl bg-white border-4 border-slate-950 p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition">
               <div className="relative h-48 w-full rounded-xl overflow-hidden border-2 border-slate-950 bg-slate-200">
-                {centre.coverUrl && <Image src={centre.coverUrl} alt={centre.name} fill className="object-cover" />}
+                {centre.cover_url && <Image src={centre.cover_url} alt={centre.name} fill className="object-cover" />}
                 <span className="absolute top-2 right-2 rounded bg-yellow-400 border-2 border-slate-950 px-2 py-0.5 text-xs font-black">
                   ★ {centre.rating.toFixed(1)}
                 </span>
