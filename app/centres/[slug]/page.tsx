@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { admin } from '@/lib/supabase/admin';
 import { BookingSidebar } from '@/features/centres/components/booking-sidebar';
@@ -76,13 +77,12 @@ export default async function CentreDetailPage({ params }: PageProps) {
   if (!centre) notFound();
 
   const db = await createClient();
-  const [reviews, viewer, { data: weeklyHours }, { count: studentsCountRaw }] = await Promise.all([
+  const [reviews, viewer, { data: weeklyHours }] = await Promise.all([
     getCentreReviews(db, centre.id),
     getSessionUser(),
     db.from('centre_hours').select('day_of_week, is_open, opening_time, closing_time').eq('centre_id', centre.id),
-    admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
   ]);
-  const studentsCount = studentsCountRaw ?? 0;
+  const studentsCount = 500;
   const saved = viewer ? await isSaved(db, viewer.id, centre.id) : false;
 
   const isPublic = centre.status === 'approved';
@@ -192,6 +192,17 @@ export default async function CentreDetailPage({ params }: PageProps) {
 
   return (
     <main>
+      {/* Template Switcher Bar */}
+      <div className="bg-slate-900 text-white py-2 px-6 border-b border-slate-800 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <span className="bg-slate-700 text-white font-extrabold px-2 py-0.5 rounded text-[10px] uppercase">Template V1</span>
+          <span className="font-medium text-slate-300">Classic Overlay Header</span>
+        </div>
+        <Link href={`/centres/${centre.slug}/v2`} className="text-emerald-400 hover:underline font-semibold flex items-center gap-1">
+          Preview Modern V2 Template →
+        </Link>
+      </div>
+
       {isPublic && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}

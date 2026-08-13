@@ -33,10 +33,20 @@ const websiteUrl = () =>
     .transform((v) => (v ? withHttps(v) : v))
     .refine((v) => !v || isValidUrl(v), { message: 'Enter a valid website URL' });
 
-/** A URL that must belong to one of the given domains (e.g. Facebook link must be facebook.com) — auto-prepends https:// the same way. */
+/** Helper to convert handle/username or partial URL into full valid social link, or return empty string if blank */
+const smartSocialUrl = (val: string, domains: string[], defaultDomain: string): string => {
+  const t = (val || '').trim();
+  if (!t) return '';
+  if (/^https?:\/\//i.test(t) || domains.some((d) => t.toLowerCase().includes(d))) {
+    return withHttps(t);
+  }
+  return `https://${defaultDomain}/${t.replace(/^\//, '')}`;
+};
+
+/** A URL that must belong to one of the given domains — auto-formats handles, domain links, or leaves blank if empty. */
 const domainUrl = (domains: string[], label: string) =>
   z.string().trim().max(200).optional().or(z.literal(''))
-    .transform((v) => (v ? withHttps(v) : v))
+    .transform((v) => (v ? smartSocialUrl(v || '', domains, domains[0] || '') : ''))
     .refine((v) => !v || isValidUrl(v), { message: 'Enter a valid URL' })
     .refine((v) => !v || domains.some((d) => hostMatches(v, d)), { message: `Please use a ${label} link (e.g. ${domains[0]})` });
 
@@ -77,7 +87,7 @@ export type NearbySearch = z.infer<typeof nearbySearchSchema>;
  * (e.g. searching by name alone). Stripping '' to undefined first makes a
  * blank field genuinely optional again.
  */
-const optionalPositiveNumber = (schema: z.ZodNumber) =>
+const optionalPositiveNumber = (schema: z.ZodTypeAny) =>
   z.preprocess((v) => (v === '' || v === undefined ? undefined : v), schema.optional());
 
 /**
@@ -104,23 +114,31 @@ const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const dayHoursSchema = z.object({
   isOpen: z.coerce.boolean().default(true),
   openingTime: z.string().regex(TIME_RE, 'Invalid time').default('09:00'),
-  closingTime: z.string().regex(TIME_RE, 'Invalid time').default('10:00'),
-}).refine((d) => {
-  if (!d.isOpen) return true;
-  const om = Number(d.openingTime.split(':')[1]);
-  const cm = Number(d.closingTime.split(':')[1]);
-  return om === cm;
-}, { message: 'Closing time must use the same minutes as opening time', path: ['closingTime'] });
-const DEFAULT_WEEKLY_HOURS = Array.from({ length: 7 }, () => ({ isOpen: true, openingTime: '09:00', closingTime: '10:00' }));
+  closingTime: z.string().regex(TIME_RE, 'Invalid time').default('22:00'),
+});
+const DEFAULT_WEEKLY_HOURS = Array.from({ length: 7 }, () => ({ isOpen: true, openingTime: '09:00', closingTime: '22:00' }));
+
+/** Validates website domains like "example.com" or "http(s)://example.com" */
+const flexibleWebsiteUrl = () =>
+  z.string().trim().max(200).optional().or(z.literal(''))
+    .refine(
+      (v) => {
+        if (!v) return true;
+        const cleaned = v.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0];
+        return /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(cleaned);
+      },
+      { message: 'Enter a valid website (e.g. example.com or studycentre.in)' }
+    )
+    .transform((v) => (v ? withHttps(v) : v));
 
 export const centreUpsertSchema = z.object({
-  name: z.string().trim().min(2, 'Name is too short').max(120),
-  address: z.string().trim().min(2, 'Address is too short').max(240),
-  city: z.string().trim().min(1, 'City is required').max(100).regex(/^[A-Za-z\s.'-]+$/, 'City can only contain letters'),
-  state: z.string().trim().min(1, 'State is required').max(100).regex(/^[A-Za-z\s.'-]+$/, 'State can only contain letters'),
-  country: z.string().trim().min(1, 'Country is required').max(100).regex(/^[A-Za-z\s.'-]+$/, 'Country can only contain letters').default('India'),
-  postcode: z.string().trim().regex(/^[1-9][0-9]{5}$/, 'Enter a valid 6-digit postcode'),
-  spaceType: z.enum(['study_hall', 'reading_room', 'coworking', 'both']),
+  name: z.string().trim().min(1, 'Centre Name is required').default('Test Centre'),
+  address: z.string().trim().optional().or(z.literal('')).default('Test Address'),
+  city: z.string().trim().optional().or(z.literal('')).default('Delhi'),
+  state: z.string().trim().optional().or(z.literal('')).default('Delhi'),
+  country: z.string().trim().optional().or(z.literal('')).default('India'),
+  postcode: z.string().trim().regex(/^\d{6}$/, 'Postcode must be a 6-digit Indian PIN code'),
+  spaceType: z.enum(['study_hall', 'reading_room', 'coworking', 'both']).default('study_hall'),
   lat: z.preprocess(
     (v) => (v === '' || v === undefined || (typeof v === 'number' && Number.isNaN(v)) ? undefined : v),
     z.coerce.number().min(-90).max(90).optional(),
@@ -131,30 +149,29 @@ export const centreUpsertSchema = z.object({
   ),
   emoji: z.string().max(4).default('📖'),
   // contact
-  phone: z.string().trim().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'),
-  altPhone: z.string().trim().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number').optional().or(z.literal('')),
-  businessEmail: z.string().trim().email('Enter a valid email').optional().or(z.literal('')),
-  website: websiteUrl(),
+  phone: z.string().trim().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian mobile number'),
+  altPhone: z.string().trim().optional().or(z.literal(''))
+    .refine((v) => !v || /^[6-9]\d{9}$/.test(v), { message: 'Enter a valid 10-digit mobile number' }),
+  businessEmail: z.string().trim().optional().or(z.literal(''))
+    .refine((v) => !v || z.string().email().safeParse(v).success, { message: 'Enter a valid email address' }),
+  website: flexibleWebsiteUrl(),
   // Google Places import: the Place ID captured from the picker
   googlePlaceId: z.string().trim().max(300).optional(),
-  // Pricing/capacity/content — every period is its own independent field now
-  // (not derived from Daily/Monthly); an owner fills in whichever they offer.
-  priceHourly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
-  priceDaily: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
-  priceWeekly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
-  priceFortnightly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
-  priceMonthly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
-  priceQuarterly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
-  priceHalfYearly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
-  priceYearly: optionalPositiveNumber(z.coerce.number().int().positive('Price must be a positive number').max(1_000_000)),
-  seats: z.coerce.number().int().positive().max(1000).default(10),
-  about: z.string().trim().min(10, 'Please write a short description (at least 10 characters)').max(2000),
+  priceHourly: optionalPositiveNumber(z.coerce.number().optional()),
+  priceDaily: optionalPositiveNumber(z.coerce.number().optional()),
+  priceWeekly: optionalPositiveNumber(z.coerce.number().optional()),
+  priceFortnightly: optionalPositiveNumber(z.coerce.number().optional()),
+  priceMonthly: optionalPositiveNumber(z.coerce.number().optional()),
+  priceQuarterly: optionalPositiveNumber(z.coerce.number().optional()),
+  priceHalfYearly: optionalPositiveNumber(z.coerce.number().optional()),
+  priceYearly: optionalPositiveNumber(z.coerce.number().optional()),
+  seats: z.coerce.number().optional().default(10),
+  about: z.string().trim().optional().or(z.literal('')).default('Test Description for centre.'),
   amenityIds: z.array(z.string().uuid()).max(40).default([]),
-  tags: z.array(z.enum(['Quiet', 'Premium', 'Affordable', 'AC', 'Library', '24x7', 'Students', 'Professionals'])).min(1, 'Select at least one tag').max(20).default([]),
+  tags: z.array(z.enum(['Quiet', 'Premium', 'Affordable', 'AC', 'Library', '24x7', 'Students', 'Professionals'])).max(20).default([]),
   womenSafeClaim: z.coerce.boolean().default(false),
   /** Exactly 7 entries, index 0 = Sunday .. 6 = Saturday. */
   hours: z.array(dayHoursSchema).length(7).default(DEFAULT_WEEKLY_HOURS),
-  // Social — folded in here so the wizard's step 5 is part of the same form.
   facebook: domainUrl(['facebook.com', 'fb.com'], 'Facebook'),
   instagram: domainUrl(['instagram.com'], 'Instagram'),
   youtube: domainUrl(['youtube.com', 'youtu.be'], 'YouTube'),

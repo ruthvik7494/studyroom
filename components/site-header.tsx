@@ -17,51 +17,38 @@ export async function SiteHeader() {
   const user = await getSessionUser();
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
-      <HeaderShell>
-        {/* Logo */}
-        <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-display text-sm font-bold text-primary-foreground">S</span>
-          <span>
-            <span className="block font-display text-lg font-extrabold leading-tight">
-              Study<span className="text-brand-gold">Nook</span>
-            </span>
-            <span className="hidden text-[11px] leading-none text-muted-foreground sm:block">Find. Book. Study.</span>
-          </span>
+    <header className="sticky top-0 z-40 w-full bg-[#f7f9fb]/90 backdrop-blur-xl border-b border-[#e0e3e5] shadow-sm">
+      <div className="relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 h-16">
+        {/* Brand Logo */}
+        <Link href="/" className="text-2xl font-extrabold text-[#006b2c] font-['Lexend',sans-serif]">
+          StudyNook
         </Link>
 
+        {/* Navigation Links */}
         <DesktopNav role={user?.role ?? null} />
 
-        {/* Right side — account (desktop/tablet-wide only; mobile/tablet
-            gets the same account actions folded into the hamburger panel,
-            matching DesktopNav's md breakpoint exactly so there's no gap
-            where neither is shown) */}
+        {/* Auth Actions */}
         <div className="hidden shrink-0 items-center gap-3 md:flex">
-          <ThemeToggle />
           {user ? (
-            <>
+            <div className="flex items-center gap-3">
               <AccountAvatarLink initial={(user.email ?? 'U').charAt(0).toUpperCase()} role={user.role} />
               <form action={signOut}>
-                <button className="rounded-full border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground">
-                  Sign out
+                <button type="submit" className="text-sm font-semibold text-[#565e74] border border-[#e0e3e5] bg-white hover:bg-[#eceef0] px-4 py-1.5 rounded-full transition-colors">
+                  Sign Out
                 </button>
               </form>
-            </>
+            </div>
           ) : (
-            <Link href="/login" className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
-              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <circle cx="12" cy="8" r="3.5" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
-              </svg>
+            <Link className="text-sm font-semibold bg-[#006b2c] text-white px-5 py-2 rounded-xl hover:bg-[#00873a] transition-colors shadow-sm" href="/login">
               Sign In
             </Link>
           )}
         </div>
 
         <div className="flex items-center gap-1 md:hidden">
-          <ThemeToggle />
           <MobileMenu role={user?.role ?? null} email={user?.email ?? null} signOutAction={signOut} />
         </div>
-      </HeaderShell>
+      </div>
     </header>
   );
 }

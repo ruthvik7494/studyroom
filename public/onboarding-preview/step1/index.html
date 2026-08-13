@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StudyNook Partner Onboarding - Profile &amp; Category</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Lexend:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#dae2fd",
+                    "on-background": "#191c1e",
+                    "surface-container": "#eceef0",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed-variant": "#3a485c",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#131b2e",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary-container": "#dae2fd",
+                    "on-primary-container": "#f7fff2",
+                    "outline-variant": "#bdcaba",
+                    "surface-tint": "#006e2d",
+                    "on-tertiary-container": "#fdfcff",
+                    "surface-variant": "#e0e3e5",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "surface": "#f7f9fb",
+                    "surface-container-high": "#e6e8ea",
+                    "on-tertiary-fixed": "#0d1c2f",
+                    "primary-fixed": "#7ffc97",
+                    "primary-container": "#00873a",
+                    "tertiary": "#4f5d72",
+                    "on-primary-fixed-variant": "#005320",
+                    "inverse-surface": "#2d3133",
+                    "tertiary-fixed-dim": "#b9c7e0",
+                    "on-secondary-container": "#5c647a",
+                    "tertiary-container": "#67758c",
+                    "error-container": "#ffdad6",
+                    "secondary": "#565e74",
+                    "on-secondary-fixed-variant": "#3f465c",
+                    "on-primary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "outline": "#6e7b6c",
+                    "tertiary-fixed": "#d5e3fd",
+                    "primary-fixed-dim": "#62df7d",
+                    "on-primary-fixed": "#002109",
+                    "on-error-container": "#93000a",
+                    "background": "#f7f9fb",
+                    "on-surface-variant": "#3e4a3d",
+                    "surface-bright": "#f7f9fb",
+                    "primary": "#006b2c",
+                    "on-surface": "#191c1e",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#eff1f3",
+                    "inverse-primary": "#62df7d",
+                    "error": "#ba1a1a",
+                    "surface-container-low": "#f2f4f6",
+                    "surface-dim": "#d8dadc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px",
+                    "2xl": "1.5rem"
+            },
+            "spacing": {
+                    "margin-tablet": "32px",
+                    "margin-desktop": "64px",
+                    "unit": "8px",
+                    "section-padding": "80px",
+                    "margin-mobile": "16px",
+                    "container-max-width": "1280px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Lexend"],
+                    "body-sm": ["Inter"],
+                    "headline-lg-mobile": ["Lexend"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Lexend"],
+                    "body-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-xl": ["Lexend"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(86, 94, 116, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-md flex flex-col pt-[64px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 bg-surface/70 backdrop-blur-xl border-b border-white/20 shadow-sm">
+<div class="flex items-center gap-4">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">StudyNook</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="font-label-md text-label-md text-primary font-semibold hover:bg-primary-container/10 transition-colors px-4 py-2 rounded-full active:scale-95 duration-200">
+                Save Draft
+            </button>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-variant">
+<img alt="Partner profile" class="w-full h-full object-cover" data-alt="A professional headshot of a young entrepreneur in a modern office setting. The lighting is soft and flattering, creating a premium, corporate aesthetic suitable for a business partner profile on a study space marketplace. The overall tone is confident and approachable, reflecting the high standards of the platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4A4pije_zHG0qgAqHkUz329UInMe1OIVzagvusAUsZYKMabqUvuT1GF8EdkGWanM6m9_QZOz2C3goYCHluNZxGe1KevW3fEo2ia3UsMVfKkGWtAIvG16UR_3ISLbLJy6havueYBiaUoRR7bnI1xrhrnJgRAdLkgSEMz2cc4SvR8hgR3K8l9uuSKtVbNmyF4YsfiucC7I8KUCC1iNX7ckTyi_7IMfpyftAkyV_IiCosgCL4ogi4Xrs"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 relative">
+<!-- SideNavBar (Hidden on Mobile) -->
+<nav class="fixed left-0 top-[64px] h-[calc(100vh-64px)] w-64 hidden lg:flex flex-col bg-surface-container-low p-6 z-40 border-r border-outline-variant/30">
+<div class="mb-8">
+<h2 class="font-headline-md text-headline-md text-primary">Onboarding</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Step 1 of 7</p>
+</div>
+<ul class="flex flex-col gap-2 flex-1">
+<!-- Active Item -->
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold bg-primary-container/20 cursor-pointer active:translate-x-1 transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_edit</span>
+<span class="font-label-md text-label-md">Profile &amp; Category</span>
+</a>
+</li>
+<!-- Inactive Items -->
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">location_on</span>
+<span class="font-label-md text-label-md">Address &amp; Contact</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">schedule</span>
+<span class="font-label-md text-label-md">Hours &amp; Pricing</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">ac_unit</span>
+<span class="font-label-md text-label-md">Facilities</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">share</span>
+<span class="font-label-md text-label-md">Social Links</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">collections</span>
+<span class="font-label-md text-label-md">Gallery</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-label-md text-label-md">Review</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto">
+<button class="w-full font-label-md text-label-md text-on-surface-variant hover:bg-secondary-container/30 transition-all py-3 rounded-lg border border-outline-variant">
+                    Finish Later
+                </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 lg:ml-64 p-margin-mobile md:p-margin-desktop bg-background pb-[100px] lg:pb-margin-desktop">
+<div class="max-w-4xl mx-auto">
+<div class="mb-10">
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-2">Profile &amp; Category</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Set up the basic identity of your study space to attract the right professionals and students.</p>
+</div>
+<form class="space-y-8">
+<!-- Basic Info Card -->
+<div class="glass-panel rounded-2xl p-6 md:p-8">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6 border-b border-outline-variant/30 pb-4">Basic Information</h3>
+<div class="space-y-6">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2" for="centreName">Centre Name <span class="text-error">*</span></label>
+<input class="w-full bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 font-body-md text-on-surface transition-all" id="centreName" placeholder="Enter your business name" type="text"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2" for="shortDesc">Short Description</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 font-body-md text-on-surface transition-all resize-none" id="shortDesc" placeholder="A brief overview of your space..." rows="3"></textarea>
+<p class="text-on-surface-variant text-sm mt-1">Keep it concise. This appears in search results.</p>
+</div>
+</div>
+</div>
+<!-- Media Assets Card -->
+<div class="glass-panel rounded-2xl p-6 md:p-8">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6 border-b border-outline-variant/30 pb-4">Media Assets</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Logo Upload -->
+<div class="col-span-1">
+<label class="block font-label-md text-label-md text-on-surface mb-2">Business Logo</label>
+<div class="aspect-square bg-surface-container-low rounded-2xl border-2 border-dashed border-outline-variant hover:border-primary transition-colors flex flex-col items-center justify-center cursor-pointer group">
+<span class="material-symbols-outlined text-4xl text-secondary group-hover:text-primary transition-colors mb-2">add_photo_alternate</span>
+<span class="font-label-sm text-label-sm text-secondary group-hover:text-primary">Upload Logo</span>
+<span class="text-xs text-on-surface-variant mt-1">Optional, max 2MB</span>
+</div>
+</div>
+<!-- Cover Image Upload -->
+<div class="col-span-1 md:col-span-2">
+<label class="block font-label-md text-label-md text-on-surface mb-2">Cover Image <span class="text-error">*</span></label>
+<div class="h-full min-h-[200px] bg-surface-container-low rounded-2xl border-2 border-dashed border-outline-variant hover:border-primary transition-colors flex flex-col items-center justify-center cursor-pointer group">
+<span class="material-symbols-outlined text-4xl text-secondary group-hover:text-primary transition-colors mb-2">wallpaper</span>
+<span class="font-label-md text-label-md text-secondary group-hover:text-primary">Upload Cover Image</span>
+<span class="text-sm text-on-surface-variant mt-2 max-w-[200px] text-center">High quality image of your main space (1920x1080 recommended)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Categorization Card -->
+<div class="glass-panel rounded-2xl p-6 md:p-8">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6 border-b border-outline-variant/30 pb-4">Categorization</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2" for="category">Space Type <span class="text-error">*</span></label>
+<div class="relative">
+<select class="w-full bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 font-body-md text-on-surface appearance-none transition-all" id="category">
+<option disabled="" selected="" value="">Select a category</option>
+<option value="study">Study Centre</option>
+<option value="reading">Reading Room</option>
+<option value="coworking">Coworking Space</option>
+<option value="both">Hybrid (Study &amp; Coworking)</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">expand_more</span>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2">Seating Capacity Tier <span class="text-error">*</span></label>
+<div class="grid grid-cols-3 gap-2">
+<label class="cursor-pointer">
+<input class="peer sr-only" name="capacity_tier" type="radio" value="small"/>
+<div class="text-center py-2 px-3 rounded-lg border border-outline-variant peer-checked:bg-primary-container/20 peer-checked:border-primary peer-checked:text-primary font-label-sm text-label-sm transition-all text-on-surface">1-10</div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="capacity_tier" type="radio" value="medium"/>
+<div class="text-center py-2 px-3 rounded-lg border border-outline-variant peer-checked:bg-primary-container/20 peer-checked:border-primary peer-checked:text-primary font-label-sm text-label-sm transition-all text-on-surface">10-50</div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="capacity_tier" type="radio" value="large"/>
+<div class="text-center py-2 px-3 rounded-lg border border-outline-variant peer-checked:bg-primary-container/20 peer-checked:border-primary peer-checked:text-primary font-label-sm text-label-sm transition-all text-on-surface">50-100+</div>
+</label>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2" for="exactCapacity">Exact Seating Count</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 font-body-md text-on-surface transition-all" id="exactCapacity" placeholder="e.g. 45" type="number"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-2">Business Tags</label>
+<div class="flex flex-wrap gap-2">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm cursor-pointer hover:opacity-80 transition-opacity">
+                                        Quiet Zone
+                                        <span class="material-symbols-outlined text-[16px] ml-1">close</span>
+</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant font-label-sm text-label-sm cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px] mr-1">add</span>
+                                        Add Tags
+                                    </span>
+</div>
+<p class="text-on-surface-variant text-sm mt-2">Help users find you by specific amenities or vibes.</p>
+</div>
+</div>
+</div>
+<div class="hidden lg:flex justify-end gap-4 mt-8">
+<button class="px-6 py-3 rounded-full font-label-md text-label-md text-primary bg-primary-container/10 hover:bg-primary-container/20 transition-colors" type="button">
+                            Save Draft
+                        </button>
+<button class="px-8 py-3 rounded-full font-label-md text-label-md text-on-primary bg-primary hover:shadow-md transition-all shadow-[0_2px_4px_rgba(0,107,44,0.3)]" type="button">
+                            Next Step
+                        </button>
+</div>
+</form>
+</div>
+</main>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-surface/90 backdrop-blur-md border-t border-outline-variant shadow-lg lg:hidden">
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="font-label-sm text-label-sm mt-1">Back</span>
+</button>
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150">
+<span class="material-symbols-outlined">save</span>
+<span class="font-label-sm text-label-sm mt-1">Save</span>
+</button>
+<button class="bg-primary text-on-primary rounded-full px-6 py-2 flex items-center gap-2 hover:opacity-90 active:scale-90 duration-150 shadow-md">
+<span class="font-label-sm text-label-sm">Next</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</nav>
+</body></html>

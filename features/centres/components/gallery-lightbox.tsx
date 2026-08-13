@@ -34,7 +34,7 @@ export function GalleryLightbox({ images, previewCount = 6 }: { images: GalleryI
           const isLast = idx === preview.length - 1 && overflow > 0;
           return (
             <button
-              key={img.id}
+              key={img.id || `${img.url}-${idx}`}
               type="button"
               onClick={() => setOpenIndex(idx)}
               className="relative aspect-[4/3] overflow-hidden rounded-lg"

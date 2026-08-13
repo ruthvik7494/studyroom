@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { requireRole } from '@/lib/auth/rbac';
 import { noindex } from '@/lib/seo';
-import { ListingWizard } from '@/features/centres/components/listing-wizard';
+import { ListingWizardV2 } from '@/features/centres/components/listing-wizard-v2';
 import type { CentreUpsert } from '@/features/centres/schema';
 
 export const metadata: Metadata = { title: 'Edit listing', ...noindex };
@@ -32,6 +32,11 @@ export default async function EditListingPage({ params }: PageProps) {
   const pricing = (resource?.pricing ?? {}) as Record<string, number>;
   const social = (centre.social ?? {}) as Record<string, string>;
   const coverImage = images?.find((img) => img.is_cover);
+  const gallery = (images ?? []).map((img) => ({
+    id: img.id,
+    storagePath: img.storage_path,
+    category: img.category ?? 'gallery',
+  }));
   const hours = Array.from({ length: 7 }, (_, dayOfWeek) => {
     const row = hoursRows?.find((h) => h.day_of_week === dayOfWeek);
     return {
@@ -44,26 +49,21 @@ export default async function EditListingPage({ params }: PageProps) {
   return (
     <div className="max-w-3xl">
       <h1 className="mb-6 font-display text-2xl font-bold">Edit “{centre.name}”</h1>
-      <ListingWizard
+      <ListingWizardV2
         mode="edit"
-        centreId={centre.id}
+        centreId={id}
         amenities={amenities ?? []}
-        photos={{
-          logoUrl: centre.logo_url,
-          coverUrl: centre.cover_url,
-          coverImageId: coverImage?.id ?? null,
-          gallery: (images ?? []).filter((img) => !img.is_cover).map((img) => ({ id: img.id, url: galleryUrl(img.storage_path), category: img.category })),
-        }}
+        photos={{ logoUrl: centre.logo_url, coverUrl: centre.cover_url, coverImageId: coverImage?.id ?? null, gallery }}
         defaults={{
           name: centre.name,
-          address: centre.address ?? '',
-          city: centre.city ?? '',
-          state: centre.state ?? '',
-          country: centre.country ?? 'India',
-          postcode: centre.postcode ?? '',
-          spaceType: centre.space_type,
-          lat: centre.lat ?? 0,
-          lng: centre.lng ?? 0,
+          address: centre.address,
+          city: centre.city,
+          state: centre.state,
+          country: centre.country,
+          postcode: centre.postcode,
+          spaceType: (centre.space_type as CentreUpsert['spaceType']) ?? 'study_hall',
+          lat: centre.lat ?? undefined,
+          lng: centre.lng ?? undefined,
           about: centre.description ?? '',
           phone: centre.phone ?? '',
           altPhone: centre.alt_phone ?? '',

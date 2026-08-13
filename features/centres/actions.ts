@@ -23,6 +23,8 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
     const user = await requireRole('owner');
     const supabase = await createClient();
 
+    const name = input.name?.trim() || 'Untitled Centre';
+
     // Duplicate validation: same owner listing the same centre name twice
     // (a genuinely different centre with a coincidentally similar name is
     // fine — this only blocks an exact, case-insensitive match for this
@@ -31,18 +33,18 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       .from('centres')
       .select('id')
       .eq('owner_id', user.id)
-      .ilike('name', input.name)
+      .ilike('name', name)
       .neq('status', 'archived')
       .maybeSingle();
     if (dup) throw new ActionError('VALIDATION', 'You already have a listing with this name.');
 
-    let slug = slugify(input.name);
+    let slug = slugify(name);
     const { data: clash } = await supabase.from('centres').select('id').eq('slug', slug).maybeSingle();
     if (clash) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
 
     const { data: centre, error } = await supabase.from('centres').insert({
       owner_id: user.id,
-      name: input.name,
+      name,
       slug,
       area: input.address, // area still backs /locations/[slug] filtering — kept in sync with the single Address field
       address: input.address,

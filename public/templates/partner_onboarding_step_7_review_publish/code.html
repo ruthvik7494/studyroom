@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StudyNook Partner Onboarding - Step 7</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed": "#dae2fd",
+                      "on-background": "#191c1e",
+                      "surface-container": "#eceef0",
+                      "on-error": "#ffffff",
+                      "on-tertiary-fixed-variant": "#3a485c",
+                      "surface-container-lowest": "#ffffff",
+                      "on-secondary-fixed": "#131b2e",
+                      "surface-container-highest": "#e0e3e5",
+                      "secondary-container": "#dae2fd",
+                      "on-primary-container": "#f7fff2",
+                      "outline-variant": "#bdcaba",
+                      "surface-tint": "#006e2d",
+                      "on-tertiary-container": "#fdfcff",
+                      "surface-variant": "#e0e3e5",
+                      "secondary-fixed-dim": "#bec6e0",
+                      "surface": "#f7f9fb",
+                      "surface-container-high": "#e6e8ea",
+                      "on-tertiary-fixed": "#0d1c2f",
+                      "primary-fixed": "#7ffc97",
+                      "primary-container": "#00873a",
+                      "tertiary": "#4f5d72",
+                      "on-primary-fixed-variant": "#005320",
+                      "inverse-surface": "#2d3133",
+                      "tertiary-fixed-dim": "#b9c7e0",
+                      "on-secondary-container": "#5c647a",
+                      "tertiary-container": "#67758c",
+                      "error-container": "#ffdad6",
+                      "secondary": "#565e74",
+                      "on-secondary-fixed-variant": "#3f465c",
+                      "on-primary": "#ffffff",
+                      "on-secondary": "#ffffff",
+                      "outline": "#6e7b6c",
+                      "tertiary-fixed": "#d5e3fd",
+                      "primary-fixed-dim": "#62df7d",
+                      "on-primary-fixed": "#002109",
+                      "on-error-container": "#93000a",
+                      "background": "#f7f9fb",
+                      "on-surface-variant": "#3e4a3d",
+                      "surface-bright": "#f7f9fb",
+                      "primary": "#006b2c",
+                      "on-surface": "#191c1e",
+                      "on-tertiary": "#ffffff",
+                      "inverse-on-surface": "#eff1f3",
+                      "inverse-primary": "#62df7d",
+                      "error": "#ba1a1a",
+                      "surface-container-low": "#f2f4f6",
+                      "surface-dim": "#d8dadc"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-tablet": "32px",
+                      "margin-desktop": "64px",
+                      "unit": "8px",
+                      "section-padding": "80px",
+                      "margin-mobile": "16px",
+                      "container-max-width": "1280px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Lexend"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-lg-mobile": [
+                              "Lexend"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Lexend"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Lexend"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen antialiased flex">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-low dark:bg-surface-container-lowest h-screen w-64 hidden lg:flex flex-col p-6 fixed left-0 top-0 z-40 border-r border-outline-variant/20 shadow-sm">
+<div class="mb-8">
+<h1 class="font-headline-md text-headline-md text-primary mb-2">StudyNook</h1>
+<p class="font-label-md text-label-md text-on-surface-variant font-bold">Onboarding</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant opacity-80">Step 7 of 7</p>
+</div>
+<ul class="flex-1 space-y-2">
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="person_edit">person_edit</span>
+<span class="font-label-md text-label-md">Profile &amp; Category</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+<span class="font-label-md text-label-md">Address &amp; Contact</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+<span class="font-label-md text-label-md">Hours &amp; Pricing</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="ac_unit">ac_unit</span>
+<span class="font-label-md text-label-md">Facilities</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+<span class="font-label-md text-label-md">Social Links</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="collections">collections</span>
+<span class="font-label-md text-label-md">Gallery</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg text-primary font-bold bg-primary-container/20 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-md text-label-md">Review</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto pt-6 border-t border-outline-variant/20">
+<button class="w-full py-2 px-4 rounded-full border border-outline-variant text-on-surface hover:bg-surface-variant transition-colors font-label-md text-label-md">Finish Later</button>
+</div>
+</nav>
+<!-- TopAppBar Mobile -->
+<header class="bg-surface/70 dark:bg-surface-dim/70 backdrop-blur-xl border-b border-white/20 dark:border-white/10 shadow-sm fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-4 lg:hidden">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">StudyNook</h1>
+<button class="font-label-md text-label-md text-primary">Save Draft</button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 lg:ml-64 pt-20 lg:pt-0 min-h-screen flex flex-col pb-24 lg:pb-0">
+<div class="px-margin-mobile md:px-margin-desktop py-section-padding max-w-container-max-width mx-auto w-full">
+<header class="mb-12">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4">Review &amp; Publish</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Please review your space details before submitting for approval. You can always edit these later.</p>
+</header>
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-gutter">
+<!-- Bento Grid Summary -->
+<div class="xl:col-span-2 space-y-gutter">
+<!-- Section: Profile & Details -->
+<section class="bg-surface-container-lowest/70 backdrop-blur-md rounded-xl p-6 shadow-[0_4px_30px_rgba(86,94,116,0.05)] border border-white/40">
+<div class="flex justify-between items-center mb-6 border-b border-outline-variant/20 pb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary opacity-60">person_edit</span> Profile
+                            </h3>
+<button class="text-primary hover:bg-primary-container/10 p-2 rounded-full transition-colors"><span class="material-symbols-outlined">edit</span></button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1 uppercase tracking-wider">Space Name</p>
+<p class="font-body-md text-body-md font-medium text-on-surface">Quiet Corner Cafe</p>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1 uppercase tracking-wider">Category</p>
+<p class="font-body-md text-body-md font-medium text-on-surface">Cafe / Workspace</p>
+</div>
+<div class="md:col-span-2">
+<p class="font-label-sm text-label-sm text-secondary mb-1 uppercase tracking-wider">Description</p>
+<p class="font-body-md text-body-md text-on-surface-variant">A cozy, quiet cafe environment optimized for remote workers and students. High-speed internet and artisan coffee.</p>
+</div>
+</div>
+</section>
+<!-- Section: Address & Contact -->
+<section class="bg-surface-container-lowest/70 backdrop-blur-md rounded-xl p-6 shadow-[0_4px_30px_rgba(86,94,116,0.05)] border border-white/40">
+<div class="flex justify-between items-center mb-6 border-b border-outline-variant/20 pb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary opacity-60">location_on</span> Location
+                            </h3>
+<button class="text-primary hover:bg-primary-container/10 p-2 rounded-full transition-colors"><span class="material-symbols-outlined">edit</span></button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="md:col-span-2">
+<p class="font-label-sm text-label-sm text-secondary mb-1 uppercase tracking-wider">Address</p>
+<p class="font-body-md text-body-md font-medium text-on-surface">123 Innovation Drive, Suite 100, Tech District, SF, CA 94105</p>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1 uppercase tracking-wider">Phone</p>
+<p class="font-body-md text-body-md font-medium text-on-surface">+1 (415) 555-0198</p>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1 uppercase tracking-wider">Email</p>
+<p class="font-body-md text-body-md font-medium text-on-surface">hello@quietcorner.com</p>
+</div>
+</div>
+</section>
+<!-- Section: Facilities -->
+<section class="bg-surface-container-lowest/70 backdrop-blur-md rounded-xl p-6 shadow-[0_4px_30px_rgba(86,94,116,0.05)] border border-white/40">
+<div class="flex justify-between items-center mb-6 border-b border-outline-variant/20 pb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary opacity-60">ac_unit</span> Facilities
+                            </h3>
+<button class="text-primary hover:bg-primary-container/10 p-2 rounded-full transition-colors"><span class="material-symbols-outlined">edit</span></button>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="bg-secondary-container/50 text-on-secondary-container px-3 py-1 rounded-full font-label-sm text-label-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">wifi</span> Fast Wi-Fi</span>
+<span class="bg-secondary-container/50 text-on-secondary-container px-3 py-1 rounded-full font-label-sm text-label-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">power</span> Power Outlets</span>
+<span class="bg-secondary-container/50 text-on-secondary-container px-3 py-1 rounded-full font-label-sm text-label-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">local_cafe</span> Coffee</span>
+<span class="bg-secondary-container/50 text-on-secondary-container px-3 py-1 rounded-full font-label-sm text-label-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">volume_off</span> Quiet Zone</span>
+</div>
+</section>
+</div>
+<!-- Side Panel: Actions & Gallery Summary -->
+<div class="space-y-gutter">
+<!-- Publish Action Card -->
+<div class="bg-primary/5 rounded-2xl p-6 border border-primary/20 sticky top-24">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-4">Ready to go live?</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6">Your profile looks great. Submit it for review by our team. Approval usually takes 24 hours.</p>
+<div class="flex flex-col gap-3">
+<button class="bg-primary hover:bg-primary/90 text-on-primary font-label-md text-label-md py-3 px-6 rounded-full w-full transition-all shadow-[0_2px_8px_rgba(0,107,44,0.3)] active:scale-[0.98]">
+                                Publish for Review
+                            </button>
+<button class="bg-surface hover:bg-surface-variant text-primary border border-outline-variant font-label-md text-label-md py-3 px-6 rounded-full w-full transition-all active:scale-[0.98]">
+                                Save as Draft
+                            </button>
+</div>
+</div>
+<!-- Gallery Summary -->
+<section class="bg-surface-container-lowest/70 backdrop-blur-md rounded-xl p-6 shadow-[0_4px_30px_rgba(86,94,116,0.05)] border border-white/40">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary opacity-60">collections</span> Gallery
+                            </h3>
+<button class="text-primary text-sm hover:underline font-label-sm">Edit</button>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div class="rounded-lg overflow-hidden aspect-square">
+<img class="w-full h-full object-cover" data-alt="A brightly lit, modern cafe interior with sleek wooden tables, ergonomic chairs, and large windows letting in natural sunlight. Subtle potted plants add greenery. The aesthetic is clean, professional, and conducive to focused study, captured in high-resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0m1UIrg7wcV6G9avmvKc5sN_jK3LCEqDx9HlErxucPixVQJKAIYa309Frptzh0yPR5-Nel2vv9hcyW9ZFrUF6tMn4rZcBlQikESw7pYG5627ZkNiGR3n425b-WabNJJBqICVyUqQJedw7kqOni6np8NwujiotY172iRQlj35s1ZH_XxQxCIwZwt1i45qnSB76RuDqS_rZDzQpDtixwbNnZz2J1RaSL4EDnFQkUN0k5rPRXXnnbpZi"/>
+</div>
+<div class="rounded-lg overflow-hidden aspect-square">
+<img class="w-full h-full object-cover" data-alt="A close-up view of a comfortable workspace setup in a modern cafe. A laptop sits on a light oak table next to a ceramic cup of artisan coffee. Soft, diffused lighting creates a serene and productive atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDT1uAgluwPFo0ksKMXDbu_xtbj-tOmAj_M2kWwvQyGpROr1dGhF149OoqZkIN0v3ZmeEMI3oUsMjaQtHocWffY41aEIgrl1ZMQYxrD2E519WBoGFx6RSaPaKUl17WcYdo2VMQ6Od6qbG_v_a7SmzuuioOWSVdYlGVFkCZCz-G24fhZr-yqWaSSAt5_ebjtqPq0HhkkJP6B0-EytvEIa0gcWcfA0RhVVkll8lmC4ud4WBpBHIEy4Dtc"/>
+</div>
+</div>
+<p class="font-label-sm text-label-sm text-secondary mt-3 text-center">+ 4 more photos</p>
+</section>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Mobile -->
+<nav class="bg-surface dark:bg-surface-dim border-t border-outline-variant shadow-lg fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-surface/90 backdrop-blur-md lg:hidden">
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+<span class="font-label-sm text-label-sm mt-1">Back</span>
+</button>
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="save">save</span>
+<span class="font-label-sm text-label-sm mt-1">Save</span>
+</button>
+<button class="bg-primary text-on-primary rounded-full px-6 py-2 flex items-center gap-2 hover:opacity-90 active:scale-90 duration-150 font-label-sm text-label-sm">
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+<span>Next</span>
+</button>
+</nav>
+</body></html>

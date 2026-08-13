@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StudyNook Partner Onboarding - Address &amp; Contact</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#dae2fd",
+                        "on-background": "#191c1e",
+                        "surface-container": "#eceef0",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#3a485c",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed": "#131b2e",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-container": "#dae2fd",
+                        "on-primary-container": "#f7fff2",
+                        "outline-variant": "#bdcaba",
+                        "surface-tint": "#006e2d",
+                        "on-tertiary-container": "#fdfcff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "surface": "#f7f9fb",
+                        "surface-container-high": "#e6e8ea",
+                        "on-tertiary-fixed": "#0d1c2f",
+                        "primary-fixed": "#7ffc97",
+                        "primary-container": "#00873a",
+                        "tertiary": "#4f5d72",
+                        "on-primary-fixed-variant": "#005320",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-fixed-dim": "#b9c7e0",
+                        "on-secondary-container": "#5c647a",
+                        "tertiary-container": "#67758c",
+                        "error-container": "#ffdad6",
+                        "secondary": "#565e74",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "outline": "#6e7b6c",
+                        "tertiary-fixed": "#d5e3fd",
+                        "primary-fixed-dim": "#62df7d",
+                        "on-primary-fixed": "#002109",
+                        "on-error-container": "#93000a",
+                        "background": "#f7f9fb",
+                        "on-surface-variant": "#3e4a3d",
+                        "surface-bright": "#f7f9fb",
+                        "primary": "#006b2c",
+                        "on-surface": "#191c1e",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "inverse-primary": "#62df7d",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-dim": "#d8dadc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-tablet": "32px",
+                        "margin-desktop": "64px",
+                        "unit": "8px",
+                        "section-padding": "80px",
+                        "margin-mobile": "16px",
+                        "container-max-width": "1280px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Lexend"],
+                        "body-sm": ["Inter"],
+                        "headline-lg-mobile": ["Lexend"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Lexend"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Lexend"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px -10px rgba(86, 94, 116, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex flex-col md:flex-row">
+<!-- TopAppBar (Mobile Only - Intent: Transactional/Onboarding, but JSON anchors TopAppBar. Suppressing BottomNav due to linear flow) -->
+<header class="bg-surface/70 dark:bg-surface-dim/70 backdrop-blur-xl docked full-width top-0 border-b border-white/20 dark:border-white/10 shadow-sm fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 lg:hidden">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">StudyNook</div>
+<button class="text-primary dark:text-primary-fixed-dim font-headline-md text-headline-md hover:bg-primary-container/10 transition-colors active:scale-95 duration-200 px-4 py-2 rounded-lg">Save Draft</button>
+</header>
+<!-- SideNavBar (Desktop) -->
+<aside class="bg-surface-container-low dark:bg-surface-container-lowest text-primary dark:text-primary-fixed-dim font-label-md text-label-md h-screen w-64 hidden lg:flex flex-col flat no shadows fixed left-0 top-16 h-[calc(100vh-64px)] p-6 z-40 border-r border-outline-variant/20">
+<div class="mb-8">
+<h1 class="font-headline-md text-headline-md text-primary">Onboarding</h1>
+<p class="text-on-surface-variant text-body-sm mt-1">Step 2 of 7</p>
+</div>
+<nav class="flex-1 space-y-2">
+<!-- Step 1 -->
+<div class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1">
+<span class="material-symbols-outlined" data-icon="person_edit">person_edit</span>
+<span>Profile &amp; Category</span>
+</div>
+<!-- Step 2 (Active) -->
+<div class="flex items-center gap-3 px-4 py-3 text-primary font-bold bg-primary-container/20 rounded-lg hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1">
+<span class="material-symbols-outlined" data-icon="location_on" data-weight="fill" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<span>Address &amp; Contact</span>
+</div>
+<!-- Step 3 -->
+<div class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+<span>Hours &amp; Pricing</span>
+</div>
+<!-- Step 4 -->
+<div class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1">
+<span class="material-symbols-outlined" data-icon="ac_unit">ac_unit</span>
+<span>Facilities</span>
+</div>
+<!-- Step 5 -->
+<div class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+<span>Social Links</span>
+</div>
+<!-- Step 6 -->
+<div class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1">
+<span class="material-symbols-outlined" data-icon="collections">collections</span>
+<span>Gallery</span>
+</div>
+<!-- Step 7 -->
+<div class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span>Review</span>
+</div>
+</nav>
+<div class="mt-auto pt-6 border-t border-outline-variant/20">
+<button class="w-full py-3 px-4 text-on-surface-variant font-label-md hover:bg-surface-container-high rounded-lg transition-colors border border-outline-variant">Finish Later</button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-64 mt-[72px] lg:mt-0 p-margin-mobile md:p-margin-desktop min-h-screen">
+<div class="max-w-[800px] mx-auto">
+<!-- Header section for desktop -->
+<div class="hidden lg:flex justify-between items-center mb-section-padding">
+<div class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed-dim">StudyNook</div>
+<button class="text-primary font-label-md px-4 py-2 rounded-lg hover:bg-primary-container/10 transition-colors">Save Draft</button>
+</div>
+<div class="mb-12">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Address &amp; Contact Information</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Help students locate and reach out to your study space effortlessly.</p>
+</div>
+<form class="space-y-8 glass-card p-6 md:p-8 rounded-[24px]">
+<!-- Location Section -->
+<div class="space-y-6">
+<h3 class="font-headline-md text-headline-md text-on-surface border-b border-outline-variant/30 pb-4">Location Details</h3>
+<div class="space-y-4">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="address">Street Address / Landmark <span class="text-error">*</span></label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none" id="address" placeholder="e.g., 12-34, Near Kakatiya University..." rows="3"></textarea>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="city">City <span class="text-error">*</span></label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" id="city" placeholder="e.g., Hanamkonda" type="text" value="Hanamkonda"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="state">State <span class="text-error">*</span></label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" id="state" placeholder="e.g., Telangana" type="text" value="Telangana"/>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="country">Country <span class="text-error">*</span></label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all bg-surface-container-high" id="country" readonly="" type="text" value="India"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="postcode">Postcode <span class="text-error">*</span></label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" id="postcode" pattern="[0-9]{6}" placeholder="6-digit pin" type="text"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Contact Section -->
+<div class="space-y-6 pt-6">
+<h3 class="font-headline-md text-headline-md text-on-surface border-b border-outline-variant/30 pb-4">Contact Details</h3>
+<div class="space-y-4">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="mobile">Primary Mobile Number <span class="text-error">*</span></label>
+<div class="flex">
+<span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-outline-variant bg-surface-container-highest text-on-surface-variant font-body-md">+91</span>
+<input class="flex-1 bg-surface-container-low border border-outline-variant rounded-r-xl px-4 py-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" id="mobile" placeholder="10-digit number" type="tel"/>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="alt-mobile">Alternate Number</label>
+<div class="flex">
+<span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-outline-variant bg-surface-container-highest text-on-surface-variant font-body-md">+91</span>
+<input class="flex-1 bg-surface-container-low border border-outline-variant rounded-r-xl px-4 py-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" id="alt-mobile" placeholder="Optional" type="tel"/>
+</div>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="email">Email Address <span class="text-error">*</span></label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" id="email" placeholder="contact@yourstudyhall.com" type="email"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="website">Website URL (Optional)</label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" id="website" placeholder="https://www.yoursite.com" type="url"/>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="pt-8 flex flex-col-reverse sm:flex-row justify-between items-center gap-4 border-t border-outline-variant/30">
+<button class="w-full sm:w-auto px-6 py-3 rounded-full font-label-md text-label-md text-secondary border border-outline-variant hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+                        Back
+                    </button>
+<button class="w-full sm:w-auto px-8 py-3 rounded-full font-label-md text-label-md bg-primary text-on-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2" type="button">
+                        Next Step
+                        <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</form>
+</div>
+</main>
+</body></html>

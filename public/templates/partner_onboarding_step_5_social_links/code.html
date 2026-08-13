@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StudyNook Partner Onboarding - Step 5</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Lexend:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#dae2fd",
+                    "on-background": "#191c1e",
+                    "surface-container": "#eceef0",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed-variant": "#3a485c",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#131b2e",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary-container": "#dae2fd",
+                    "on-primary-container": "#f7fff2",
+                    "outline-variant": "#bdcaba",
+                    "surface-tint": "#006e2d",
+                    "on-tertiary-container": "#fdfcff",
+                    "surface-variant": "#e0e3e5",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "surface": "#f7f9fb",
+                    "surface-container-high": "#e6e8ea",
+                    "on-tertiary-fixed": "#0d1c2f",
+                    "primary-fixed": "#7ffc97",
+                    "primary-container": "#00873a",
+                    "tertiary": "#4f5d72",
+                    "on-primary-fixed-variant": "#005320",
+                    "inverse-surface": "#2d3133",
+                    "tertiary-fixed-dim": "#b9c7e0",
+                    "on-secondary-container": "#5c647a",
+                    "tertiary-container": "#67758c",
+                    "error-container": "#ffdad6",
+                    "secondary": "#565e74",
+                    "on-secondary-fixed-variant": "#3f465c",
+                    "on-primary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "outline": "#6e7b6c",
+                    "tertiary-fixed": "#d5e3fd",
+                    "primary-fixed-dim": "#62df7d",
+                    "on-primary-fixed": "#002109",
+                    "on-error-container": "#93000a",
+                    "background": "#f7f9fb",
+                    "on-surface-variant": "#3e4a3d",
+                    "surface-bright": "#f7f9fb",
+                    "primary": "#006b2c",
+                    "on-surface": "#191c1e",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#eff1f3",
+                    "inverse-primary": "#62df7d",
+                    "error": "#ba1a1a",
+                    "surface-container-low": "#f2f4f6",
+                    "surface-dim": "#d8dadc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-tablet": "32px",
+                    "margin-desktop": "64px",
+                    "unit": "8px",
+                    "section-padding": "80px",
+                    "margin-mobile": "16px",
+                    "container-max-width": "1280px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg": [
+                            "Lexend"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "headline-lg-mobile": [
+                            "Lexend"
+                    ],
+                    "label-md": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Lexend"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "label-sm": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "headline-xl": [
+                            "Lexend"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "36px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-xl": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(86, 94, 116, 0.05);
+        }
+        
+        .input-glass {
+            background-color: #f2f4f6;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .input-glass:focus {
+            background-color: #ffffff;
+            border-color: #00873a;
+            box-shadow: 0 0 0 4px rgba(0, 135, 58, 0.1);
+            outline: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen font-sans flex flex-col md:flex-row">
+<!-- Mobile Top Header -->
+<header class="md:hidden bg-surface-container-lowest/80 backdrop-blur-md border-b border-surface-container-highest px-margin-mobile py-4 flex items-center justify-between fixed top-0 w-full z-40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-weight="fill">store</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">StudyNook</span>
+</div>
+<div class="text-on-surface-variant font-label-md text-label-md">
+            Step 5 of 7
+        </div>
+</header>
+<!-- Side Navigation (Desktop) -->
+<nav class="bg-surface-container-low dark:bg-surface-container-lowest hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 p-6 z-30 border-r border-surface-container-highest">
+<div class="mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">storefront</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md text-primary" style="font-size: 18px; line-height: 24px;">Onboarding</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Step 5 of 7</p>
+</div>
+</div>
+<ul class="flex-1 space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all font-label-md text-label-md cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">person_edit</span>
+                    Profile &amp; Category
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all font-label-md text-label-md cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">location_on</span>
+                    Address &amp; Contact
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all font-label-md text-label-md cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">schedule</span>
+                    Hours &amp; Pricing
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all font-label-md text-label-md cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">ac_unit</span>
+                    Facilities
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold bg-primary-container/20 font-label-md text-label-md cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">share</span>
+                    Social Links
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all font-label-md text-label-md cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">collections</span>
+                    Gallery
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all font-label-md text-label-md cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+                    Review
+                </a>
+</li>
+</ul>
+<div class="mt-auto pt-6 border-t border-surface-container-highest">
+<button class="w-full py-2.5 px-4 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors">
+                Finish Later
+            </button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-64 w-full min-h-screen pt-[72px] lg:pt-0 pb-[80px] lg:pb-0 flex flex-col relative overflow-hidden">
+<!-- Decorative Ambient Background -->
+<div class="absolute inset-0 z-0 pointer-events-none opacity-40">
+<div class="absolute top-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-secondary-fixed-dim blur-3xl mix-blend-multiply"></div>
+<div class="absolute bottom-[-10%] left-[-5%] w-[50vw] h-[50vw] rounded-full bg-primary-fixed-dim/20 blur-3xl mix-blend-multiply"></div>
+</div>
+<div class="flex-1 w-full max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-12 z-10 flex flex-col">
+<div class="mb-10 max-w-2xl">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-background mb-3">
+                    Connect your audience
+                </h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                    Add your social media profiles to help students verify your space and build trust. Leave blank any platforms you don't use.
+                </p>
+</div>
+<!-- Bento Grid Layout for Inputs -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-12 flex-1">
+<!-- Primary Socials Card -->
+<div class="glass-card rounded-2xl p-6 md:p-8 flex flex-col gap-6 h-fit">
+<div class="flex items-center gap-3 border-b border-surface-container-highest pb-4 mb-2">
+<span class="material-symbols-outlined text-secondary opacity-80" data-weight="fill">public</span>
+<h3 class="font-headline-md text-headline-md text-on-surface" style="font-size: 18px; line-height: 24px;">Core Platforms</h3>
+</div>
+<div class="space-y-5">
+<!-- Instagram -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Instagram URL</label>
+<div class="relative flex items-center">
+<div class="absolute left-4 text-on-surface-variant opacity-60 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">photo_camera</span>
+</div>
+<input class="input-glass w-full rounded-xl pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50" placeholder="https://instagram.com/yourspace" type="url"/>
+</div>
+</div>
+<!-- Facebook -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Facebook Page URL</label>
+<div class="relative flex items-center">
+<div class="absolute left-4 text-on-surface-variant opacity-60 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+</div>
+<input class="input-glass w-full rounded-xl pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50" placeholder="https://facebook.com/yourspace" type="url"/>
+</div>
+</div>
+<!-- Google Business -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Google Business Profile</label>
+<div class="relative flex items-center">
+<div class="absolute left-4 text-on-surface-variant opacity-60 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">store</span>
+</div>
+<input class="input-glass w-full rounded-xl pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50" placeholder="https://g.page/yourspace" type="url"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Socials Card -->
+<div class="glass-card rounded-2xl p-6 md:p-8 flex flex-col gap-6 h-fit">
+<div class="flex items-center gap-3 border-b border-surface-container-highest pb-4 mb-2">
+<span class="material-symbols-outlined text-secondary opacity-80" data-weight="fill">chat_bubble</span>
+<h3 class="font-headline-md text-headline-md text-on-surface" style="font-size: 18px; line-height: 24px;">Additional Channels</h3>
+</div>
+<div class="space-y-5">
+<!-- WhatsApp -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">WhatsApp Business Number</label>
+<div class="relative flex items-center">
+<div class="absolute left-4 text-on-surface-variant opacity-60 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</div>
+<input class="input-glass w-full rounded-xl pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50" placeholder="+1 234 567 8900" type="tel"/>
+</div>
+</div>
+<!-- LinkedIn -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">LinkedIn Company Page</label>
+<div class="relative flex items-center">
+<div class="absolute left-4 text-on-surface-variant opacity-60 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">work</span>
+</div>
+<input class="input-glass w-full rounded-xl pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50" placeholder="https://linkedin.com/company/yourspace" type="url"/>
+</div>
+</div>
+<!-- Twitter / X -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">X (Twitter) Profile</label>
+<div class="relative flex items-center">
+<div class="absolute left-4 text-on-surface-variant opacity-60 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">tag</span>
+</div>
+<input class="input-glass w-full rounded-xl pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50" placeholder="https://x.com/yourspace" type="url"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Desktop Footer Actions -->
+<div class="hidden lg:flex justify-between items-center mt-auto pt-6 border-t border-surface-container-highest">
+<button class="px-6 py-3 rounded-full border border-outline text-on-surface font-label-md text-label-md hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                    Back
+                </button>
+<button class="px-8 py-3 rounded-full bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container shadow-sm hover:shadow-md transition-all active:scale-[0.98] flex items-center gap-2">
+                    Next Step
+                    <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Mobile Bottom Navigation Shell -->
+<nav class="md:hidden bg-surface/90 dark:bg-surface-dim/90 backdrop-blur-md fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 border-t border-outline-variant shadow-lg lg:hidden">
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150 gap-1">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="font-label-sm text-label-sm">Back</span>
+</button>
+<button class="bg-primary text-on-primary rounded-full px-6 py-2 flex items-center gap-2 hover:opacity-90 active:scale-90 duration-150">
+<span class="font-label-sm text-label-sm font-semibold">Next</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150 gap-1 opacity-50">
+<span class="material-symbols-outlined">save</span>
+<span class="font-label-sm text-label-sm">Save</span>
+</button>
+</nav>
+</body></html>

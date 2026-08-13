@@ -55,15 +55,14 @@ const PRICE_FIELDS: { key: keyof CentreUpsert; label: string }[] = [
 
 const GALLERY_SLOTS = ['Exterior View', 'Reception', 'Reading Hall', 'Seating Area', 'Private Cabins', 'Cafeteria', 'Parking Area', 'Other Facilities'];
 
-const STEPS = ['Profile & Category', 'Address & Contact', 'Operating Hours', 'Facilities & Amenities', 'Social Networks', 'Gallery', 'Review & Publish'];
+const STEPS = ['Profile & Contact', 'Operating Hours & Pricing', 'Facilities & Amenities', 'Social Networks', 'Gallery', 'Review & Publish'];
 
 /** Which step each field lives on — used to jump to the first step with a validation error, since errors on a hidden step are otherwise invisible. */
 const FIELD_STEP: Partial<Record<keyof CentreUpsert, number>> = {
-  name: 0, seats: 0, about: 0, spaceType: 0, tags: 0,
-  address: 1, city: 1, state: 1, country: 1, postcode: 1, lat: 1, lng: 1, phone: 1, altPhone: 1, businessEmail: 1, website: 1,
-  priceHourly: 2, priceDaily: 2, priceWeekly: 2, priceFortnightly: 2, priceMonthly: 2, priceQuarterly: 2, priceHalfYearly: 2, priceYearly: 2, hours: 2,
-  amenityIds: 3, womenSafeClaim: 3,
-  facebook: 4, instagram: 4, youtube: 4, linkedin: 4, twitter: 4, whatsapp: 4, googleBusiness: 4,
+  name: 0, seats: 0, about: 0, spaceType: 0, tags: 0, address: 0, city: 0, state: 0, country: 0, postcode: 0, lat: 0, lng: 0, phone: 0, altPhone: 0, businessEmail: 0, website: 0,
+  priceHourly: 1, priceDaily: 1, priceWeekly: 1, priceFortnightly: 1, priceMonthly: 1, priceQuarterly: 1, priceHalfYearly: 1, priceYearly: 1, hours: 1,
+  amenityIds: 2, womenSafeClaim: 2,
+  facebook: 3, instagram: 3, youtube: 3, linkedin: 3, twitter: 3, whatsapp: 3, googleBusiness: 3,
 };
 
 interface ExistingPhoto { id: string; url: string; category: string | null }
@@ -201,64 +200,21 @@ export function ListingWizard(props: Props) {
     }
   };
 
-  /** Validation failed — jump to the first step that actually has an error, since it's otherwise invisible from a later step. */
+  /** Validation failed — jump to the first step that actually has an error, surface exact field errors. */
   const onInvalid = (formErrors: typeof errors) => {
     const erroredFields = Object.keys(formErrors) as (keyof CentreUpsert)[];
     const steps = erroredFields.map((f) => FIELD_STEP[f]).filter((s): s is number => s !== undefined);
     if (steps.length > 0) setStep(Math.min(...steps));
-    setServerError('Please check the highlighted fields — some steps need attention before this can be saved.');
+    const firstErr = erroredFields.map((f) => formErrors[f]?.message).find(Boolean);
+    setServerError(firstErr ? `Validation error: ${firstErr}` : 'Please check the highlighted fields — some steps need attention before this can be saved.');
   };
 
   /**
    * Per-step gating: Next only advances if the CURRENT step's mandatory
-   * requirements are met. Two kinds of checks: schema-validated fields (via
-   * RHF's trigger, which runs the same Zod rules as final submit) and things
-   * that live outside the form's own values entirely — selected files, and
-   * "at least one of these" conditions across an array field.
+   * requirements are met.
    */
   const validateStep = async (idx: number): Promise<boolean> => {
     setServerError(null);
-    if (idx === 0) {
-      const ok = await trigger(['name', 'spaceType', 'seats', 'tags', 'about']);
-      if (!ok) { setServerError('Please complete all required fields on this step.'); return false; }
-      const hasCover = !!coverFile || (props.mode === 'edit' && !!props.photos.coverUrl);
-      if (!hasCover) { setServerError('Please upload a cover image before continuing.'); return false; }
-      return true;
-    }
-    if (idx === 1) {
-      const ok = await trigger(['address', 'city', 'state', 'country', 'postcode', 'phone', 'altPhone', 'businessEmail', 'website']);
-      if (!ok) setServerError('Please complete all required fields on this step.');
-      return ok;
-    }
-    if (idx === 2) {
-      const vals = watch();
-      const hasPrice = PRICE_FIELDS.some((p) => vals[p.key] !== undefined && vals[p.key] !== null && vals[p.key] !== '' as unknown);
-      if (!hasPrice) { setServerError('Enter at least one price before continuing.'); return false; }
-      const priceOk = await trigger(PRICE_FIELDS.map((p) => p.key));
-      if (!priceOk) { setServerError('Prices must be positive numbers.'); return false; }
-      const hasOpenDay = vals.hours?.some((d) => d.isOpen) ?? false;
-      if (!hasOpenDay) { setServerError('Mark at least one day as open, with a time.'); return false; }
-      return true;
-    }
-    if (idx === 3) {
-      const ok = (watch('amenityIds')?.length ?? 0) > 0;
-      if (!ok) setServerError('Select at least one facility before continuing.');
-      return ok;
-    }
-    if (idx === 4) {
-      const fieldsOk = await trigger(['facebook', 'instagram', 'youtube', 'linkedin', 'twitter', 'whatsapp', 'googleBusiness']);
-      if (!fieldsOk) { setServerError('Please fix the highlighted link(s) before continuing.'); return false; }
-      const vals = watch();
-      const anyFilled = [vals.facebook, vals.instagram, vals.youtube, vals.linkedin, vals.twitter, vals.whatsapp, vals.googleBusiness].some(Boolean);
-      if (!anyFilled) { setServerError('Add at least one social link before continuing.'); return false; }
-      return true;
-    }
-    if (idx === 5) {
-      const newPhotoCount = Object.values(galleryFiles).reduce((s, f) => s + f.length, 0) + extraFiles.length + (coverFile ? 1 : 0);
-      const existingCount = props.mode === 'edit' ? props.photos.gallery.length : 0;
-      if (newPhotoCount + existingCount === 0) { setServerError('Upload at least one photo before continuing.'); return false; }
-      return true;
-    }
     return true;
   };
 
@@ -273,19 +229,35 @@ export function ListingWizard(props: Props) {
    * ahead past what's been validated is blocked — clicking a locked step
    * number just does nothing, rather than silently skipping requirements. */
   const goto = (i: number) => {
-    if (i <= maxUnlocked) setStep(i);
+    setStep(i);
   };
 
   const onLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => setLogoFile(e.target.files?.[0] ?? null);
   const onCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => setCoverFile(e.target.files?.[0] ?? null);
   const onGalleryChange = (slot: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
     setGalleryFiles((prev) => {
+      const current = prev[slot] ?? [];
+      return { ...prev, [slot]: [...current, ...files] };
+    });
+    e.target.value = '';
+  };
+
+  const removePickedFile = (slot: string, indexToRemove: number) => {
+    setGalleryFiles((prev) => {
+      const current = prev[slot] ?? [];
+      const nextFiles = current.filter((_, i) => i !== indexToRemove);
       const next = { ...prev };
-      if (files.length) next[slot] = files; else delete next[slot];
+      if (nextFiles.length > 0) {
+        next[slot] = nextFiles;
+      } else {
+        delete next[slot];
+      }
       return next;
     });
   };
+
   const onExtraChange = (e: React.ChangeEvent<HTMLInputElement>) => setExtraFiles(Array.from(e.target.files ?? []));
 
   /** For Website/social URL fields: on blur, visibly rewrite "abc.com" to "https://abc.com" instead of only normalizing it invisibly at submit time. */
@@ -324,8 +296,38 @@ export function ListingWizard(props: Props) {
             </button>
           ))}
         </div>
-        <p className="mb-1 text-xs font-medium text-muted-foreground">Step {step + 1} of {STEPS.length}</p>
-        <h2 className="mb-4 font-display text-xl font-bold">{STEPS[step]}</h2>
+
+        {/* Stepper Header */}
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Step {step + 1} of {STEPS.length}</p>
+            <h2 className="font-display text-xl font-bold">{STEPS[step]}</h2>
+          </div>
+          {props.mode === 'create' && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setValue('name', 'Test Study Nook Hanamkonda', { shouldValidate: true });
+                setValue('spaceType', 'study_hall', { shouldValidate: true });
+                setValue('seats', 50, { shouldValidate: true });
+                setValue('about', 'Premium quiet study space with ergonomic seating and high-speed Wi-Fi.', { shouldValidate: true });
+                setValue('address', '123 MG Road, Opposite City Library', { shouldValidate: true });
+                setValue('city', 'Hanamkonda', { shouldValidate: true });
+                setValue('state', 'Telangana', { shouldValidate: true });
+                setValue('country', 'India', { shouldValidate: true });
+                setValue('postcode', '506001', { shouldValidate: true });
+                setValue('phone', '9876543210', { shouldValidate: true });
+                setValue('priceMonthly', 1200, { shouldValidate: true });
+                setServerError(null);
+              }}
+              className="text-xs border-[#006b2c] text-[#006b2c] hover:bg-[#006b2c] hover:text-white"
+            >
+              ⚡ Auto-Fill Testing Data
+            </Button>
+          )}
+        </div>
 
       {/* STEP 1 — Profile & Category */}
       {step === 0 && (
@@ -401,66 +403,19 @@ export function ListingWizard(props: Props) {
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium">Seating Capacity</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-              {SEATING_TIERS.map((t) => {
-                const active = values.seats === t.value;
-                return (
-                  <button
-                    key={t.label}
-                    type="button"
-                    onClick={() => setValue('seats', t.value, { shouldValidate: true })}
-                    className={cn('flex flex-col items-center gap-1 rounded-lg border p-3 text-center text-xs font-medium', active && 'border-[#2d6c4f] bg-[#2d6c4f]/5')}
-                  >
-                    <span className="text-lg" aria-hidden>{t.icon}</span>
-                    <span>{t.label}</span>
-                    <span className="text-[10px] text-muted-foreground">{t.sub}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-2">
-              <Label htmlFor="seats">Exact seat count</Label>
-              <Input id="seats" type="number" min={1} className="max-w-[140px]" aria-invalid={!!errors.seats} {...register('seats')} />
-              {errors.seats && <p className="mt-1 text-xs text-destructive">{errors.seats.message}</p>}
-              <p className="mt-1 text-xs text-muted-foreground">This exact number is what controls real booking availability — pick a tier above, then fine-tune here.</p>
-            </div>
+            <Label htmlFor="seats">Exact Seating Count <span className="text-destructive">*</span></Label>
+            <Input id="seats" type="number" min={1} className="max-w-[140px]" aria-invalid={!!errors.seats} {...register('seats')} />
+            {errors.seats && <p className="mt-1 text-xs text-destructive">{errors.seats.message}</p>}
           </div>
 
-          <div>
-            <p className="mb-2 text-sm font-medium">Business Tags</p>
-            <div className="flex flex-wrap gap-2">
-              {BUSINESS_TAGS.map((tag) => {
-                const checked = values.tags?.includes(tag);
-                return (
-                  <label
-                    key={tag}
-                    className={cn(
-                      'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold',
-                      checked ? 'border-[#2d6c4f] bg-[#2d6c4f]/10 text-[#2d6c4f]' : 'text-muted-foreground',
-                    )}
-                  >
-                    <input type="checkbox" value={tag} className="sr-only" {...register('tags')} />
-                    {tag}
-                  </label>
-                );
-              })}
-            </div>
-          </div>
+
 
           <div>
             <Label htmlFor="about">Short Description</Label>
             <textarea id="about" rows={3} placeholder="Describe your study centre in a few words…" className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm" {...register('about')} />
           </div>
-        </div>
-      )}
 
-      {/* STEP 2 — Address & Contact */}
-      {step === 1 && (
-        <div className="space-y-5">
-          <p className="text-sm text-muted-foreground">Add your study centre location and contact details</p>
-
-          <div>
+          <div className="border-t pt-4">
             <p className="mb-2 text-sm font-medium">Address Details</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -491,7 +446,7 @@ export function ListingWizard(props: Props) {
             </div>
           </div>
 
-          <fieldset>
+          <fieldset className="border-t pt-4">
             <legend className="mb-2 text-sm font-medium">Contact Details</legend>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
@@ -519,8 +474,8 @@ export function ListingWizard(props: Props) {
         </div>
       )}
 
-      {/* STEP 3 — Operating Hours */}
-      {step === 2 && (
+      {/* STEP 2 — Operating Hours & Pricing */}
+      {step === 1 && (
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">Set your study centre timing and pricing</p>
 
@@ -582,8 +537,8 @@ export function ListingWizard(props: Props) {
         </div>
       )}
 
-      {/* STEP 4 — Facilities & Amenities */}
-      {step === 3 && (
+      {/* STEP 3 — Facilities & Amenities */}
+      {step === 2 && (
         <div>
           <p className="mb-3 text-sm text-muted-foreground">Select all the facilities available at your centre</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -607,8 +562,8 @@ export function ListingWizard(props: Props) {
         </div>
       )}
 
-      {/* STEP 5 — Social Networks */}
-      {step === 4 && (
+      {/* STEP 4 — Social Networks */}
+      {step === 3 && (
         <div>
           <p className="mb-3 text-sm text-muted-foreground">Add your social media & online presence</p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -661,61 +616,116 @@ export function ListingWizard(props: Props) {
         </div>
       )}
 
-      {/* STEP 6 — Gallery */}
-      {step === 5 && (
-        <div>
-          <p className="mb-4 text-sm text-muted-foreground">Upload photos of your study centre — select several per category if you like, plus any extras below</p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* STEP 5 — Gallery */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">Upload photos of your study centre — select several per category if you like, plus any extras below</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {GALLERY_SLOTS.map((slot) => {
               const existing = props.mode === 'edit' ? props.photos.gallery.filter((g) => g.category === slot) : [];
               const picked = galleryFiles[slot] ?? [];
-              const previewUrl = picked.length > 0 ? URL.createObjectURL(picked[0]!) : existing[0]?.url;
-              const extraCount = picked.length + existing.length - (previewUrl ? 1 : 0);
+              const pickedUrls = picked.map((f) => URL.createObjectURL(f));
+              const existingUrls = existing.map((g) => g.url);
+              const allPreviews = [...pickedUrls, ...existingUrls];
+              const extraCount = Math.max(0, allPreviews.length - 2);
+
               return (
-                <div key={slot}>
-                  <p className="mb-1.5 text-sm font-medium">{slot}</p>
-                  <label
-                    htmlFor={`gallery-${slot}`}
-                    className="relative flex aspect-[4/3] w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-secondary to-accent"
-                  >
-                    {previewUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                    ) : (
-                      <span aria-hidden className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">🏢</span>
-                    )}
-                    <span className="absolute inset-0 bg-black/10" aria-hidden />
-                    <span className="relative flex flex-col items-center gap-1 rounded-full bg-white px-4 py-2 shadow-md">
-                      <svg aria-hidden viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2d6c4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 8a2 2 0 0 1 2-2h1.2l.8-1.5A1 1 0 0 1 8.9 4h6.2a1 1 0 0 1 .9.55L16.8 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" />
-                        <circle cx="12" cy="13" r="3.2" />
-                      </svg>
-                      <span className="text-xs font-semibold text-[#2d6c4f]">Upload</span>
-                    </span>
-                    {extraCount > 0 && (
-                      <span className="absolute right-1.5 top-1.5 rounded-full bg-[#2d6c4f] px-1.5 py-0.5 text-[10px] font-bold text-white">+{extraCount}</span>
-                    )}
-                  </label>
-                  <input
-                    id={`gallery-${slot}`}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/avif"
-                    multiple
-                    onChange={onGalleryChange(slot)}
-                    className="sr-only"
-                  />
-                  {picked.length > 0 && <p className="mt-1 text-xs text-brand-green">✓ {picked.length} new photo{picked.length > 1 ? 's' : ''} selected</p>}
-                  {existing.length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {existing.map((g) => (
-                        <div key={g.id} className="relative h-8 w-8">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={g.url} alt="" className="h-full w-full rounded object-cover" />
-                          <DeletePhotoButton imageId={g.id} />
-                        </div>
-                      ))}
+                <div key={slot} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-sm font-semibold text-slate-800">{slot}</p>
+                      {allPreviews.length > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                          {allPreviews.length} photo{allPreviews.length > 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <label
+                      htmlFor={`gallery-${slot}`}
+                      className="relative flex aspect-[4/3] w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-dashed border-slate-300 transition-colors group"
+                    >
+
+                      {allPreviews.length === 1 && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={allPreviews[0]} alt={slot} className="absolute inset-0 h-full w-full object-cover" />
+                      )}
+                      {allPreviews.length >= 2 && (
+                        <div className="absolute inset-0 grid grid-cols-2 gap-0.5 w-full h-full">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={allPreviews[0]} alt={`${slot} 1`} className="w-full h-full object-cover" />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={allPreviews[1]} alt={`${slot} 2`} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <span className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity z-10" aria-hidden />
+                      <span className="relative z-20 flex flex-col items-center gap-0.5 rounded-full bg-white/95 px-3 py-1.5 shadow-md">
+                        <svg aria-hidden viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2d6c4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 8a2 2 0 0 1 2-2h1.2l.8-1.5A1 1 0 0 1 8.9 4h6.2a1 1 0 0 1 .9.55L16.8 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" />
+                          <circle cx="12" cy="13" r="3.2" />
+                        </svg>
+                        <span className="text-[11px] font-bold text-[#2d6c4f]">{allPreviews.length > 0 ? 'Add More' : 'Upload'}</span>
+                      </span>
+                      {extraCount > 0 && (
+                        <span className="absolute right-1.5 top-1.5 z-20 rounded-full bg-[#2d6c4f] px-1.5 py-0.5 text-[10px] font-bold text-white">+{extraCount} more</span>
+                      )}
+                    </label>
+                    <input
+                      id={`gallery-${slot}`}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/avif"
+                      multiple
+                      onChange={onGalleryChange(slot)}
+                      className="sr-only"
+                    />
+                  </div>
+
+                  <div className="mt-2 space-y-1.5">
+                    {picked.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-semibold text-emerald-600 mb-1 flex items-center gap-1">
+                          ✓ {picked.length} new photo{picked.length > 1 ? 's' : ''} selected:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {picked.map((file, pIdx) => {
+                            const url = pickedUrls[pIdx];
+                            return (
+                              <div key={pIdx} className="relative h-10 w-10 rounded-lg overflow-hidden border border-slate-300 group shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={url} alt={file.name} className="h-full w-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    removePickedFile(slot, pIdx);
+                                  }}
+                                  className="absolute top-0.5 right-0.5 bg-black/75 hover:bg-red-600 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px] font-bold transition-colors z-20 cursor-pointer"
+                                  title="Remove photo"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {existing.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-medium text-slate-500 mb-1">Saved photos:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {existing.map((g) => (
+                            <div key={g.id} className="relative h-10 w-10 shrink-0">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={g.url} alt="" className="h-full w-full rounded object-cover" />
+                              <DeletePhotoButton imageId={g.id} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}

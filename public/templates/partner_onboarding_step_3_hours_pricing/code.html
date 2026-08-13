@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StudyNook Partner Onboarding - Step 3</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Lexend:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#dae2fd",
+                    "on-background": "#191c1e",
+                    "surface-container": "#eceef0",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed-variant": "#3a485c",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#131b2e",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary-container": "#dae2fd",
+                    "on-primary-container": "#f7fff2",
+                    "outline-variant": "#bdcaba",
+                    "surface-tint": "#006e2d",
+                    "on-tertiary-container": "#fdfcff",
+                    "surface-variant": "#e0e3e5",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "surface": "#f7f9fb",
+                    "surface-container-high": "#e6e8ea",
+                    "on-tertiary-fixed": "#0d1c2f",
+                    "primary-fixed": "#7ffc97",
+                    "primary-container": "#00873a",
+                    "tertiary": "#4f5d72",
+                    "on-primary-fixed-variant": "#005320",
+                    "inverse-surface": "#2d3133",
+                    "tertiary-fixed-dim": "#b9c7e0",
+                    "on-secondary-container": "#5c647a",
+                    "tertiary-container": "#67758c",
+                    "error-container": "#ffdad6",
+                    "secondary": "#565e74",
+                    "on-secondary-fixed-variant": "#3f465c",
+                    "on-primary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "outline": "#6e7b6c",
+                    "tertiary-fixed": "#d5e3fd",
+                    "primary-fixed-dim": "#62df7d",
+                    "on-primary-fixed": "#002109",
+                    "on-error-container": "#93000a",
+                    "background": "#f7f9fb",
+                    "on-surface-variant": "#3e4a3d",
+                    "surface-bright": "#f7f9fb",
+                    "primary": "#006b2c",
+                    "on-surface": "#191c1e",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#eff1f3",
+                    "inverse-primary": "#62df7d",
+                    "error": "#ba1a1a",
+                    "surface-container-low": "#f2f4f6",
+                    "surface-dim": "#d8dadc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-tablet": "32px",
+                    "margin-desktop": "64px",
+                    "unit": "8px",
+                    "section-padding": "80px",
+                    "margin-mobile": "16px",
+                    "container-max-width": "1280px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg": [
+                            "Lexend"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "headline-lg-mobile": [
+                            "Lexend"
+                    ],
+                    "label-md": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Lexend"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "label-sm": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "headline-xl": [
+                            "Lexend"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "36px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-xl": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(86, 94, 116, 0.15); /* Soft shadow using secondary color */
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 bg-surface/70 dark:bg-surface-dim/70 backdrop-blur-xl border-b border-white/20 dark:border-white/10 shadow-sm">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">StudyNook</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="font-label-md text-label-md text-on-surface-variant hover:bg-primary-container/10 transition-colors px-4 py-2 rounded-full active:scale-95 duration-200">
+                Save Draft
+            </button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container/20">
+<img alt="Partner profile" class="w-full h-full object-cover" data-alt="A professional headshot of a young professional in a brightly lit, modern office space. The lighting is soft and even, highlighting a friendly expression. The background features subtle blur of indoor plants and glass partitions, conveying a premium, clean aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGm60BAmO9SnbPSjNsvg3QvNrS4qIcfqeQjBceQSFi7W2ZH6p12TfXf828ku5D-F8jBB3t36GXlVTs2iGvA6ChdBJSKqan2E5VLT-j-ewk388umlnbDFuvGFjYcXVy7PpMAcsLnFjVEehkJ0WOllmRrfyhLxlPkta4DXj4MqwSUS8inazpqYcQdn7q2hRSNFPvSlHIcqpKayaSXThcfwwBC1K1m4sSd4ki_8XgULjjuj4Ksa_pZuHT"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Hidden on Mobile) -->
+<nav class="fixed left-0 top-16 h-[calc(100vh-64px)] p-6 bg-surface-container-low dark:bg-surface-container-lowest w-64 hidden lg:flex flex-col z-40 border-r border-outline-variant/20">
+<div class="mb-8">
+<h2 class="font-headline-md text-headline-md text-primary">Onboarding</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Step 3 of 7</p>
+</div>
+<ul class="flex flex-col gap-2 flex-grow">
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg font-label-md text-label-md text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person_edit</span>
+                    Profile &amp; Category
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg font-label-md text-label-md text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">location_on</span>
+                    Address &amp; Contact
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg font-label-md text-label-md text-primary font-bold bg-primary-container/20 cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">schedule</span>
+                    Hours &amp; Pricing
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg font-label-md text-label-md text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">ac_unit</span>
+                    Facilities
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg font-label-md text-label-md text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">share</span>
+                    Social Links
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg font-label-md text-label-md text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">collections</span>
+                    Gallery
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 p-3 rounded-lg font-label-md text-label-md text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">fact_check</span>
+                    Review
+                </a>
+</li>
+</ul>
+<div class="mt-auto">
+<button class="w-full py-3 rounded-lg border border-outline-variant text-primary font-label-md text-label-md hover:bg-surface-container-high transition-colors">
+                Finish Later
+            </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-grow pt-24 pb-32 lg:pb-24 px-margin-mobile md:px-margin-desktop lg:ml-64 flex justify-center">
+<div class="w-full max-w-4xl space-y-12">
+<!-- Header -->
+<div class="space-y-2">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Set Operating Hours &amp; Pricing</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Define when your space is available and set your standard rates.</p>
+</div>
+<!-- Pricing Grid (Bento Style) -->
+<section class="space-y-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">payments</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Standard Pricing Rates</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Hourly -->
+<div class="glass-panel rounded-2xl p-6 flex flex-col gap-4">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Hourly Rate</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 pl-8 pr-4 font-body-md text-body-md text-on-surface focus:ring-2 focus:ring-primary focus:bg-surface transition-all" placeholder="0.00" type="number"/>
+</div>
+</div>
+<!-- Daily -->
+<div class="glass-panel rounded-2xl p-6 flex flex-col gap-4">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Daily Rate</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 pl-8 pr-4 font-body-md text-body-md text-on-surface focus:ring-2 focus:ring-primary focus:bg-surface transition-all" placeholder="0.00" type="number"/>
+</div>
+</div>
+<!-- Weekly -->
+<div class="glass-panel rounded-2xl p-6 flex flex-col gap-4">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Weekly Rate</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 pl-8 pr-4 font-body-md text-body-md text-on-surface focus:ring-2 focus:ring-primary focus:bg-surface transition-all" placeholder="0.00" type="number"/>
+</div>
+</div>
+<!-- Monthly -->
+<div class="glass-panel rounded-2xl p-6 flex flex-col gap-4 border-2 border-primary-container/20">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-primary uppercase tracking-wider font-bold">Monthly (Popular)</label>
+</div>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 pl-8 pr-4 font-body-md text-body-md text-on-surface focus:ring-2 focus:ring-primary focus:bg-surface transition-all" placeholder="0.00" type="number"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Timings Section -->
+<section class="space-y-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">calendar_clock</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Operating Hours</h2>
+</div>
+<div class="glass-panel rounded-2xl overflow-hidden">
+<div class="flex flex-col">
+<!-- Monday -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 border-b border-outline-variant/20 gap-4">
+<div class="flex items-center gap-4 w-48">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+<span class="font-label-md text-label-md text-on-surface">Monday</span>
+</div>
+<div class="flex items-center gap-4 flex-grow">
+<input class="bg-surface-container-low border-none rounded-lg py-2 px-4 font-body-sm text-body-sm text-on-surface focus:ring-2 focus:ring-primary flex-grow sm:flex-grow-0" type="time" value="09:00"/>
+<span class="text-on-surface-variant font-body-sm">to</span>
+<input class="bg-surface-container-low border-none rounded-lg py-2 px-4 font-body-sm text-body-sm text-on-surface focus:ring-2 focus:ring-primary flex-grow sm:flex-grow-0" type="time" value="18:00"/>
+</div>
+</div>
+<!-- Tuesday -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 border-b border-outline-variant/20 gap-4">
+<div class="flex items-center gap-4 w-48">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+<span class="font-label-md text-label-md text-on-surface">Tuesday</span>
+</div>
+<div class="flex items-center gap-4 flex-grow">
+<input class="bg-surface-container-low border-none rounded-lg py-2 px-4 font-body-sm text-body-sm text-on-surface focus:ring-2 focus:ring-primary flex-grow sm:flex-grow-0" type="time" value="09:00"/>
+<span class="text-on-surface-variant font-body-sm">to</span>
+<input class="bg-surface-container-low border-none rounded-lg py-2 px-4 font-body-sm text-body-sm text-on-surface focus:ring-2 focus:ring-primary flex-grow sm:flex-grow-0" type="time" value="18:00"/>
+</div>
+</div>
+<!-- Sunday (Closed example) -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-surface-container-low/50 gap-4">
+<div class="flex items-center gap-4 w-48">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+<span class="font-label-md text-label-md text-on-surface-variant">Sunday</span>
+</div>
+<div class="flex items-center gap-4 flex-grow opacity-50 pointer-events-none">
+<span class="font-body-sm text-body-sm text-on-surface-variant italic">Closed</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Desktop Action Buttons -->
+<div class="hidden lg:flex justify-between items-center pt-8 border-t border-outline-variant/20">
+<button class="px-8 py-3 rounded-full border border-outline-variant text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors">
+                    Back
+                </button>
+<button class="px-8 py-3 rounded-full bg-primary text-on-primary font-label-md text-label-md hover:shadow-lg hover:shadow-primary/20 transition-all">
+                    Next Step
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-surface/90 dark:bg-surface-dim backdrop-blur-md border-t border-outline-variant shadow-lg lg:hidden">
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150 gap-1">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+<span class="font-label-sm text-label-sm">Back</span>
+</button>
+<button class="bg-primary text-on-primary rounded-full px-6 py-2 flex items-center gap-2 hover:opacity-90 active:scale-90 duration-150 shadow-md shadow-primary/20">
+<span class="font-label-sm text-label-sm font-semibold">Next</span>
+<span class="material-symbols-outlined text-xl">arrow_forward</span>
+</button>
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150 gap-1">
+<span class="material-symbols-outlined text-2xl">save</span>
+<span class="font-label-sm text-label-sm">Save</span>
+</button>
+</nav>
+</body></html>

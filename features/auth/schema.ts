@@ -38,7 +38,7 @@ export type SignUpInput = z.infer<typeof signUpSchema>;
 export const profileSchema = z.object({
   fullName: z.string().trim().min(2, 'Enter your name').max(80, 'Name is too long')
     .regex(/^[A-Za-z][A-Za-z .'-]*$/, 'Name can only contain letters'),
-  phone: z.string().trim().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number').optional().or(z.literal('')),
+  phone: z.string().trim().regex(/^(\+91\s?)?[6-9]\d{9}$|^(\+91\s?)?[6-9]\d{4}\s?\d{5}$/, 'Enter a valid 10-digit mobile number').optional().or(z.literal('')),
 });
 export type ProfileInput = z.infer<typeof profileSchema>;
 

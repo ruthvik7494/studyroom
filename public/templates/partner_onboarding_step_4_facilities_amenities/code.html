@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StudyNook Partner Onboarding - Step 4: Facilities</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Lexend:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed": "#dae2fd",
+                      "on-background": "#191c1e",
+                      "surface-container": "#eceef0",
+                      "on-error": "#ffffff",
+                      "on-tertiary-fixed-variant": "#3a485c",
+                      "surface-container-lowest": "#ffffff",
+                      "on-secondary-fixed": "#131b2e",
+                      "surface-container-highest": "#e0e3e5",
+                      "secondary-container": "#dae2fd",
+                      "on-primary-container": "#f7fff2",
+                      "outline-variant": "#bdcaba",
+                      "surface-tint": "#006e2d",
+                      "on-tertiary-container": "#fdfcff",
+                      "surface-variant": "#e0e3e5",
+                      "secondary-fixed-dim": "#bec6e0",
+                      "surface": "#f7f9fb",
+                      "surface-container-high": "#e6e8ea",
+                      "on-tertiary-fixed": "#0d1c2f",
+                      "primary-fixed": "#7ffc97",
+                      "primary-container": "#00873a",
+                      "tertiary": "#4f5d72",
+                      "on-primary-fixed-variant": "#005320",
+                      "inverse-surface": "#2d3133",
+                      "tertiary-fixed-dim": "#b9c7e0",
+                      "on-secondary-container": "#5c647a",
+                      "tertiary-container": "#67758c",
+                      "error-container": "#ffdad6",
+                      "secondary": "#565e74",
+                      "on-secondary-fixed-variant": "#3f465c",
+                      "on-primary": "#ffffff",
+                      "on-secondary": "#ffffff",
+                      "outline": "#6e7b6c",
+                      "tertiary-fixed": "#d5e3fd",
+                      "primary-fixed-dim": "#62df7d",
+                      "on-primary-fixed": "#002109",
+                      "on-error-container": "#93000a",
+                      "background": "#f7f9fb",
+                      "on-surface-variant": "#3e4a3d",
+                      "surface-bright": "#f7f9fb",
+                      "primary": "#006b2c",
+                      "on-surface": "#191c1e",
+                      "on-tertiary": "#ffffff",
+                      "inverse-on-surface": "#eff1f3",
+                      "inverse-primary": "#62df7d",
+                      "error": "#ba1a1a",
+                      "surface-container-low": "#f2f4f6",
+                      "surface-dim": "#d8dadc"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-tablet": "32px",
+                      "margin-desktop": "64px",
+                      "unit": "8px",
+                      "section-padding": "80px",
+                      "margin-mobile": "16px",
+                      "container-max-width": "1280px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Lexend"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-lg-mobile": [
+                              "Lexend"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Lexend"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Lexend"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        /* Glassmorphism utilities */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(86, 94, 116, 0.05);
+        }
+        
+        .amenity-card-active {
+            border: 2px solid theme('colors.primary');
+            background: theme('colors.primary-container');
+            color: theme('colors.on-primary-container');
+        }
+        .amenity-card-active .material-symbols-outlined {
+            color: theme('colors.on-primary-container');
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col md:flex-row antialiased">
+<!-- TopAppBar (Mobile Only for Onboarding context, though JSON says hidden md:flex for full cluster, Onboarding is a focused flow) -->
+<header class="md:hidden bg-surface/70 dark:bg-surface-dim/70 backdrop-blur-xl border-b border-white/20 dark:border-white/10 shadow-sm fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-2xl">menu</span>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">StudyNook</span>
+</div>
+<button class="text-primary font-label-md text-label-md">Save Draft</button>
+</header>
+<!-- SideNavBar (Desktop) -->
+<nav class="bg-surface-container-low dark:bg-surface-container-lowest h-screen w-64 hidden lg:flex flex-col fixed left-0 top-0 p-6 z-40 border-r border-outline-variant/30">
+<div class="mb-8 mt-4">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim block mb-6">StudyNook</span>
+<h2 class="font-headline-md text-headline-md text-on-background">Onboarding</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Step 4 of 7</p>
+</div>
+<ul class="flex flex-col gap-2 flex-grow">
+<!-- Step 1 -->
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_edit</span>
+<span class="font-label-md text-label-md">Profile &amp; Category</span>
+</li>
+<!-- Step 2 -->
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<span class="font-label-md text-label-md">Address &amp; Contact</span>
+</li>
+<!-- Step 3 -->
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">schedule</span>
+<span class="font-label-md text-label-md">Hours &amp; Pricing</span>
+</li>
+<!-- Step 4 (Active) -->
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold bg-primary-container/20 cursor-pointer active:translate-x-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">ac_unit</span>
+<span class="font-label-md text-label-md">Facilities</span>
+</li>
+<!-- Step 5 -->
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">share</span>
+<span class="font-label-md text-label-md">Social Links</span>
+</li>
+<!-- Step 6 -->
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">collections</span>
+<span class="font-label-md text-label-md">Gallery</span>
+</li>
+<!-- Step 7 -->
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-secondary-container opacity-70 hover:bg-secondary-container/30 transition-all cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fact_check</span>
+<span class="font-label-md text-label-md">Review</span>
+</li>
+</ul>
+<div class="mt-auto pt-6 border-t border-outline-variant/30">
+<button class="w-full text-center py-2 font-label-md text-label-md text-secondary hover:text-on-background transition-colors">Finish Later</button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-64 pt-[72px] lg:pt-0 px-margin-mobile md:px-margin-desktop py-section-padding max-w-[1000px] mx-auto w-full flex flex-col min-h-screen">
+<div class="mb-10">
+<h1 class="font-headline-xl text-headline-lg-mobile md:text-headline-xl text-on-background mb-4">Facilities &amp; Amenities</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+                Highlight the comforts and necessities your space offers to help students and professionals choose you for their next deep-work session.
+            </p>
+</div>
+<form class="flex-grow flex flex-col gap-10">
+<!-- Bento Grid for Core Amenities -->
+<section>
+<h3 class="font-headline-md text-headline-md text-on-background mb-6">Core Amenities</h3>
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+<!-- Amenity Items -->
+<label class="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:-translate-y-1 amenity-card-active relative overflow-hidden group">
+<input checked="" class="sr-only" type="checkbox"/>
+<span class="material-symbols-outlined text-3xl">wifi</span>
+<span class="font-label-md text-label-md text-center">High-Speed Wi-Fi</span>
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</label>
+<label class="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:-translate-y-1 hover:border-primary/50 relative overflow-hidden group">
+<input class="sr-only" type="checkbox"/>
+<span class="material-symbols-outlined text-3xl text-secondary">ac_unit</span>
+<span class="font-label-md text-label-md text-center text-on-surface-variant">Air Conditioning</span>
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</label>
+<label class="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:-translate-y-1 hover:border-primary/50 relative overflow-hidden group">
+<input class="sr-only" type="checkbox"/>
+<span class="material-symbols-outlined text-3xl text-secondary">lock</span>
+<span class="font-label-md text-label-md text-center text-on-surface-variant">Personal Lockers</span>
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</label>
+<label class="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:-translate-y-1 hover:border-primary/50 relative overflow-hidden group">
+<input class="sr-only" type="checkbox"/>
+<span class="material-symbols-outlined text-3xl text-secondary">battery_charging_full</span>
+<span class="font-label-md text-label-md text-center text-on-surface-variant">Power Backup</span>
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</label>
+<label class="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:-translate-y-1 amenity-card-active relative overflow-hidden group">
+<input checked="" class="sr-only" type="checkbox"/>
+<span class="material-symbols-outlined text-3xl">local_cafe</span>
+<span class="font-label-md text-label-md text-center">Coffee/Tea</span>
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</label>
+<label class="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:-translate-y-1 hover:border-primary/50 relative overflow-hidden group">
+<input class="sr-only" type="checkbox"/>
+<span class="material-symbols-outlined text-3xl text-secondary">local_parking</span>
+<span class="font-label-md text-label-md text-center text-on-surface-variant">Parking</span>
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</label>
+<label class="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:-translate-y-1 hover:border-primary/50 relative overflow-hidden group">
+<input class="sr-only" type="checkbox"/>
+<span class="material-symbols-outlined text-3xl text-secondary">print</span>
+<span class="font-label-md text-label-md text-center text-on-surface-variant">Printing Station</span>
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</label>
+<label class="glass-panel rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:-translate-y-1 hover:border-primary/50 relative overflow-hidden group">
+<input class="sr-only" type="checkbox"/>
+<span class="material-symbols-outlined text-3xl text-secondary">videocam</span>
+<span class="font-label-md text-label-md text-center text-on-surface-variant">CCTV Security</span>
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</label>
+</div>
+</section>
+<!-- Special Claims Section (Asymmetric Layout) -->
+<section class="mt-4">
+<h3 class="font-headline-md text-headline-md text-on-background mb-6">Special Attributes</h3>
+<div class="glass-panel rounded-2xl p-6 md:p-8 border-l-4 border-l-primary flex flex-col md:flex-row gap-6 items-start md:items-center">
+<div class="bg-primary/10 p-4 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div class="flex-grow">
+<h4 class="font-headline-md text-headline-md text-on-background mb-2">Women-Safe Access Claim</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                            Checking this box adds a verifiable badge to your listing. It signifies well-lit environments, secure access protocols, and verified staff to ensure a secure environment.
+                        </p>
+</div>
+<div class="flex-shrink-0 self-center">
+<label class="flex items-center cursor-pointer">
+<div class="relative">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-14 h-7 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary shadow-inner"></div>
+</div>
+<span class="ml-3 font-label-md text-label-md text-on-surface-variant hidden md:inline">Enable</span>
+</label>
+</div>
+</div>
+</section>
+<!-- Bottom Action Bar (Desktop inside canvas, Mobile via BottomNavBar) -->
+<div class="hidden lg:flex justify-between items-center mt-auto pt-10 border-t border-outline-variant/20">
+<button class="px-6 py-3 rounded-lg border border-outline-variant text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors flex items-center gap-2" type="button">
+<span class="material-symbols-outlined">arrow_back</span>
+                    Back
+                </button>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-lg font-label-md text-label-md hover:bg-primary/90 transition-colors shadow-[0_2px_10px_rgba(0,107,44,0.3)] flex items-center gap-2" type="button">
+                    Next Step
+                    <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<!-- Spacer for mobile bottom nav -->
+<div class="h-24 lg:hidden"></div>
+</form>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="bg-surface dark:bg-surface-dim docked full-width bottom-0 lg:hidden border-t border-outline-variant shadow-lg fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-surface/90 backdrop-blur-md">
+<!-- Back (Inactive) -->
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="font-label-sm text-label-sm mt-1">Back</span>
+</button>
+<!-- Save (Inactive) -->
+<button class="text-secondary flex flex-col items-center hover:opacity-90 active:scale-90 duration-150">
+<span class="material-symbols-outlined">save</span>
+<span class="font-label-sm text-label-sm mt-1">Save</span>
+</button>
+<!-- Next (Active - treating Next as primary action in this flow context for mobile) -->
+<button class="bg-primary text-on-primary rounded-full px-6 py-2 flex items-center gap-2 hover:opacity-90 active:scale-90 duration-150 shadow-[0_2px_8px_rgba(0,107,44,0.4)]">
+<span class="font-label-sm text-label-sm font-semibold">Next</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</nav>
+<script>
+        // Simple script to toggle amenity active states
+        document.addEventListener('DOMContentLoaded', () => {
+            const amenityLabels = document.querySelectorAll('label.glass-panel');
+            
+            amenityLabels.forEach(label => {
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                
+                // Set initial state
+                updateAmenityState(label, checkbox.checked);
+
+                checkbox.addEventListener('change', (e) => {
+                    updateAmenityState(label, e.target.checked);
+                });
+            });
+
+            function updateAmenityState(label, isChecked) {
+                const icon = label.querySelector('.material-symbols-outlined');
+                const text = label.querySelector('span:not(.material-symbols-outlined)');
+
+                if (isChecked) {
+                    label.classList.add('amenity-card-active');
+                    label.classList.remove('hover:border-primary/50');
+                    if(icon) icon.classList.remove('text-secondary');
+                    if(text) text.classList.remove('text-on-surface-variant');
+                } else {
+                    label.classList.remove('amenity-card-active');
+                    label.classList.add('hover:border-primary/50');
+                    if(icon) icon.classList.add('text-secondary');
+                    if(text) text.classList.add('text-on-surface-variant');
+                }
+            }
+        });
+    </script>
+</body></html>

@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const navLinkClass = 'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#2d6c4f] hover:text-white';
-const activeNavLinkClass = 'rounded-lg bg-[#2d6c4f] px-3 py-2 text-sm font-semibold text-white';
+const navLinkClass = 'rounded-lg px-3 py-2 text-sm font-semibold text-[#565e74] transition-colors hover:text-[#006b2c] hover:bg-[#f2f4f6]';
+const activeNavLinkClass = 'rounded-lg px-3 py-2 text-sm font-bold text-[#006b2c] bg-[#006b2c]/10';
 
 const panelLinkClass = 'block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-[#2d6c4f] hover:text-white';
 const panelActiveLinkClass = 'block rounded-md bg-[#2d6c4f] px-3 py-2.5 text-sm font-semibold text-white';
