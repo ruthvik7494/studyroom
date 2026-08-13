@@ -82,9 +82,14 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
 
   return (
     <section aria-labelledby="all-centres-heading">
-      <div className="mb-4 flex items-center gap-2">
-        <h2 id="all-centres-heading" className="font-display text-lg font-bold">All Centres</h2>
-        <RefreshButton label="Refresh centres" />
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <h2 id="all-centres-heading" className="font-display text-lg font-bold">All Centres</h2>
+          <RefreshButton label="Refresh centres" />
+        </div>
+        <Link href="/admin/centres/new">
+          <Button size="sm" className="font-semibold">+ Create Centre</Button>
+        </Link>
       </div>
 
       <div className="mb-4 flex gap-1">
@@ -171,6 +176,7 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
                     <TableCell><Badge variant={STATUS_VARIANT[c.status] ?? 'secondary'}>{c.status}</Badge></TableCell>
                     <TableCell className="pr-6 text-right">
                       <div className="flex items-center justify-end gap-3">
+                        <Link href={`/centres/${c.slug}`} target="_blank" className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline">View</Link>
                         {c.status === 'pending_review' ? (
                           <CentreModerationActions centreId={c.id} />
                         ) : tab === 'archived' ? (

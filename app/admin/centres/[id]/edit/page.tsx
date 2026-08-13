@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getCentreForAdminEdit } from '@/features/admin/services/admin.service';
-import { EditCentreForm } from '@/features/admin/components/edit-centre-form';
+import { admin } from '@/lib/supabase/admin';
+import { requireRole } from '@/lib/auth/rbac';
 import { noindex } from '@/lib/seo';
+import { ListingWizardV2 } from '@/features/centres/components/listing-wizard-v2';
+import type { CentreUpsert } from '@/features/centres/schema';
 
 export const metadata: Metadata = { title: 'Edit Centre', ...noindex };
 
@@ -11,14 +13,84 @@ interface PageProps { params: Promise<{ id: string }> }
 
 export default async function AdminEditCentrePage({ params }: PageProps) {
   const { id } = await params;
+  await requireRole('admin');
   const db = await createClient();
-  const centre = await getCentreForAdminEdit(db, id);
+
+  const [{ data: centre }, { data: resource }, { data: selectedAmenities }, { data: amenities }, { data: images }, { data: hoursRows }] = await Promise.all([
+    admin.from('centres').select('id, owner_id, name, address, city, state, country, postcode, space_type, lat, lng, description, women_safe_verified, cover_url, logo_url, phone, alt_phone, business_email, website, social, tags').eq('id', id).maybeSingle(),
+    admin.from('resources').select('unit_count, pricing').eq('centre_id', id).limit(1).maybeSingle(),
+    admin.from('centre_amenities').select('amenity_id').eq('centre_id', id),
+    admin.from('amenities').select('id, label, icon').order('sort_order'),
+    admin.from('listing_images').select('id, storage_path, is_cover, category').eq('centre_id', id).order('sort_order', { ascending: true }),
+    admin.from('centre_hours').select('day_of_week, is_open, opening_time, closing_time').eq('centre_id', id),
+  ]);
+
   if (!centre) notFound();
 
+  const pricing = (resource?.pricing ?? {}) as Record<string, number>;
+  const social = (centre.social ?? {}) as Record<string, string>;
+  const coverImage = images?.find((img) => img.is_cover);
+  const gallery = (images ?? []).map((img) => ({
+    id: img.id,
+    storagePath: img.storage_path,
+    category: img.category ?? 'gallery',
+  }));
+  const hours = Array.from({ length: 7 }, (_, dayOfWeek) => {
+    const row = hoursRows?.find((h) => h.day_of_week === dayOfWeek);
+    return {
+      isOpen: row?.is_open ?? true,
+      openingTime: row?.opening_time?.slice(0, 5) ?? '06:00',
+      closingTime: row?.closing_time?.slice(0, 5) ?? '22:00',
+    };
+  });
+
   return (
-    <section aria-labelledby="edit-centre-heading">
-      <h2 id="edit-centre-heading" className="mb-4 font-display text-lg font-bold">Edit Centre</h2>
-      <EditCentreForm centre={centre} />
-    </section>
+    <div>
+      <h1 className="mb-6 font-display text-2xl font-bold">Edit “{centre.name}”</h1>
+      <ListingWizardV2
+        mode="edit"
+        centreId={id}
+        targetRedirectUrl="/admin/centres/all"
+        amenities={amenities ?? []}
+        photos={{ logoUrl: centre.logo_url, coverUrl: centre.cover_url, coverImageId: coverImage?.id ?? null, gallery: gallery.map(g => ({ ...g, url: g.storagePath, category: g.category ?? null })) }}
+        defaults={{
+          name: centre.name,
+          address: centre.address ?? undefined,
+          city: centre.city ?? undefined,
+          state: centre.state ?? undefined,
+          country: centre.country ?? undefined,
+          postcode: centre.postcode ?? undefined,
+          spaceType: (centre.space_type as CentreUpsert['spaceType']) ?? 'study_hall',
+          lat: centre.lat ?? undefined,
+          lng: centre.lng ?? undefined,
+          about: centre.description ?? '',
+          phone: centre.phone ?? '',
+          altPhone: centre.alt_phone ?? '',
+          businessEmail: centre.business_email ?? '',
+          website: centre.website ?? '',
+          priceHourly: pricing.hour,
+          priceDaily: pricing.day,
+          priceWeekly: pricing.week,
+          priceFortnightly: pricing.fortnight,
+          priceMonthly: pricing.month,
+          priceQuarterly: pricing.quarter,
+          priceHalfYearly: pricing.half_year,
+          priceYearly: pricing.year,
+          seats: resource?.unit_count ?? 10,
+          womenSafeClaim: centre.women_safe_verified ?? false,
+          amenityIds: (selectedAmenities ?? []).map((a) => a.amenity_id),
+          tags: (centre.tags ?? []) as CentreUpsert['tags'],
+          hours,
+          facebook: social.facebook ?? '',
+          instagram: social.instagram ?? '',
+          youtube: social.youtube ?? '',
+          linkedin: social.linkedin ?? '',
+          twitter: social.twitter ?? '',
+          whatsapp: social.whatsapp ?? '',
+          googleBusiness: social.googleBusiness ?? '',
+        }}
+      />
+    </div>
   );
 }
+

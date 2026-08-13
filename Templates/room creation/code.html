@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nittala Ruthvik - Executive Study Space</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Lexend:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f7f9fb",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#b9c7e0",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#0d1c2f",
+                        "on-secondary-container": "#5c647a",
+                        "on-primary-container": "#f7fff2",
+                        "on-surface": "#191c1e",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "primary-fixed": "#7ffc97",
+                        "on-tertiary-container": "#fdfcff",
+                        "on-primary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#005320",
+                        "surface-dim": "#d8dadc",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#2d3133",
+                        "outline-variant": "#bdcaba",
+                        "inverse-primary": "#62df7d",
+                        "secondary": "#565e74",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#dae2fd",
+                        "on-surface-variant": "#3e4a3d",
+                        "surface": "#f7f9fb",
+                        "background": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#67758c",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "surface-tint": "#006e2d",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#e0e3e5",
+                        "tertiary": "#4f5d72",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed": "#d5e3fd",
+                        "surface-container-high": "#e6e8ea",
+                        "primary-fixed-dim": "#62df7d",
+                        "surface-container": "#eceef0",
+                        "primary-container": "#00873a",
+                        "on-background": "#191c1e",
+                        "outline": "#6e7b6c",
+                        "primary": "#006b2c",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-secondary-fixed": "#131b2e",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-tertiary-fixed-variant": "#3a485c",
+                        "secondary-fixed": "#dae2fd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "container-max-width": "1280px",
+                        "section-padding": "80px",
+                        "margin-desktop": "64px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "margin-tablet": "32px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Lexend"],
+                        "headline-xl": ["Lexend"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Lexend"],
+                        "label-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Lexend"],
+                        "headline-sm": ["Lexend"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Thin dividers for structured look */
+        .grid-borders > div {
+            border-bottom: 1px solid rgba(189, 202, 186, 0.3);
+            border-right: 1px solid rgba(189, 202, 186, 0.3);
+        }
+        .grid-borders {
+            border-top: 1px solid rgba(189, 202, 186, 0.3);
+            border-left: 1px solid rgba(189, 202, 186, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased selection:bg-primary/20 selection:text-primary">
+<!-- TopNavBar -->
+<nav class="sticky top-0 w-full z-50 bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant/30 shadow-sm transition-all duration-300" id="global-nav">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max-width mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight uppercase">
+                Admin Dashboard
+            </div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-3 text-on-surface-variant">
+<button class="hover:text-on-surface transition-colors duration-200">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="hover:text-on-surface transition-colors duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+<div class="w-8 h-8 bg-surface-variant rounded-full flex items-center justify-center text-on-surface font-label-md">A</div>
+</div>
+</div>
+</nav>
+<main class="max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop pt-8 pb-section-padding">
+<div class="mb-8">
+<h1 class="font-headline-xl text-headline-xl text-on-surface uppercase tracking-tight mb-2">Create Room Category</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Define a new space type for your study center.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Left Column: Form -->
+<div class="lg:col-span-2 space-y-12">
+<!-- Step 1: Visual Room Type Selection -->
+<section class="space-y-6">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-md">1</div>
+<h2 class="font-headline-md text-headline-md text-on-surface uppercase tracking-wide">Select Room Type</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Standard AC -->
+<label class="cursor-pointer group">
+<input checked="" class="peer sr-only" name="room_type" type="radio"/>
+<div class="border border-outline-variant/50 rounded-sm overflow-hidden flex flex-col bg-surface-container-lowest peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition-all">
+<div class="h-32 bg-surface-variant relative overflow-hidden">
+<img alt="AC Study Hall" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 grayscale-[20%]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxKSAEeN5IjFDafDb2Qzs0cAGahQkhQR2ydJ2xgtbxYrMa3glgw7G2UIu3Jvy83lXBbycZqBLh785hnHMht1zoBQQ-5jLx2nS24j7d-YpVJWUl9gjNdXHFRrdYseKRBhJECYoqvN1zvvIE5HiT4aqaO3h1Tjxsjn17D81XHpP1gWCf2PBdrrSzxd7Nhy51vhsbS3LvibruRiTjtng0GB3Evkxn8Y56CAPSeEe14rDZ0rz6EJ4SA4of"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</div>
+<div class="p-4 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-[24px] mb-2 text-on-surface-variant group-hover:text-primary peer-checked:text-primary transition-colors">ac_unit</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Standard AC</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">Temperature controlled halls</p>
+</div>
+</div>
+</label>
+<!-- Standard Non-AC -->
+<label class="cursor-pointer group">
+<input class="peer sr-only" name="room_type" type="radio"/>
+<div class="border border-outline-variant/50 rounded-sm overflow-hidden flex flex-col bg-surface-container-lowest peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition-all">
+<div class="h-32 bg-surface-variant relative overflow-hidden">
+<img alt="Non-AC Study Hall" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 grayscale-[20%]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcioIHfYN-diZwLFReBEEJWomV0u8zsAZDnpjFIgvN7j9cFxRPK9J_VwqL34__C4WlibCE4Nz8t-iEvjucJcHQcui6BpbIgv7H9DhzrpTXphkIWgkQo0J_-neyoUDL3X3vD1XiRKXeUwl8SWdt9txmufGUB5mpkPtOu6HJqXCvYzm0RJQqE6nFBbIHwBWNymBEd5CUJqMhn01tS9M9q4Ws6mPMd8w-C6jEX-QPM3jecjLnn-F7yDJg"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</div>
+<div class="p-4 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-[24px] mb-2 text-on-surface-variant group-hover:text-primary peer-checked:text-primary transition-colors">air</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Standard Non-AC</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">Well-ventilated spaces</p>
+</div>
+</div>
+</label>
+<!-- Executive Luxury -->
+<label class="cursor-pointer group">
+<input class="peer sr-only" name="room_type" type="radio"/>
+<div class="border border-outline-variant/50 rounded-sm overflow-hidden flex flex-col bg-surface-container-lowest peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition-all">
+<div class="h-32 bg-surface-variant relative overflow-hidden">
+<img alt="Luxury Desk" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 grayscale-[20%]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBz01RbzcCqcxCRa_0n8upLH7H6w_X_6I-YNiUuFStJZUxFS_-vR-rwxVbvTf6crT8EaZ7zxmc915EwHAJYKAZunubbnSmx7Pw-aaVYrVU_MWoGThdvFfhQObkgNlI1DrUXpYTpB90A5ZD6pF1g-evGug2HPURUMHXYu9PiKa5OUGXvb8Q9DOiIr32zv_oV7fIgpD3uCgzUZHNcOXLSVFahRmOC9cW1LAFscEHH0fPl5xntZO2GZned"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</div>
+<div class="p-4 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-[24px] mb-2 text-on-surface-variant group-hover:text-primary peer-checked:text-primary transition-colors">chair</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Executive Luxury</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">Premium ergonomic setups</p>
+</div>
+</div>
+</label>
+</div>
+</section>
+<!-- Step 2: Details & Pricing (Revealed/Expanded style) -->
+<section class="space-y-6 pt-8 border-t border-outline-variant/30">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-md">2</div>
+<h2 class="font-headline-md text-headline-md text-on-surface uppercase tracking-wide">Configure Details &amp; Pricing</h2>
+</div>
+<div class="bg-surface-container-lowest p-8 border border-outline-variant/50 rounded-sm space-y-8 shadow-sm">
+<!-- Basic Details -->
+<div class="space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2 uppercase tracking-wider" for="room_name">Category Name</label>
+<input class="w-full rounded-sm border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest text-on-surface font-body-md text-body-md p-3 transition-colors" id="room_name" type="text" value="Standard AC"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2 uppercase tracking-wider" for="room_desc">Short Description</label>
+<textarea class="w-full rounded-sm border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest text-on-surface font-body-md text-body-md p-3 transition-colors" id="room_desc" rows="2">Quiet, temperature-controlled halls perfect for long study hours.</textarea>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2 uppercase tracking-wider" for="total_seats">Total Seats</label>
+<input class="w-full md:w-1/3 rounded-sm border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest text-on-surface font-body-md text-body-md p-3 transition-colors" id="total_seats" type="number" value="43"/>
+</div>
+</div>
+<!-- Pricing Structure -->
+<div class="pt-6 border-t border-outline-variant/30">
+<h3 class="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-4">Pricing Structure (₹)</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Short Term -->
+<div class="space-y-4 p-4 border border-outline-variant/30 rounded-sm bg-surface">
+<h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Short-term Passes</h4>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1" for="price_hourly">Hourly Pass</label>
+<input class="w-full rounded-sm border-outline-variant/50 focus:border-primary focus:ring-0 bg-surface-container-lowest text-on-surface font-body-md p-2" id="price_hourly" placeholder="e.g. 100" type="number"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1" for="price_daily">Daily Pass</label>
+<input class="w-full rounded-sm border-outline-variant/50 focus:border-primary focus:ring-0 bg-surface-container-lowest text-on-surface font-body-md p-2" id="price_daily" placeholder="e.g. 1000" type="number"/>
+</div>
+</div>
+<!-- Regular Plans -->
+<div class="space-y-4 p-4 border border-outline-variant/30 rounded-sm bg-surface">
+<h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Regular Plans</h4>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1" for="price_weekly">Weekly / Fortnightly</label>
+<input class="w-full rounded-sm border-outline-variant/50 focus:border-primary focus:ring-0 bg-surface-container-lowest text-on-surface font-body-md p-2" id="price_weekly" type="number" value="12000"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1" for="price_monthly">Monthly Plan</label>
+<input class="w-full rounded-sm border-outline-variant/50 focus:border-primary focus:ring-0 bg-surface-container-lowest text-on-surface font-body-md p-2" id="price_monthly" type="number" value="22000"/>
+</div>
+</div>
+<!-- Long Term -->
+<div class="md:col-span-2 space-y-4 p-4 border border-outline-variant/30 rounded-sm bg-surface">
+<h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Long-term Bundles</h4>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1" for="price_quarterly">Quarterly</label>
+<input class="w-full rounded-sm border-outline-variant/50 focus:border-primary focus:ring-0 bg-surface-container-lowest text-on-surface font-body-md p-2" id="price_quarterly" type="number" value="60000"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1" for="price_half">Half-Yearly</label>
+<input class="w-full rounded-sm border-outline-variant/50 focus:border-primary focus:ring-0 bg-surface-container-lowest text-on-surface font-body-md p-2" id="price_half" type="number" value="110000"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1" for="price_yearly">Yearly</label>
+<input class="w-full rounded-sm border-outline-variant/50 focus:border-primary focus:ring-0 bg-surface-container-lowest text-on-surface font-body-md p-2" id="price_yearly" type="number" value="200000"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Amenities Toggles -->
+<div class="pt-6 border-t border-outline-variant/30">
+<h3 class="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-4">Included Amenities</h3>
+<div class="flex flex-wrap gap-3">
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="px-4 py-2 rounded-full border border-outline-variant/50 bg-surface-container-lowest text-on-surface-variant font-label-sm peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">wifi</span> High-speed Wi-Fi
+                                </div>
+</label>
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="px-4 py-2 rounded-full border border-outline-variant/50 bg-surface-container-lowest text-on-surface-variant font-label-sm peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">ac_unit</span> Air Conditioning
+                                </div>
+</label>
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="px-4 py-2 rounded-full border border-outline-variant/50 bg-surface-container-lowest text-on-surface-variant font-label-sm peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">power</span> Power at Desk
+                                </div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" type="checkbox"/>
+<div class="px-4 py-2 rounded-full border border-outline-variant/50 bg-surface-container-lowest text-on-surface-variant font-label-sm peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">lock</span> Personal Locker
+                                </div>
+</label>
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" type="checkbox"/>
+<div class="px-4 py-2 rounded-full border border-outline-variant/50 bg-surface-container-lowest text-on-surface-variant font-label-sm peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">volume_off</span> Dedicated Silent Zone
+                                </div>
+</label>
+</div>
+</div>
+</div>
+<div class="flex justify-end gap-4 pt-4">
+<button class="px-6 py-3 border border-outline-variant text-on-surface font-label-md rounded-sm hover:border-on-surface transition-colors uppercase tracking-wider">Cancel</button>
+<button class="px-8 py-3 bg-primary text-on-primary font-label-md rounded-sm hover:bg-primary/90 transition-colors uppercase tracking-wider shadow-sm">Save Category</button>
+</div>
+</section>
+</div>
+<!-- Right Column: Live Preview -->
+<div class="lg:col-span-1 relative">
+<div class="sticky top-24 space-y-4">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">visibility</span> Live Preview
+                </h3>
+<!-- Preview Card mimicking listing page style -->
+<div class="border border-outline-variant/50 rounded-sm bg-surface-container-lowest overflow-hidden flex flex-col shadow-sm">
+<div class="h-40 bg-surface-variant relative overflow-hidden">
+<img alt="AC Study Hall" class="w-full h-full object-cover grayscale-[20%]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxKSAEeN5IjFDafDb2Qzs0cAGahQkhQR2ydJ2xgtbxYrMa3glgw7G2UIu3Jvy83lXBbycZqBLh785hnHMht1zoBQQ-5jLx2nS24j7d-YpVJWUl9gjNdXHFRrdYseKRBhJECYoqvN1zvvIE5HiT4aqaO3h1Tjxsjn17D81XHpP1gWCf2PBdrrSzxd7Nhy51vhsbS3LvibruRiTjtng0GB3Evkxn8Y56CAPSeEe14rDZ0rz6EJ4SA4of"/>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Standard AC</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6 line-clamp-2">Quiet, temperature-controlled halls perfect for long study hours.</p>
+<div class="mt-auto">
+<div class="text-body-sm text-on-surface-variant uppercase tracking-widest mb-1">Starting from</div>
+<div class="font-headline-sm font-bold text-on-surface mb-4">₹12,000<span class="text-body-sm font-normal text-on-surface-variant">/2 weeks</span></div>
+<button class="block w-full text-center px-4 py-2 border border-outline-variant hover:border-on-surface text-on-surface font-label-md rounded transition-colors uppercase tracking-wider bg-surface-container-lowest">View Plans</button>
+</div>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant/70 text-center italic pt-2">This is how your category will appear to users on the listing page.</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

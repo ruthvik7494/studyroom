@@ -120,6 +120,7 @@ interface Props {
   defaults?: Partial<CentreUpsert>;
   amenities: Amenity[];
   intro?: string;
+  targetRedirectUrl?: string;
   photos?: { logoUrl: string | null; coverUrl: string | null; coverImageId: string | null; gallery: { id: string; url: string; category: string | null }[] };
 }
 
@@ -213,7 +214,7 @@ export function ListingWizardV2(props: Props) {
         }
       }
 
-      router.push('/owner/centres');
+      router.push(props.targetRedirectUrl || '/owner/centres');
       router.refresh();
     } catch {
       setServerError('An unexpected error occurred. Please try again.');
@@ -497,321 +498,126 @@ export function ListingWizardV2(props: Props) {
             </div>
           )}
 
-          {/* STEP 2 — Operating Hours & Pricing */}
+          {/* STEP 2 — Hours, Facilities & Dynamic Spaces */}
           {step === 1 && (
-            <div className="space-y-6">
-              {/* Pricing Structure */}
-              <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs space-y-6">
-                <div>
-                  <h3 className="text-lg font-bold text-[#191c1e] font-['Lexend',sans-serif]">Pricing Structure</h3>
-                  <p className="text-xs text-[#565e74] mt-0.5">Fill in the rates for the membership plans you offer.</p>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                  {/* Short Pass */}
-                  <div className="p-4 bg-[#f8faf8] rounded-2xl border border-[#e0e3e5] space-y-4 flex flex-col justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-[#191c1e] uppercase tracking-wider block">Short-Term Passes</span>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-[#565e74]">Hourly Pass (₹)</label>
-                        <input type="number" placeholder="e.g. 50" className="w-full bg-white border border-[#bdcaba] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#16a34a]" {...register('priceHourly')} />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-[#565e74]">Day Pass / Daily (₹)</label>
-                        <input type="number" placeholder="e.g. 300" className="w-full bg-white border border-[#bdcaba] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#16a34a]" {...register('priceDaily')} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Standard Plans */}
-                  <div className="p-4 bg-[#f8faf8] rounded-2xl border border-[#e0e3e5] space-y-4 flex flex-col justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-[#191c1e] uppercase tracking-wider block">Regular Plans</span>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-[#565e74]">Monthly Plan (₹)</label>
-                        <input type="number" placeholder="e.g. 3500" className="w-full bg-white border border-[#bdcaba] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#16a34a]" {...register('priceMonthly')} />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-[#565e74]">Weekly Plan (₹)</label>
-                        <input type="number" placeholder="e.g. 1200" className="w-full bg-white border border-[#bdcaba] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#16a34a]" {...register('priceWeekly')} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Long Term */}
-                  <div className="p-4 bg-[#f8faf8] rounded-2xl border border-[#e0e3e5] space-y-4 flex flex-col justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-[#191c1e] uppercase tracking-wider block">Long-Term Bundles</span>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-[#565e74]">Quarterly (₹)</label>
-                        <input type="number" placeholder="e.g. 9000" className="w-full bg-white border border-[#bdcaba] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#16a34a]" {...register('priceQuarterly')} />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-[#565e74]">Half-Yearly (₹)</label>
-                        <input type="number" placeholder="e.g. 16000" className="w-full bg-white border border-[#bdcaba] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#16a34a]" {...register('priceHalfYearly')} />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-[#565e74]">Yearly (₹)</label>
-                        <input type="number" placeholder="e.g. 30000" className="w-full bg-white border border-[#bdcaba] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#16a34a]" {...register('priceYearly')} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Grid Container for Opening Hours & Space Details */}
+            <div className="space-y-8">
+              {/* Row 1: Side-by-Side Operating Hours & Facilities */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-                {/* Operating Hours Table */}
-                <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs h-full flex flex-col">
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f2f4f6] pb-4 shrink-0">
-                    <div>
-                      <h3 className="text-lg font-bold text-[#191c1e] font-['Lexend',sans-serif]">Opening Hours</h3>
-                      <p className="text-xs text-[#565e74] mt-0.5">Set daily operating hours or copy timings across days.</p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        DAY_ORDER.forEach((dayIdx) => {
-                          setValue(`hours.${dayIdx}.isOpen`, true);
-                          setValue(`hours.${dayIdx}.openingTime`, '06:00');
-                          setValue(`hours.${dayIdx}.closingTime`, '22:00');
-                        });
-                      }}
-                      className="text-xs border-[#16a34a] text-[#16a34a] hover:bg-[#16a34a] hover:text-white rounded-xl font-bold"
-                    >
-                      ⚡ Set All Days to 06:00 - 22:00
-                    </Button>
-                  </div>
-
-                  <div className="flex-1 flex flex-col justify-center space-y-3 py-4">
-                    {DAY_ORDER.map((dayIdx) => {
-                      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIdx] ?? 'Sunday';
-                      const dayShort = dayName.charAt(0);
-                      const isOpen = values.hours?.[dayIdx]?.isOpen ?? true;
-
-                      return (
-                        <div key={dayIdx} className="flex items-center gap-3">
-                          {/* Day Circle */}
-                          <button
-                            type="button"
-                            onClick={() => setValue(`hours.${dayIdx}.isOpen`, !isOpen)}
-                            className={cn(
-                              "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all cursor-pointer shrink-0 select-none",
-                              isOpen ? "bg-[#0b192c] text-white" : "bg-[#f1f5f9] text-[#94a3b8]"
-                            )}
-                          >
-                            {dayShort}
-                          </button>
-
-                          {/* Timing inputs or Unavailable / + button */}
-                          {isOpen ? (
-                            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                              <input
-                                type="time"
-                                className="bg-[#f8fafc] border-0 rounded-lg px-3 py-2 text-xs font-semibold text-[#1e293b] focus:outline-none focus:ring-1 focus:ring-[#16a34a]"
-                                {...register(`hours.${dayIdx}.openingTime`)}
-                              />
-                              <span className="text-xs text-[#94a3b8] font-medium">-</span>
-                              <input
-                                type="time"
-                                className="bg-[#f8fafc] border-0 rounded-lg px-3 py-2 text-xs font-semibold text-[#1e293b] focus:outline-none focus:ring-1 focus:ring-[#16a34a]"
-                                {...register(`hours.${dayIdx}.closingTime`)}
-                              />
-                              
-                              {/* Actions: Close (Disable) & Copy */}
-                              <button
-                                type="button"
-                                onClick={() => setValue(`hours.${dayIdx}.isOpen`, false)}
-                                title="Mark Unavailable"
-                                className="p-1.5 text-[#94a3b8] hover:text-[#ef4444] rounded-md transition-colors cursor-pointer"
-                              >
-                                ✕
-                              </button>
-                              <button
-                                type="button"
-                                title={`Copy ${dayName} hours to other days`}
-                                onClick={() => {
-                                  setCopyHoursSourceDay(dayIdx);
-                                  setCopyHoursTargets(DAY_ORDER.filter((d) => d !== dayIdx));
-                                }}
-                                className="p-1.5 text-[#94a3b8] hover:text-[#16a34a] rounded-md transition-colors cursor-pointer"
-                              >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-[#64748b]">Unavailable</span>
-                              <button
-                                type="button"
-                                onClick={() => setValue(`hours.${dayIdx}.isOpen`, true)}
-                                title="Add Hours"
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-[#64748b] hover:bg-[#f1f5f9] border border-[#cbd5e1] cursor-pointer"
-                              >
-                                +
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* COPY HOURS MODAL */}
-                {copyHoursSourceDay !== null && (
-                  <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-[#e0e3e5] space-y-4">
-                      <div className="flex items-center justify-between border-b border-[#f2f4f6] pb-3">
-                        <div>
-                          <span className="text-xs font-bold text-[#16a34a] uppercase tracking-wider block">COPY TIMES TO...</span>
-                          <span className="text-sm font-bold text-[#191c1e]">
-                            Source: {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][copyHoursSourceDay]}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setCopyHoursSourceDay(null)}
-                          className="text-[#565e74] hover:text-black font-bold text-lg cursor-pointer"
-                        >
-                          ✕
-                        </button>
+                {/* Left Side: Operating Hours */}
+                <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f2f4f6] pb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-[#191c1e] font-['Lexend',sans-serif]">Operating Hours</h3>
+                        <p className="text-xs text-[#565e74] mt-0.5">Set daily operating hours or copy timings across days.</p>
                       </div>
-
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {DAY_ORDER.map((dIdx) => {
-                          if (dIdx === copyHoursSourceDay) return null;
-                          const dName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dIdx];
-                          const checked = copyHoursTargets.includes(dIdx);
-                          return (
-                            <label key={dIdx} className="flex items-center justify-between p-2 rounded-xl hover:bg-[#f8faf8] cursor-pointer">
-                              <span className="text-sm font-semibold text-[#191c1e]">{dName}</span>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={(e) => {
-                                  if (e.target.checked) setCopyHoursTargets((prev) => [...prev, dIdx]);
-                                  else setCopyHoursTargets((prev) => prev.filter((i) => i !== dIdx));
-                                }}
-                                className="w-4 h-4 accent-[#16a34a] rounded cursor-pointer"
-                              />
-                            </label>
-                          );
-                        })}
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setCopyHoursSourceDay(null)}
-                          className="flex-1 rounded-xl font-bold text-xs"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            const srcOpen = values.hours?.[copyHoursSourceDay]?.isOpen ?? true;
-                            const srcStart = values.hours?.[copyHoursSourceDay]?.openingTime ?? '06:00';
-                            const srcEnd = values.hours?.[copyHoursSourceDay]?.closingTime ?? '22:00';
-
-                            copyHoursTargets.forEach((targetIdx) => {
-                              setValue(`hours.${targetIdx}.isOpen`, srcOpen);
-                              setValue(`hours.${targetIdx}.openingTime`, srcStart);
-                              setValue(`hours.${targetIdx}.closingTime`, srcEnd);
-                            });
-                            setCopyHoursSourceDay(null);
-                          }}
-                          className="flex-1 bg-[#16a34a] hover:bg-[#16a34a]/90 text-white rounded-xl font-bold text-xs shadow-sm"
-                        >
-                          Apply to Selected
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Right Column: Combined Space Details & Facilities Card */}
-                <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs h-full flex flex-col">
-                  <div className="shrink-0">
-                    <h3 className="text-lg font-bold text-[#191c1e] font-['Lexend',sans-serif]">Space Details</h3>
-                    <p className="text-xs text-[#565e74] mt-0.5">Classify your space and select available facilities.</p>
-                  </div>
-
-                  <div className="flex-1 flex flex-col justify-center space-y-5 py-2">
-                    {/* Space Type */}
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#565e74]" htmlFor="spaceType">
-                        Space Type <span className="text-[#ba1a1a]">*</span>
-                      </label>
-                      <select
-                        id="spaceType"
-                        className="w-full bg-[#f2f4f6] border border-[#bdcaba] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#16a34a]"
-                        {...register('spaceType')}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          DAY_ORDER.forEach((dayIdx) => {
+                            setValue(`hours.${dayIdx}.isOpen`, true);
+                            setValue(`hours.${dayIdx}.openingTime`, '06:00');
+                            setValue(`hours.${dayIdx}.closingTime`, '22:00');
+                          });
+                        }}
+                        className="text-xs border-[#16a34a] text-[#16a34a] hover:bg-[#16a34a] hover:text-white rounded-xl font-bold"
                       >
-                        {SPACE_TYPES.map((t) => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
+                        ⚡ All Days 06:00 - 22:00
+                      </Button>
                     </div>
 
-                    {/* Exact Seating Count */}
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#565e74]" htmlFor="seats">
-                        Exact Seating Count <span className="text-[#ba1a1a]">*</span>
-                      </label>
-                      <input
-                        id="seats"
-                        type="number"
-                        min={1}
-                        className="w-full bg-[#f2f4f6] border border-[#bdcaba] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#16a34a]"
-                        {...register('seats')}
-                      />
-                    </div>
+                    <div className="space-y-3 py-4">
+                      {DAY_ORDER.map((dayIdx) => {
+                        const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIdx] ?? 'Sunday';
+                        const dayShort = dayName.charAt(0);
+                        const isOpen = values.hours?.[dayIdx]?.isOpen ?? true;
 
-                    {/* Facilities & Amenities */}
-                    <div className="space-y-2">
-                      <label className="block text-xs font-semibold text-[#565e74]">
-                        Facilities &amp; Amenities
-                      </label>
-                      <div className="flex flex-wrap gap-2 pt-0.5">
-                        {props.amenities.map((a) => {
-                          const checked = values.amenityIds?.includes(a.id);
-                          const lucideIcon = AMENITY_LUCIDE_MAP[a.label];
-                          return (
-                            <label
-                              key={a.id}
+                        return (
+                          <div key={dayIdx} className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setValue(`hours.${dayIdx}.isOpen`, !isOpen)}
                               className={cn(
-                                "cursor-pointer px-3 py-1.5 rounded-full text-xs font-semibold border transition-all select-none flex items-center gap-1.5",
-                                checked
-                                  ? "bg-[#16a34a] text-white border-[#16a34a] shadow-xs"
-                                  : "bg-[#f2f4f6] text-[#565e74] border-[#bdcaba] hover:bg-[#e6e8ea]"
+                                "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all cursor-pointer shrink-0 select-none",
+                                isOpen ? "bg-[#0b192c] text-white" : "bg-[#f1f5f9] text-[#94a3b8]"
                               )}
                             >
-                              <input type="checkbox" value={a.id} className="sr-only" {...register('amenityIds')} />
-                              <span className="shrink-0 flex items-center justify-center [&_svg]:w-3.5 [&_svg]:h-3.5">
-                                {lucideIcon}
-                              </span>
-                              <span>{checked ? `✓ ${a.label}` : `+ ${a.label}`}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
+                              {dayShort}
+                            </button>
+
+                            {isOpen ? (
+                              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                                <input
+                                  type="time"
+                                  className="bg-[#f8fafc] border-0 rounded-lg px-3 py-2 text-xs font-semibold text-[#1e293b] focus:outline-none focus:ring-1 focus:ring-[#16a34a]"
+                                  {...register(`hours.${dayIdx}.openingTime`)}
+                                />
+                                <span className="text-xs text-[#94a3b8] font-medium">-</span>
+                                <input
+                                  type="time"
+                                  className="bg-[#f8fafc] border-0 rounded-lg px-3 py-2 text-xs font-semibold text-[#1e293b] focus:outline-none focus:ring-1 focus:ring-[#16a34a]"
+                                  {...register(`hours.${dayIdx}.closingTime`)}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setValue(`hours.${dayIdx}.isOpen`, false)}
+                                  title="Mark Unavailable"
+                                  className="p-1.5 text-[#94a3b8] hover:text-[#ef4444] rounded-md transition-colors cursor-pointer"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-[#64748b]">Unavailable</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setValue(`hours.${dayIdx}.isOpen`, true)}
+                                  title="Add Hours"
+                                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-[#64748b] hover:bg-[#f1f5f9] border border-[#cbd5e1] cursor-pointer"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Side: Facilities & Amenities + Women Safe */}
+                <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs flex flex-col justify-between">
+                  <div className="space-y-5">
+                    <div className="border-b border-[#f2f4f6] pb-3">
+                      <h3 className="text-lg font-bold text-[#191c1e] font-['Lexend',sans-serif]">Facilities &amp; Amenities</h3>
+                      <p className="text-xs text-[#565e74] mt-0.5">Select all facilities provided across your centre.</p>
                     </div>
 
-                    {/* Women-Safe Access */}
-                    <div className="pt-2 border-t border-[#f2f4f6]">
+                    <div className="flex flex-wrap gap-2.5">
+                      {props.amenities.map((a) => {
+                        const checked = values.amenityIds?.includes(a.id);
+                        return (
+                          <label
+                            key={a.id}
+                            className={cn(
+                              "cursor-pointer px-4 py-2 rounded-full text-xs font-semibold border transition-all select-none flex items-center gap-2",
+                              checked
+                                ? "bg-[#16a34a] text-white border-[#16a34a] shadow-xs"
+                                : "bg-[#f2f4f6] text-[#565e74] border-[#bdcaba] hover:bg-[#e6e8ea]"
+                            )}
+                          >
+                            <input type="checkbox" value={a.id} className="sr-only" {...register('amenityIds')} />
+                            <span>{checked ? `✓ ${a.label}` : `+ ${a.label}`}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    <div className="pt-4 border-t border-[#f2f4f6]">
                       <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[#191c1e] select-none hover:text-[#16a34a] transition-colors">
                         <input
                           type="checkbox"
@@ -819,10 +625,136 @@ export function ListingWizardV2(props: Props) {
                           {...register('womenSafeClaim')}
                         />
                         <ShieldCheck className="w-4 h-4 text-[#059669] shrink-0" />
-                        <span>This centre has women-safe facilities</span>
+                        <span>This centre has verified women-safe facilities</span>
                       </label>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Row 2: Space Details (Dynamic Multiple Spaces Management) */}
+              <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f2f4f6] pb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-[#191c1e] font-['Lexend',sans-serif]">Space Details</h3>
+                    <p className="text-xs text-[#565e74] mt-0.5">Add, customize, and configure as many room spaces as your centre offers.</p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const currentTags = values.tags || [];
+                      setValue('tags', [...currentTags, `Room ${currentTags.length + 1}` as any]);
+                    }}
+                    className="bg-[#16a34a] hover:bg-[#16a34a]/90 text-white rounded-xl text-xs font-bold px-4 py-2 flex items-center gap-1.5 shadow-xs"
+                  >
+                    + Add New Space
+                  </Button>
+                </div>
+
+                {/* List of Configured Spaces */}
+                <div className="space-y-6">
+                  {/* Primary / Default Space */}
+                  <div className="p-5 bg-[#f8faf8] rounded-2xl border border-[#e0e3e5] space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#16a34a] uppercase tracking-wider">Space 1 (Primary Space)</span>
+                      <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full">Default</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Room Name *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Standard AC Study Hall"
+                          className="w-full bg-white border border-[#bdcaba] rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#16a34a]"
+                          {...register('name')}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Seats *</label>
+                        <input
+                          type="number"
+                          min={1}
+                          placeholder="e.g. 43"
+                          className="w-full bg-white border border-[#bdcaba] rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#16a34a]"
+                          {...register('seats')}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Special Facilities & Custom Tags */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold text-[#565e74]">Special Facilities &amp; Tags</label>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {['Quiet', 'AC', 'Library', '24x7', 'Ergonomic Seating', 'Individual Power Outlets'].map((tag) => {
+                          const isChecked = values.tags?.includes(tag as any);
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => {
+                                const list = values.tags || [];
+                                if (isChecked) {
+                                  setValue('tags', list.filter((t) => t !== tag) as any);
+                                } else {
+                                  setValue('tags', [...list, tag as any]);
+                                }
+                              }}
+                              className={cn(
+                                "px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer select-none",
+                                isChecked
+                                  ? "bg-slate-900 text-white border-slate-900"
+                                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                              )}
+                            >
+                              {isChecked ? `✓ ${tag}` : `+ ${tag}`}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Spaces dynamically added */}
+                  {(values.tags || []).filter(t => !['Quiet', 'AC', 'Library', '24x7', 'Ergonomic Seating', 'Individual Power Outlets'].includes(t)).map((spaceTag, idx) => (
+                    <div key={idx} className="p-5 bg-white rounded-2xl border border-[#e0e3e5] space-y-4 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Space {idx + 2}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const list = values.tags || [];
+                            setValue('tags', list.filter((t) => t !== spaceTag) as any);
+                          }}
+                          className="text-xs font-bold text-rose-600 hover:underline"
+                        >
+                          ✕ Remove Space
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-[#565e74] mb-1">Room Name *</label>
+                          <input
+                            type="text"
+                            defaultValue={spaceTag}
+                            className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#16a34a]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-[#565e74] mb-1">Seats *</label>
+                          <input
+                            type="number"
+                            min={1}
+                            placeholder="e.g. 20"
+                            className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#16a34a]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

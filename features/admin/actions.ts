@@ -76,6 +76,7 @@ export async function adminCreateCentre(raw: unknown): Promise<Result<{ id: stri
     }
 
     await logAudit('centre.admin_created', 'centre', centre.id, { name: input.name, pricing });
+    revalidatePath('/admin/centres/all');
     revalidatePath('/admin/centres');
     revalidatePath('/centres');
     return { id: centre.id, slug: centre.slug };

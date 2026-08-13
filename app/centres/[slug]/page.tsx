@@ -23,6 +23,7 @@ import { PricingSyncProvider } from '@/features/centres/components/pricing-sync'
 import { CentreCard } from '@/features/centres/components/centre-card';
 import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
 import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
+import { HeaderLayoutSwitcher } from '@/features/centres/components/header-layout-switcher';
 import { PERIOD_LABEL, priceForPeriod, availablePeriods } from '@/features/bookings/pricing';
 import { isSaved } from '@/features/saved/services/saved.service';
 
@@ -192,17 +193,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
 
   return (
     <main>
-      {/* Template Switcher Bar */}
-      <div className="bg-slate-900 text-white py-2 px-6 border-b border-slate-800 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <span className="bg-slate-700 text-white font-extrabold px-2 py-0.5 rounded text-[10px] uppercase">Template V1</span>
-          <span className="font-medium text-slate-300">Classic Overlay Header</span>
-        </div>
-        <Link href={`/centres/${centre.slug}/v2`} className="text-emerald-400 hover:underline font-semibold flex items-center gap-1">
-          Preview Modern V2 Template →
-        </Link>
-      </div>
-
       {isPublic && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}
@@ -211,99 +201,46 @@ export default async function CentreDetailPage({ params }: PageProps) {
           choice between cropping (object-cover) or letterboxing (object-contain);
           a plain full-width image with auto height shows the photo's real
           proportions, always full width, never cropped. */}
-      <div className="relative w-full bg-gradient-to-br from-secondary to-accent">
+      <div className="relative w-full overflow-hidden bg-slate-900 h-[280px] sm:h-[360px] flex items-center justify-center">
         {centre.cover_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={centre.cover_url} alt={`${centre.name} study space`} className="mx-auto block h-auto max-h-[340px] w-full" />
+          <>
+            {/* Stretched & subtle blurred background image */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={centre.cover_url}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover blur-md scale-105 opacity-80 pointer-events-none"
+            />
+            <div className="absolute inset-0 bg-black/15 backdrop-blur-xs pointer-events-none" />
+
+            {/* Original uncropped image centered in foreground */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={centre.cover_url}
+              alt={`${centre.name} study space`}
+              className="relative z-10 max-h-full max-w-full object-contain shadow-2xl"
+            />
+          </>
         ) : (
           <span className="flex h-[260px] w-full items-center justify-center text-8xl sm:h-[340px]" aria-hidden>{centre.emoji}</span>
         )}
         {centre.gallery.length > 0 && (
-          <a href="#gallery-heading" className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-background">
+          <a href="#gallery-heading" className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-background shadow-md">
             <span aria-hidden>📷</span> View all {centre.gallery.length} photos
           </a>
         )}
       </div>
 
       <div className="mx-auto max-w-6xl px-6">
-        {/* White card overlapping the bottom of the cover image, matching the reference exactly */}
-        <div className="relative z-10 -mt-14 rounded-2xl border bg-card p-4 shadow-md sm:-mt-16 sm:p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            {centre.logo_url ? (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-background shadow-sm sm:h-24 sm:w-24">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={centre.logo_url} alt="" className="h-full w-full object-cover" />
-              </div>
-            ) : (
-              <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border bg-secondary text-4xl sm:h-24 sm:w-24" aria-hidden>{centre.emoji}</span>
-            )}
-
-            <div className="min-w-0 flex-1">
-              {centre.is_verified && (
-                <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                  <svg aria-hidden viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5l-8-3Zm-1.2 13.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z" /></svg>
-                  Verified Centre
-                </span>
-              )}
-              <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
-                <h1 className="min-w-0 break-words font-display text-2xl font-bold tracking-tight sm:text-3xl">{centre.name}</h1>
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-gold2/10 px-3 py-1 text-sm font-bold text-brand-gold2">
-                  <span aria-hidden>★</span>{centre.rating.toFixed(1)}
-                  <span className="font-medium text-muted-foreground">({centre.reviews_count} reviews)</span>
-                </span>
-              </div>
-              <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                <span aria-hidden>📍</span>{fullAddress || centre.area}
-              </p>
-
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-                {schedule && (
-                  <span className={cn('inline-flex items-center gap-1.5 font-semibold', todayOpen ? 'text-primary' : 'text-destructive')}>
-                    <span className={cn('h-1.5 w-1.5 rounded-full', todayOpen ? 'bg-primary' : 'bg-destructive')} aria-hidden />
-                    {todayOpen ? 'Open Now' : 'Closed Now'}
-                  </span>
-                )}
-                {centre.occupancy && (
-                  <span className="inline-flex items-center gap-1.5 text-muted-foreground"><span aria-hidden>👤</span>{centre.occupancy.seatsFree} Seats Available</span>
-                )}
-                {totalSeats > 0 && (
-                  <span className="inline-flex items-center gap-1.5 text-muted-foreground"><span aria-hidden>👥</span>{totalSeats} Total Seats</span>
-                )}
-                {centre.women_safe_verified && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-plum/10 px-2.5 py-0.5 text-xs font-semibold text-brand-plum">🛡 Women-safe</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Action row — 4-up grid, matching the reference; wraps to 2 columns on very small screens */}
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t pt-4 sm:grid-cols-4">
-            {centre.phone && (
-              <a href={`tel:${centre.phone}`} className="inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-sm font-semibold hover:bg-secondary">
-                <span aria-hidden>📞</span> Call
-              </a>
-            )}
-            {social.whatsapp && (
-              <a href={social.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#25D366]/40 py-2 text-sm font-semibold text-[#128C36] hover:bg-[#25D366]/5">
-                <span aria-hidden>💬</span> WhatsApp
-              </a>
-            )}
-            {centre.lat != null && centre.lng != null && (
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${centre.lat},${centre.lng}`}
-                target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-sm font-semibold hover:bg-secondary"
-              >
-                <span aria-hidden>🧭</span> Directions
-              </a>
-            )}
-            {centre.website && (
-              <a href={centre.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-lg border py-2 text-sm font-semibold hover:bg-secondary">
-                <span aria-hidden>🌐</span> Website
-              </a>
-            )}
-          </div>
-        </div>
+        <HeaderLayoutSwitcher
+          centre={centre}
+          fullAddress={fullAddress}
+          schedule={schedule}
+          todayOpen={todayOpen}
+          totalSeats={totalSeats}
+          social={social}
+        />
 
         {canPreview && (
           <div className="mt-4 rounded-md border border-brand-gold/40 bg-accent px-4 py-2 text-sm text-accent-foreground" role="status">

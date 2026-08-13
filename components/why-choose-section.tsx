@@ -10,7 +10,7 @@ export function WhyChooseSection({ city = 'Hanamkonda' }: WhyChooseSectionProps)
     <section className="py-20 px-6 md:px-16 max-w-[1280px] mx-auto flex flex-col gap-16 font-['Inter',sans-serif]">
       {/* 1. SECTION HEADER */}
       <div className="text-center flex flex-col gap-3">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-[#191c1e] font-['Lexend',sans-serif] tracking-tight">
+        <h2 className="text-3xl sm:text-4xl font-bold text-[#191c1e] font-['Lexend',sans-serif] tracking-tight">
           Why Choose StudyNook?
         </h2>
         <p className="text-base text-[#565e74] max-w-2xl mx-auto">
@@ -97,7 +97,7 @@ export function WhyChooseSection({ city = 'Hanamkonda' }: WhyChooseSectionProps)
         <div className="lg:col-span-6 flex flex-col items-start gap-6">
           <div>
             <span className="text-xs font-bold text-[#006b2c] uppercase tracking-wider block mb-2">Built for Students, Designed for Focus</span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#191c1e] font-['Lexend',sans-serif] leading-tight tracking-tight">
+            <h2 className="text-[1.7rem] sm:text-[2.25rem] font-bold text-[#191c1e] font-['Lexend',sans-serif] leading-tight tracking-tight">
               Everything you need to study better.
             </h2>
           </div>
@@ -149,6 +149,23 @@ export function WhyChooseSection({ city = 'Hanamkonda' }: WhyChooseSectionProps)
           <span>List Your Centre</span>
           <span>→</span>
         </Link>
+      </div>
+
+      {/* 5. EXPLORE STUDY CENTRES CTA BANNER */}
+      <div className="relative min-h-[220px] overflow-hidden rounded-[24px] bg-[#1f4a37]">
+        <Image src="/images/study-cta.png" alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover" />
+        <div className="absolute inset-0 bg-[#1f4a37]/25" />
+        <div className="relative flex h-full min-h-[220px] flex-col justify-center gap-4 p-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-white">
+            <p className="font-['Lexend',sans-serif] text-2xl font-bold drop-shadow-sm">Ready to find your perfect study space?</p>
+            <p className="mt-1 text-sm text-white/90 drop-shadow-sm">Join students who study better with StudyNook.</p>
+          </div>
+          <div className="shrink-0">
+            <Link href="/centres" className="inline-flex items-center gap-1.5 rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-[#1f4a37] transition-colors hover:bg-white/90">
+              Explore Study Centres <span>→</span>
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );
