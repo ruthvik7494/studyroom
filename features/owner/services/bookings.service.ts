@@ -13,6 +13,7 @@ export interface OwnerBookingMetrics {
     weekly: number;
     monthly: number;
     quarterly: number;
+    halfYearly: number;
     yearly: number;
   };
 }
@@ -25,7 +26,7 @@ export async function getOwnerMetrics(db: DB, ownerId: string): Promise<OwnerBoo
   if (centreIds.length === 0) {
     return {
       today: 0, upcoming: 0, revenue: 0, checkIns: 0, noShows: 0, waitlist: 0, occupancyPct: 0,
-      passBreakdown: { hourly: 0, daily: 0, weekly: 0, monthly: 0, quarterly: 0, yearly: 0 },
+      passBreakdown: { hourly: 0, daily: 0, weekly: 0, monthly: 0, quarterly: 0, halfYearly: 0, yearly: 0 },
     };
   }
   const totalCapacity = (centres ?? []).reduce((s, c) => s + (c.capacity ?? 0), 0);
@@ -49,14 +50,15 @@ export async function getOwnerMetrics(db: DB, ownerId: string): Promise<OwnerBoo
   const revenue = (paid.data ?? []).reduce((s, r) => s + Number(r.amount ?? 0), 0);
 
   // Pass breakdown calculations
-  const passBreakdown = { hourly: 0, daily: 0, weekly: 0, monthly: 0, quarterly: 0, yearly: 0 };
+  const passBreakdown = { hourly: 0, daily: 0, weekly: 0, monthly: 0, quarterly: 0, halfYearly: 0, yearly: 0 };
   (allActiveBookings.data ?? []).forEach((b) => {
     const p = (b.period || '').toLowerCase();
     if (p === 'hour') passBreakdown.hourly++;
     else if (p === 'day') passBreakdown.daily++;
     else if (p === 'week' || p === 'fortnight') passBreakdown.weekly++;
     else if (p === 'month') passBreakdown.monthly++;
-    else if (p === 'quarter' || p === 'half_year') passBreakdown.quarterly++;
+    else if (p === 'quarter') passBreakdown.quarterly++;
+    else if (p === 'half_year') passBreakdown.halfYearly++;
     else if (p === 'year') passBreakdown.yearly++;
   });
 

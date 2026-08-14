@@ -130,13 +130,14 @@ export default async function OwnerDashboardPage() {
       {/* Active Pass Breakdown by Duration */}
       <div>
         <h2 className="font-display text-lg font-bold mb-3">Active Pass Breakdown</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
           {[
             ['Hourly', metrics.passBreakdown.hourly, '⏱️', 'bg-slate-100', 'text-slate-700'],
             ['Daily', metrics.passBreakdown.daily, '☀️', 'bg-amber-100', 'text-amber-700'],
             ['Weekly', metrics.passBreakdown.weekly, '🗓️', 'bg-blue-100', 'text-blue-700'],
             ['Monthly', metrics.passBreakdown.monthly, '🌙', 'bg-emerald-100', 'text-emerald-700'],
             ['Quarterly', metrics.passBreakdown.quarterly, '📊', 'bg-purple-100', 'text-purple-700'],
+            ['Half-Yearly', metrics.passBreakdown.halfYearly, '📈', 'bg-teal-100', 'text-teal-700'],
             ['Yearly', metrics.passBreakdown.yearly, '🏆', 'bg-yellow-100', 'text-yellow-700'],
           ].map(([label, count, icon, bg, fg]) => (
             <Card key={label as string} className="p-3.5 border border-secondary shadow-sm">
