@@ -75,7 +75,7 @@ export default async function OwnerBookingsPage({
                 <td className="px-3 py-2.5">{formatINR(Number(b.amount))}</td>
                 <td className="px-3 py-2.5"><BookingStatusBadge status={b.status} /></td>
                 <td className="px-3 py-2.5"><PaymentStatusBadge status={b.payment} /></td>
-                <td className="px-3 py-2.5"><OwnerBookingRowActions bookingId={b.id} status={b.status} /></td>
+                <td className="px-3 py-2.5"><OwnerBookingRowActions bookingId={b.id} status={b.status} period={b.period} /></td>
               </tr>
             ))}
           </tbody>
