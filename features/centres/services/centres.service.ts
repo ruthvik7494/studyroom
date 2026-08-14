@@ -61,10 +61,13 @@ export interface PaginatedCentrePage {
 }
 
 export async function searchCentresPaginated(db: DB, params: PaginatedCentreSearch): Promise<PaginatedCentrePage> {
+  const needsClientSort = params.sort === 'price_asc' || params.sort === 'price_desc' || params.minPrice !== undefined || params.maxPrice !== undefined;
+
   let query = db
     .from('centres')
     .select(
       'id, slug, name, area, address, emoji, cover_url, rating, reviews_count, women_safe_verified, is_verified, space_type, resources(pricing, is_active)',
+      { count: 'exact' }
     )
     .eq('is_published', true);
 
@@ -78,6 +81,44 @@ export async function searchCentresPaginated(db: DB, params: PaginatedCentreSear
   if (params.spaceType) query = query.eq('space_type', params.spaceType);
   if (params.womenSafe) query = query.eq('women_safe_verified', true);
   if (params.area) query = query.eq('area', params.area);
+
+  if (!needsClientSort) {
+    query = query.order('rating', { ascending: false });
+    const page = Math.max(1, params.page);
+    const start = (page - 1) * params.pageSize;
+    const { data, count, error } = await query.range(start, start + params.pageSize - 1);
+    if (error) throw error;
+
+    const rows = data ?? [];
+    const total = count ?? rows.length;
+    const totalPages = Math.max(1, Math.ceil(total / params.pageSize));
+
+    const ids = rows.map((r) => r.id);
+    const occByCentre = new Map<string, CentreListItem['occupancy']>();
+    if (ids.length) {
+      const { data: occ } = await db.from('centre_live_occupancy').select('*').in('centre_id', ids);
+      (occ ?? []).forEach((o) => {
+        if (!o.centre_id) return;
+        occByCentre.set(o.centre_id, {
+          seatsFree: o.seats_free ?? 0,
+          status: (o.status as 'open' | 'filling' | 'full') ?? 'unknown',
+        });
+      });
+    }
+
+    const items: CentreListItem[] = rows.map((r) => {
+      const active = ((r.resources ?? []) as unknown as Array<{ pricing: Json; is_active: boolean }>).filter((x) => x.is_active);
+      return {
+        id: r.id, slug: r.slug, name: r.name, area: r.area, emoji: r.emoji, cover_url: r.cover_url,
+        rating: r.rating, reviews_count: r.reviews_count,
+        women_safe_verified: r.women_safe_verified, is_verified: r.is_verified, space_type: r.space_type,
+        fromMonthly: cheapestMonthly(active.map((x) => x.pricing)),
+        occupancy: occByCentre.get(r.id) ?? null,
+      };
+    });
+
+    return { items, total, page, pageSize: params.pageSize, totalPages };
+  }
 
   const { data, error } = await query;
   if (error) throw error;

@@ -116,7 +116,7 @@ export default async function HomePage() {
                       {/* Image Thumbnail */}
                       <div className="relative h-48 w-full overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={coverImg} alt={centre.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <img src={coverImg} alt={centre.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                         <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
                           <span className="text-xs font-medium flex items-center gap-1 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
