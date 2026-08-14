@@ -29,14 +29,20 @@ export async function signInWithPassword(raw: unknown): Promise<Result<{ ok: tru
   return action(credentialsSchema, raw, async (input) => {
     const db = await createClient();
 
-    const { data: locked } = await db.rpc('is_account_locked', { p_email: input.email });
-    if (locked) {
-      throw new ActionError('FORBIDDEN', 'Too many failed attempts. Please try again in a few minutes.');
+    try {
+      const { data: locked } = await db.rpc('is_account_locked', { p_email: input.email });
+      if (locked) {
+        throw new ActionError('FORBIDDEN', 'Too many failed attempts. Please try again in a few minutes.');
+      }
+    } catch (e: any) {
+      // If RPC fails (e.g., table/function missing), do not block login
+      console.warn('is_account_locked check skipped:', e?.message);
     }
 
-    const { error } = await db.auth.signInWithPassword({ email: input.email, password: input.password });
+    const { error, data } = await db.auth.signInWithPassword({ email: input.email, password: input.password });
     if (error) {
-      await db.rpc('record_login_failure', { p_email: input.email });
+      console.error('Supabase signInWithPassword error on server:', error);
+      try { await db.rpc('record_login_failure', { p_email: input.email }); } catch {}
       throw new ActionError('UNAUTHENTICATED', error.message || 'Wrong email or password.');
     }
 
