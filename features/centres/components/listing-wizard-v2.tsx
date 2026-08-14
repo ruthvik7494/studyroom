@@ -240,8 +240,8 @@ export function ListingWizardV2(props: Props) {
           ...extraFiles.map((file) => ({ slot: undefined as string | undefined, file })),
         ];
 
-        for (const { slot, file } of allGalleryFiles) {
-          await uploadOne(centreId, file, slot ? { category: slot } : {});
+        if (allGalleryFiles.length > 0) {
+          await Promise.all(allGalleryFiles.map(({ slot, file }) => uploadOne(centreId, file, slot ? { category: slot } : {})));
         }
         setGalleryFiles({});
         setExtraFiles([]);

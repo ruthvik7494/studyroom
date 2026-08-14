@@ -15,25 +15,14 @@ import { cn } from '@/lib/utils';
 import { getServiceArea } from '@/lib/service-area';
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
-  const { area } = await searchParams;
-  const areaName = typeof area === 'string' && area.trim() ? area.trim() : undefined;
-  if (areaName) {
-    return {
-      title: `Study spaces in ${areaName}`,
-      description: 'Browse verified study halls, reading rooms and coworking seats with live availability, ratings and prices.',
-      alternates: { canonical: '/centres' },
-    };
-  }
-  const db = await createClient();
-  const { city } = await getServiceArea(db);
   return {
-    title: city ? `Study spaces in ${city}` : 'Study spaces',
+    title: 'Explore Study Spaces',
     description: 'Browse verified study halls, reading rooms and coworking seats with live availability, ratings and prices.',
     alternates: { canonical: '/centres' },
   };
 }
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 16;
 
 // Every render depends on searchParams (search/sort/view/page), and a client-side
 // Link navigation to a bare /centres was observed serving a stale cached shell
@@ -97,18 +86,10 @@ export default async function CentresPage({ searchParams }: PageProps) {
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="font-display text-2xl font-bold">Study spaces{filters.area ? ` in ${filters.area}` : serviceArea.city ? ` in ${serviceArea.city}` : ''}</h1>
+            <h1 className="font-display text-2xl font-bold">Explore Study Spaces</h1>
             <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{result.total} centre{result.total === 1 ? '' : 's'} found</span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">Live availability, verified reviews &amp; transparent prices.</p>
-        </div>
-        <div className="flex overflow-hidden rounded-md border" role="group" aria-label="View">
-          <Link href={hrefForView('grid')} className={cn('px-3 py-1.5 text-sm font-semibold', filters.view === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary')}>
-            Grid
-          </Link>
-          <Link href={hrefForView('list')} className={cn('px-3 py-1.5 text-sm font-semibold', filters.view === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary')}>
-            List
-          </Link>
         </div>
       </header>
 
@@ -118,13 +99,9 @@ export default async function CentresPage({ searchParams }: PageProps) {
 
         {result.items.length === 0 ? (
           <CentreEmptyState />
-        ) : filters.view === 'grid' ? (
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {result.items.map((c, i) => <CentreCard key={c.id} centre={c} isSaved={savedIds.has(c.id)} index={i} />)}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {result.items.map((c) => <CentreListRow key={c.id} centre={c} />)}
           </div>
         )}
 

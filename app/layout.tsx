@@ -8,6 +8,8 @@ import { MotionRoot } from '@/components/motion/motion-root';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { BackToTop } from '@/components/back-to-top';
+import { Suspense } from 'react';
+import { NavigationProgressModal } from '@/components/navigation-progress-modal';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
@@ -68,6 +70,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <SiteHeader />
               <div id="main-content">{children}</div>
               <SiteFooter />
+              <Suspense fallback={null}>
+                <NavigationProgressModal />
+              </Suspense>
             </QueryProvider>
             <BackToTop />
           </MotionRoot>
