@@ -132,22 +132,17 @@ export default async function OwnerDashboardPage() {
         <h2 className="font-display text-lg font-bold mb-3">Active Pass Breakdown</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
           {[
-            ['Hourly', metrics.passBreakdown.hourly, '⏱️', 'bg-slate-100', 'text-slate-700'],
-            ['Daily', metrics.passBreakdown.daily, '☀️', 'bg-amber-100', 'text-amber-700'],
-            ['Weekly', metrics.passBreakdown.weekly, '🗓️', 'bg-blue-100', 'text-blue-700'],
-            ['Monthly', metrics.passBreakdown.monthly, '🌙', 'bg-emerald-100', 'text-emerald-700'],
-            ['Quarterly', metrics.passBreakdown.quarterly, '📊', 'bg-purple-100', 'text-purple-700'],
-            ['Half-Yearly', metrics.passBreakdown.halfYearly, '📈', 'bg-teal-100', 'text-teal-700'],
-            ['Yearly', metrics.passBreakdown.yearly, '🏆', 'bg-yellow-100', 'text-yellow-700'],
-          ].map(([label, count, icon, bg, fg]) => (
+            ['Hourly', metrics.passBreakdown.hourly],
+            ['Daily', metrics.passBreakdown.daily],
+            ['Weekly', metrics.passBreakdown.weekly],
+            ['Monthly', metrics.passBreakdown.monthly],
+            ['Quarterly', metrics.passBreakdown.quarterly],
+            ['Half-Yearly', metrics.passBreakdown.halfYearly],
+            ['Yearly', metrics.passBreakdown.yearly],
+          ].map(([label, count]) => (
             <Card key={label as string} className="p-3.5 border border-secondary shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className={`flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold ${bg} ${fg}`}>
-                  {icon}
-                </span>
-                <span className="font-display text-lg font-extrabold text-foreground">{count}</span>
-              </div>
-              <p className="mt-2 text-xs font-semibold text-muted-foreground">{label} Passes</p>
+              <p className="font-display text-2xl font-extrabold text-foreground">{count}</p>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">{label} Passes</p>
             </Card>
           ))}
         </div>
