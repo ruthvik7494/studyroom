@@ -81,7 +81,8 @@ export function AuthForm({
     if (mode === 'signin') {
       const res = await signInWithPassword({ email: values.email, password: values.password });
       if (!res.ok) { setServerError(res.error.message); return; }
-      router.push(next); router.refresh();
+      const target = next && next !== '/' ? next : (res.data as { redirectTo?: string })?.redirectTo || '/';
+      window.location.href = target;
     } else {
       const res = await signUp(values);
       if (!res.ok) { setServerError(res.error.message); return; }

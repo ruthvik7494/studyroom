@@ -57,7 +57,17 @@ export async function signInWithPassword(raw: unknown): Promise<Result<{ ok: tru
     }
 
     await db.rpc('record_login_success');
-    return { ok: true as const };
+
+    // Return the role-based default route so client side can perform hard navigation
+    let redirectTo = '/';
+    if (user) {
+      const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      if (profile?.role === 'owner') redirectTo = '/owner';
+      else if (profile?.role === 'admin') redirectTo = '/admin';
+      else if (profile?.role === 'student') redirectTo = '/account';
+    }
+
+    return { ok: true as const, redirectTo };
   });
 }
 
