@@ -37,12 +37,14 @@ export function StudentBookingCalendar({ bookings }: { bookings: BookingCalendar
   const firstDayOfWeek = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Map bookings by date string YYYY-MM-DD
+  // Map bookings by date string YYYY-MM-DD (Exclude expired/cancelled bookings)
   const bookingMap = new Map<string, BookingCalendarItem[]>();
 
-  bookings.forEach((b) => {
-    const startDate = new Date(b.starts_at);
-    const endDate = new Date(b.ends_at);
+  bookings
+    .filter((b) => b.status !== 'expired' && b.status !== 'cancelled')
+    .forEach((b) => {
+      const startDate = new Date(b.starts_at);
+      const endDate = new Date(b.ends_at);
 
     // If starts_at and ends_at span across multiple days (e.g. day, week, month passes),
     // add booking to all covered dates in the range.
