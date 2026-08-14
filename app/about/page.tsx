@@ -1,257 +1,288 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
-import { admin } from '@/lib/supabase/admin';
-import { Card } from '@/components/ui/card';
-import { ReadingCornerIllustration } from '@/components/reading-corner-illustration';
-import { TestimonialCarousel, type Testimonial } from '@/components/testimonial-carousel';
-import { getServiceArea } from '@/lib/service-area';
-import { Reveal } from '@/components/motion/reveal';
-import { LoadReveal } from '@/components/motion/load-reveal';
-import { SlideIn } from '@/components/motion/slide-in';
-import { StaggerGroup, StaggerItem } from '@/components/motion/stagger';
-import { MotionCta, ArrowGlyph } from '@/components/motion/motion-cta';
-import { IconCard } from '@/components/motion/icon-card';
-import { AnimatedCounter } from '@/components/motion/animated-counter';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const db = await createClient();
-  const { city } = await getServiceArea(db);
-  return {
-    title: 'About StudyNook',
-    description: city
-      ? `StudyNook helps students in ${city} find, compare and book verified study spaces — study halls, reading rooms, libraries and coworking desks.`
-      : 'StudyNook helps students find, compare and book verified study spaces — study halls, reading rooms, libraries and coworking desks.',
-    alternates: { canonical: '/about' },
-  };
-}
+export const metadata: Metadata = {
+  title: 'About StudyNook',
+  description: 'StudyNook helps students find, compare and book verified study spaces — study halls, reading rooms, libraries and coworking desks.',
+  alternates: { canonical: '/about' },
+};
 
-const WHY_US = [
-  ['✓', 'Verified Centres', 'All centres are verified for quality and safety.'],
-  ['📡', 'Live Seat Availability', 'Check real-time seat availability before you go.'],
-  ['⚡', 'Instant Booking', 'Book your seat instantly with confirmation.'],
-  ['🛡', 'Women-Safe Spaces', 'Specially marked women-safe spaces for peace of mind.'],
-  ['⭐', 'Student Reviews', "Real reviews from students who've actually been there."],
-  ['💳', 'Affordable Pricing', 'Best prices with no hidden or extra charges.'],
-] as const;
-
-const HOW_IT_WORKS = [
-  ['🔍', 'Search', 'Search study centres near you.'],
-  ['📋', 'Compare', 'Compare prices, amenities and seat availability.'],
-  ['📅', 'Book', 'Select your preferred time and book instantly.'],
-  ['✓', 'Study', 'Head to the centre and focus on your goals.'],
-] as const;
-
-export default async function AboutPage() {
-  const db = await createClient();
-  const [
-    { count: centresCount },
-    { count: reviewsCount },
-    { count: studentsCount },
-    { count: bookingsCount },
-    { data: ratingRows },
-    { data: testimonialRows },
-    serviceArea,
-  ] = await Promise.all([
-    db.from('centres').select('id', { count: 'exact', head: true }).eq('is_published', true),
-    db.from('reviews').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-    admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
-    db.from('bookings').select('id', { count: 'exact', head: true }).in('status', ['confirmed', 'completed']),
-    db.from('centres').select('rating').eq('is_published', true).gt('reviews_count', 0),
-    admin.from('reviews')
-      .select('id, rating, body, author:author_id(full_name, avatar_url), centres(name, slug)')
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-      .limit(20),
-    getServiceArea(db),
-  ]);
-
-  const avgRating = ratingRows && ratingRows.length > 0
-    ? (ratingRows.reduce((s, r) => s + Number(r.rating), 0) / ratingRows.length).toFixed(1)
-    : null;
-
-  const testimonials: Testimonial[] = (testimonialRows ?? [])
-    .map((r): Testimonial | null => {
-      const author = r.author as unknown as { full_name: string | null; avatar_url: string | null } | null;
-      const centre = r.centres as unknown as { name: string; slug: string } | null;
-      if (!centre) return null;
-      return {
-        id: r.id,
-        name: author?.full_name || 'Verified Student',
-        avatarUrl: author?.avatar_url ?? null,
-        rating: r.rating,
-        body: r.body ?? '',
-        centreName: centre.name,
-        centreSlug: centre.slug,
-      };
-    })
-    .filter((t): t is Testimonial => t !== null)
-    .slice(0, 6);
-
-  const { data: heroPhoto } = await db
-    .from('centres')
-    .select('name, cover_url')
-    .eq('is_published', true)
-    .not('cover_url', 'is', null)
-    .order('rating', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
+export default function AboutPage() {
   return (
-    <main id="main-content" className="overflow-x-hidden">
-      {/* Hero — full-bleed background photo behind the whole section, same
-          treatment as the homepage hero: opaque where the text sits,
-          fading to a fully visible photo on the right. */}
-      <section className="relative left-1/2 right-1/2 -mx-[50vw] w-screen min-h-[480px] overflow-hidden border-b bg-gradient-to-br from-primary/5 via-background to-background sm:min-h-[520px]">
-        <div className="absolute inset-0 hidden sm:block">
-          {heroPhoto?.cover_url ? (
-            <Image src={heroPhoto.cover_url} alt="" fill priority className="object-cover" />
-          ) : (
-            <Image src="/images/hero-office.png" alt="" fill priority className="object-cover" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-r from-background from-0% via-background via-45% to-transparent to-75%" />
+    <>
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-4 md:px-16 overflow-hidden border-b border-[#bdcaba]/30">
+        <div className="absolute inset-0 z-0 opacity-40">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-bl from-[#7ffc97]/20 to-transparent blur-3xl rounded-full translate-x-1/3 -translate-y-1/3"></div>
+          <div className="absolute bottom-0 left-0 w-1/3 h-1/2 bg-gradient-to-tr from-[#dae2fd]/30 to-transparent blur-3xl rounded-full -translate-x-1/4 translate-y-1/4"></div>
         </div>
-
-        <div className="relative mx-auto max-w-6xl px-6 py-12 lg:py-16">
-          <LoadReveal>
-          <div className="max-w-xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">● About StudyNook</span>
-            <h1 className="mt-4 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
-              India&apos;s trusted platform to <span className="text-primary">discover</span> and <span className="text-primary">book</span> study spaces.
-            </h1>
-            <p className="mt-4 max-w-lg text-muted-foreground">
-              We make it simple for students to find verified, affordable and comfortable places to study and focus.
-            </p>
-
-            <form action="/centres" method="get" className="mt-6 flex max-w-md gap-2 rounded-full border bg-card p-1.5 shadow-sm">
-              <input name="q" type="text" placeholder={serviceArea.city ? `Search study centres in ${serviceArea.city}` : 'Search study centres'} className="h-10 flex-1 rounded-full bg-transparent px-4 text-sm" />
-              <button type="submit" className="h-10 shrink-0 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90">Search Centres</button>
-            </form>
-
-            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
-              <span>✓ Verified Centres</span>
-              <span>✓ Live Availability</span>
-              <span>✓ Instant Booking</span>
-              <span>✓ Secure Payments</span>
+        <div className="max-w-[1280px] mx-auto relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+            {/* Text Content */}
+            <div className="max-w-2xl">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-[#006b2c]/10 text-[#006b2c] font-['Inter'] text-sm font-semibold border border-[#006b2c]/20 backdrop-blur-sm">
+                  <span className="material-symbols-outlined text-[16px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                  100% Verified Platform
+                </span>
+                <div className="flex items-center gap-1 text-[#f59e0b]">
+                  <span className="material-symbols-outlined text-[16px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span className="material-symbols-outlined text-[16px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span className="material-symbols-outlined text-[16px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span className="material-symbols-outlined text-[16px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span className="material-symbols-outlined text-[16px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span className="text-[#3e4a3d] font-['Inter'] text-xs font-medium ml-1">(4.7/5 Average)</span>
+                </div>
+              </div>
+              <h1 className="font-['Lexend'] text-3xl md:text-5xl text-[#191c1e] mb-6 tracking-tight font-bold">
+                India&apos;s trusted platform to <br className="hidden md:block"/>
+                <span className="text-[#006b2c] font-bold">discover and book</span> study spaces
+              </h1>
+              <p className="font-['Inter'] text-lg text-[#3e4a3d] mb-8 max-w-xl">
+                Find the perfect environment for deep cognitive work. We connect serious students and professionals with curated, premium study centres.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 mb-10">
+                <Link href="/centres" className="bg-[#006b2c] text-white px-8 py-4 rounded-xl font-['Inter'] text-sm font-semibold hover:bg-[#006e2d] transition-all shadow-[0_4px_12px_rgba(0,107,44,0.2)] hover:shadow-[0_6px_16px_rgba(0,107,44,0.3)] hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-[20px]">search</span>
+                  Search Centres
+                </Link>
+              </div>
+              {/* Trust Badges */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#ffffff] p-6 rounded-2xl border border-[#bdcaba]/30 shadow-sm">
+                <div className="flex flex-col gap-1 text-[#191c1e]">
+                  <span className="material-symbols-outlined text-[#006b2c] text-[24px]">verified</span>
+                  <span className="font-['Inter'] text-xs font-bold">Verified Centres</span>
+                </div>
+                <div className="flex flex-col gap-1 text-[#191c1e]">
+                  <span className="material-symbols-outlined text-[#006b2c] text-[24px]">event_seat</span>
+                  <span className="font-['Inter'] text-xs font-bold">Live Availability</span>
+                </div>
+                <div className="flex flex-col gap-1 text-[#191c1e]">
+                  <span className="material-symbols-outlined text-[#006b2c] text-[24px]">bolt</span>
+                  <span className="font-['Inter'] text-xs font-bold">Instant Booking</span>
+                </div>
+                <div className="flex flex-col gap-1 text-[#191c1e]">
+                  <span className="material-symbols-outlined text-[#006b2c] text-[24px]">lock</span>
+                  <span className="font-['Inter'] text-xs font-bold">Secure Payments</span>
+                </div>
+              </div>
+            </div>
+            {/* Hero Image/Bento */}
+            <div className="relative hidden lg:block h-[600px] w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt="Premium Study Space" className="absolute inset-0 w-full h-full object-cover rounded-[2rem] shadow-2xl z-10 border-4 border-[#f7f9fb]" src="/images/AboutImages/mainImg.jpg" />
+              {/* Floating Stat Card */}
+              <div className="absolute bottom-10 -left-10 z-20 bg-[#f7f9fb] border border-[#bdcaba]/20 p-6 rounded-2xl w-72 shadow-xl">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-[#006b2c] rounded-full flex items-center justify-center text-white">
+                    <span className="material-symbols-outlined fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-[#191c1e] m-0">4.7/5</p>
+                    <p className="font-['Inter'] text-xs text-[#3e4a3d] font-medium">Average Platform Rating</p>
+                  </div>
+                </div>
+                <div className="flex items-center -space-x-3 mt-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img alt="" className="w-8 h-8 rounded-full border-2 border-[#f7f9fb] bg-[#e0e3e5]" src="/images/AboutImages/reviewimg1.jpg" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img alt="" className="w-8 h-8 rounded-full border-2 border-[#f7f9fb] bg-[#e0e3e5]" src="/images/AboutImages/reviewimg2.jpg" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img alt="" className="w-8 h-8 rounded-full border-2 border-[#f7f9fb] bg-[#e0e3e5]" src="/images/AboutImages/reviewimg3.jpg" />
+                  <div className="w-8 h-8 rounded-full border-2 border-[#f7f9fb] bg-[#e6e8ea] flex items-center justify-center text-[10px] font-bold text-[#191c1e]">+1k</div>
+                </div>
+              </div>
+              {/* Live Availability Badge */}
+              <div className="absolute top-10 -right-8 z-20 bg-[#f7f9fb] border border-[#bdcaba]/20 py-3 px-5 rounded-full shadow-lg flex items-center gap-2">
+                <span className="w-3 h-3 bg-[#10b981] rounded-full animate-pulse"></span>
+                <span className="font-['Inter'] text-sm font-semibold text-[#191c1e]">542 seats currently available</span>
+              </div>
             </div>
           </div>
-          </LoadReveal>
-
-          {/* Stat badges float on top of the photo, in its right-hand
-              portion where the gradient has fully cleared — same treatment
-              as the homepage hero's rating badge + featured-centre card. */}
-          <LoadReveal delay={0.4} y={8} className="absolute right-6 top-8 hidden rounded-xl bg-background/95 px-3 py-2 text-center shadow-md backdrop-blur sm:block lg:right-10">
-            <span className="block font-display text-lg font-bold">{centresCount ?? 0}+</span>
-            <span className="block text-[11px] text-muted-foreground">Study Centres</span>
-          </LoadReveal>
-          <LoadReveal delay={0.5} y={8} className="absolute right-6 top-24 hidden rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-md sm:block lg:right-10">Live Seat Availability</LoadReveal>
-          {avgRating && (
-            <LoadReveal delay={0.6} y={8} className="absolute bottom-8 right-6 hidden rounded-xl bg-background/95 px-3 py-2 shadow-md backdrop-blur sm:block lg:right-10">
-              <span className="block font-display text-sm font-bold text-brand-gold2">{avgRating}/5 ★★★★★</span>
-              <span className="block text-[11px] text-muted-foreground">From {reviewsCount ?? 0}+ reviews</span>
-            </LoadReveal>
-          )}
+        </div>
+      </section>
+      
+      {/* Stats Section */}
+      <section className="py-20 px-4 md:px-16 bg-[#006b2c] text-white shadow-[inset_0_4px_24px_rgba(0,0,0,0.1)]">
+        <div className="max-w-[1280px] mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-white/20 text-center">
+            <div className="px-4">
+              <p className="text-5xl md:text-6xl font-bold font-['Lexend'] mb-2 tracking-tighter">10+</p>
+              <p className="font-['Inter'] text-sm font-semibold text-[#f7fff2]/80 uppercase tracking-widest">Verified Centres</p>
+            </div>
+            <div className="px-4">
+              <p className="text-5xl md:text-6xl font-bold font-['Lexend'] mb-2 tracking-tighter">1k+</p>
+              <p className="font-['Inter'] text-sm font-semibold text-[#f7fff2]/80 uppercase tracking-widest">Registered Students</p>
+            </div>
+            <div className="px-4">
+              <p className="text-5xl md:text-6xl font-bold font-['Lexend'] mb-2 tracking-tighter">5k+</p>
+              <p className="font-['Inter'] text-sm font-semibold text-[#f7fff2]/80 uppercase tracking-widest">Bookings Completed</p>
+            </div>
+            <div className="px-4 border-r-0">
+              <p className="text-5xl md:text-6xl font-bold font-['Lexend'] mb-2 tracking-tighter">4.7</p>
+              <div className="flex justify-center items-center gap-1 mb-1 text-[#fcd34d]">
+                <span className="material-symbols-outlined text-[20px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                <span className="material-symbols-outlined text-[20px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                <span className="material-symbols-outlined text-[20px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                <span className="material-symbols-outlined text-[20px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                <span className="material-symbols-outlined text-[20px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star_half</span>
+              </div>
+              <p className="font-['Inter'] text-sm font-semibold text-[#f7fff2]/80 uppercase tracking-widest">Average Rating</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 py-12">
-
-
-      {/* Stats — real counts from the live database, not invented numbers */}
-      <StaggerGroup className="mt-16 grid grid-cols-2 gap-6 rounded-2xl bg-secondary/40 px-8 py-10 sm:grid-cols-4">
-        {[
-          ['🏢', `${centresCount ?? 0}+`, 'Verified Centres'],
-          ['🎓', `${studentsCount ?? 0}+`, 'Registered Students'],
-          ['📅', `${bookingsCount ?? 0}+`, 'Bookings Completed'],
-          ['⭐', avgRating ? `${avgRating}/5` : '—', 'Average Rating'],
-        ].map(([icon, value, label]) => (
-          <StaggerItem key={label} className="text-center">
-            <span className="text-2xl" aria-hidden>{icon}</span>
-            <AnimatedCounter value={value} className="mt-2 font-display text-2xl font-extrabold" />
-            <p className="text-sm text-muted-foreground">{label}</p>
-          </StaggerItem>
-        ))}
-      </StaggerGroup>
-
-      {/* Our Mission */}
-      <div className="mt-16 grid items-center gap-10 lg:grid-cols-2">
-        <SlideIn direction="left">
-          <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">Our Mission</p>
-          <h2 className="mt-2 font-display text-2xl font-extrabold sm:text-3xl">
-            Helping students find better places to <span className="text-primary">focus and grow</span>.
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            StudyNook is built to solve a simple problem — finding the right place to study. We bring transparency, real-time availability and trust to every booking.
-          </p>
-          <MotionCta className="mt-6">
-            <Link href="/contact" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-              Contact Us <ArrowGlyph />
-            </Link>
-          </MotionCta>
-        </SlideIn>
-        <Reveal variant="up" className="overflow-hidden rounded-2xl">
-          <ReadingCornerIllustration className="h-[260px] w-full object-cover" />
-        </Reveal>
-      </div>
-
-      {/* Why students choose us */}
-      <Reveal className="mt-16 text-center">
-        <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">Why Students Choose StudyNook</p>
-        <h2 className="mx-auto mt-2 max-w-lg font-display text-2xl font-extrabold sm:text-3xl">Everything you need in one place.</h2>
-      </Reveal>
-      <StaggerGroup className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {WHY_US.map(([icon, title, body]) => (
-          <IconCard key={title} icon={icon} title={title} body={body} />
-        ))}
-      </StaggerGroup>
-
-      {/* How it works */}
-      <Reveal className="mt-16 text-center">
-        <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">How It Works</p>
-        <h2 className="mx-auto mt-2 max-w-lg font-display text-2xl font-extrabold sm:text-3xl">Book your study space in 4 simple steps.</h2>
-      </Reveal>
-      <StaggerGroup stagger={0.12} className="mt-8 grid grid-cols-2 gap-6 sm:grid-cols-4">
-        {HOW_IT_WORKS.map(([icon, title, body], i) => (
-          <StaggerItem key={title} className="text-center">
-            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg" aria-hidden>{icon}</span>
-            <p className="mt-3 font-display font-bold">{i + 1}. {title}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{body}</p>
-          </StaggerItem>
-        ))}
-      </StaggerGroup>
-
-      {/* Testimonials — real published reviews */}
-      {testimonials.length > 0 && (
-        <div className="mt-16">
-          <Reveal className="text-center">
-            <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">What Students Say</p>
-            <h2 className="mx-auto mt-2 max-w-lg font-display text-2xl font-extrabold sm:text-3xl">Loved by students{serviceArea.city ? ` across ${serviceArea.city}` : ''}.</h2>
-          </Reveal>
-          <div className="mx-auto mt-8 max-w-5xl">
-            <TestimonialCarousel items={testimonials} />
+      {/* Mission & Why Choose Us */}
+      <section className="py-20 px-4 md:px-16 bg-[#f7f9fb] border-y border-[#bdcaba]/20">
+        <div className="max-w-[1280px] mx-auto">
+          <div className="text-center mb-16 max-w-3xl mx-auto">
+            <h2 className="font-['Lexend'] text-3xl md:text-4xl text-[#191c1e] mb-4 font-bold">Helping students find better places to focus and grow.</h2>
+            <p className="font-['Inter'] text-lg text-[#3e4a3d]">We believe in transparency and trust, providing a curated marketplace of high-quality study environments.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-auto">
+            {/* Large Card */}
+            <div className="bg-[#2d3133] rounded-2xl p-8 md:col-span-2 flex flex-col justify-between hover:-translate-y-1 transition-transform duration-300 shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#006b2c]/20 blur-3xl rounded-full -translate-y-1/2 translate-x-1/4"></div>
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 bg-[#006b2c]/20 text-[#62df7d] px-3 py-1 rounded-full font-['Inter'] text-xs font-semibold border border-[#006b2c]/30 mb-6">
+                  <span className="material-symbols-outlined text-[16px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+                  <span>Our Core Promise</span>
+                </div>
+                <h3 className="font-['Lexend'] text-[#eff1f3] mb-3 text-2xl font-semibold">Verified Centres Only</h3>
+                <p className="font-['Inter'] text-base text-[#eff1f3]/80 max-w-md">Every study centre on our platform undergoes a rigorous 40-point quality check to ensure a premium, quiet, and safe environment for deep work.</p>
+              </div>
+            </div>
+            {/* Regular Cards */}
+            <div className="bg-[#ffffff] border border-[#bdcaba]/30 rounded-2xl p-8 hover:-translate-y-1 transition-transform duration-300 shadow-sm">
+              <div className="w-12 h-12 bg-[#dae2fd] rounded-xl flex items-center justify-center mb-6">
+                <span className="material-symbols-outlined text-[#565e74]">event_seat</span>
+              </div>
+              <h3 className="font-['Lexend'] text-[#191c1e] mb-3 text-xl font-semibold">Live Availability</h3>
+              <p className="font-['Inter'] text-base text-[#3e4a3d]">Check real-time seat availability before you step out.</p>
+            </div>
+            <div className="bg-[#ffffff] border border-[#bdcaba]/30 rounded-2xl p-8 hover:-translate-y-1 transition-transform duration-300 shadow-sm">
+              <div className="w-12 h-12 bg-[#d5e3fd]/30 rounded-xl flex items-center justify-center mb-6">
+                <span className="material-symbols-outlined text-[#4f5d72]">bolt</span>
+              </div>
+              <h3 className="font-['Lexend'] text-[#191c1e] mb-3 text-xl font-semibold">Instant Booking</h3>
+              <p className="font-['Inter'] text-base text-[#3e4a3d]">Reserve your spot instantly with zero waiting time.</p>
+            </div>
+            <div className="bg-[#ffffff] border border-[#bdcaba]/30 rounded-2xl p-8 hover:-translate-y-1 transition-transform duration-300 shadow-sm">
+              <div className="w-12 h-12 bg-[#ffdad6]/50 rounded-xl flex items-center justify-center mb-6">
+                <span className="material-symbols-outlined text-[#ba1a1a]">shield_person</span>
+              </div>
+              <h3 className="font-['Lexend'] text-[#191c1e] mb-3 text-xl font-semibold">Women-Safe Spaces</h3>
+              <p className="font-['Inter'] text-base text-[#3e4a3d]">Dedicated safe zones and well-lit environments.</p>
+            </div>
+            <div className="bg-[#ffffff] border border-[#bdcaba]/30 rounded-2xl p-8 hover:-translate-y-1 transition-transform duration-300 shadow-sm">
+              <div className="w-12 h-12 bg-[#006b2c]/10 rounded-xl flex items-center justify-center mb-6">
+                <span className="material-symbols-outlined text-[#006b2c]">payments</span>
+              </div>
+              <h3 className="font-['Lexend'] text-[#191c1e] mb-3 text-xl font-semibold">Affordable Pricing</h3>
+              <p className="font-['Inter'] text-base text-[#3e4a3d]">Transparent pricing with no hidden fees.</p>
+            </div>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* CTA */}
-      <Reveal>
-      <Card className="mt-16 flex flex-col items-start gap-4 overflow-hidden bg-[#1f4a37] p-8 text-white sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="font-display text-xl font-bold">Ready to find your perfect study space?</p>
-          <p className="mt-1 text-sm text-white/80">Join students who study better with StudyNook.</p>
+      {/* How It Works */}
+      <section className="py-20 px-4 md:px-16 bg-[#f2f4f6]">
+        <div className="max-w-[1280px] mx-auto">
+          <h2 className="font-['Lexend'] text-3xl md:text-4xl text-center text-[#191c1e] mb-16 font-bold">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+            <div className="hidden md:block absolute top-1/4 left-[12.5%] right-[12.5%] h-0.5 bg-[#bdcaba]/30 -z-10 w-3/4 mx-auto"></div>
+            
+            <div className="text-center relative">
+              <div className="w-20 h-20 bg-gradient-to-tr from-[#f7f9fb] to-[#f2f4f6] border border-[#006b2c]/30 text-[#006b2c] rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-xl relative group transition-all duration-300 hover:shadow-[#006b2c]/20 hover:-translate-y-1">
+                <div className="absolute inset-0 bg-[#006b2c]/5 rounded-[2rem] blur-md group-hover:bg-[#006b2c]/10 transition-colors"></div>
+                <span className="material-symbols-outlined text-[36px] fill-current relative z-10" style={{ fontVariationSettings: "'FILL' 1" }}>search</span>
+              </div>
+              <h4 className="font-['Lexend'] text-[#191c1e] mb-2 text-xl font-semibold">1. Search</h4>
+              <p className="font-['Inter'] text-sm text-[#3e4a3d]">Find centres near your location.</p>
+            </div>
+            
+            <div className="text-center relative">
+              <div className="w-20 h-20 bg-gradient-to-tr from-[#f7f9fb] to-[#f2f4f6] border border-[#006b2c]/30 text-[#006b2c] rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-xl relative group transition-all duration-300 hover:shadow-[#006b2c]/20 hover:-translate-y-1">
+                <div className="absolute inset-0 bg-[#006b2c]/5 rounded-[2rem] blur-md group-hover:bg-[#006b2c]/10 transition-colors"></div>
+                <span className="material-symbols-outlined text-[36px] fill-current relative z-10" style={{ fontVariationSettings: "'FILL' 1" }}>compare_arrows</span>
+              </div>
+              <h4 className="font-['Lexend'] text-[#191c1e] mb-2 text-xl font-semibold">2. Compare</h4>
+              <p className="font-['Inter'] text-sm text-[#3e4a3d]">Review amenities and pricing.</p>
+            </div>
+            
+            <div className="text-center relative">
+              <div className="w-20 h-20 bg-gradient-to-tr from-[#f7f9fb] to-[#f2f4f6] border border-[#006b2c]/30 text-[#006b2c] rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-xl relative group transition-all duration-300 hover:shadow-[#006b2c]/20 hover:-translate-y-1">
+                <div className="absolute inset-0 bg-[#006b2c]/5 rounded-[2rem] blur-md group-hover:bg-[#006b2c]/10 transition-colors"></div>
+                <span className="material-symbols-outlined text-[36px] fill-current relative z-10" style={{ fontVariationSettings: "'FILL' 1" }}>bookmark_added</span>
+              </div>
+              <h4 className="font-['Lexend'] text-[#191c1e] mb-2 text-xl font-semibold">3. Book</h4>
+              <p className="font-['Inter'] text-sm text-[#3e4a3d]">Secure your seat instantly.</p>
+            </div>
+            
+            <div className="text-center relative">
+              <div className="w-20 h-20 bg-gradient-to-tr from-[#f7f9fb] to-[#f2f4f6] border border-[#006b2c]/30 text-[#006b2c] rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-xl relative group transition-all duration-300 hover:shadow-[#006b2c]/20 hover:-translate-y-1">
+                <div className="absolute inset-0 bg-[#006b2c]/5 rounded-[2rem] blur-md group-hover:bg-[#006b2c]/10 transition-colors"></div>
+                <span className="material-symbols-outlined text-[36px] fill-current relative z-10" style={{ fontVariationSettings: "'FILL' 1" }}>menu_book</span>
+              </div>
+              <h4 className="font-['Lexend'] text-[#191c1e] mb-2 text-xl font-semibold">4. Study</h4>
+              <p className="font-['Inter'] text-sm text-[#3e4a3d]">Focus in a premium environment.</p>
+            </div>
+          </div>
         </div>
-        <div className="flex shrink-0 gap-3">
-          <MotionCta>
-            <Link href="/centres" className="block rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-[#1f4a37] transition-colors hover:bg-white/90">Explore Study Centres <ArrowGlyph /></Link>
-          </MotionCta>
-          <MotionCta>
-            <Link href="/owner/centres/new" className="block rounded-lg border border-white/40 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10">List Your Centre <ArrowGlyph /></Link>
-          </MotionCta>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 px-4 md:px-16 bg-[#f7f9fb] border-t border-[#bdcaba]/20">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="font-['Lexend'] text-3xl md:text-4xl text-[#191c1e] mb-4 font-bold">Loved by students across Hyderabad</h2>
+          <p className="font-['Inter'] text-lg text-[#3e4a3d] mb-12">Don&apos;t just take our word for it. See what our community says.</p>
+          <div className="bg-[#ffffff] border border-[#bdcaba]/30 rounded-2xl p-10 md:p-16 relative shadow-lg">
+            <span className="material-symbols-outlined absolute top-8 left-8 text-[64px] text-[#006b2c]/10 -z-10" style={{ fontVariationSettings: "'FILL' 1" }}>format_quote</span>
+            <div className="flex justify-center items-center gap-1 mb-8 text-[#f59e0b]">
+              <span className="material-symbols-outlined text-[28px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+              <span className="material-symbols-outlined text-[28px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+              <span className="material-symbols-outlined text-[28px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+              <span className="material-symbols-outlined text-[28px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+              <span className="material-symbols-outlined text-[28px] fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+            </div>
+            <p className="font-['Lexend'] text-[#191c1e] font-normal mb-8 relative z-10 text-xl leading-relaxed">
+              &quot;StudyNook made finding a quiet place to prepare for my civil services exams so easy. The live availability feature saved me countless trips to full libraries. Truly a game-changer for serious students.&quot;
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt="Admin User Avatar" className="w-14 h-14 rounded-full border-2 border-[#006b2c] p-0.5 object-cover" src="/images/AboutImages/riviewerimg.jpg" />
+              <div className="text-left">
+                <p className="font-['Inter'] text-[#191c1e] text-lg font-semibold flex items-center gap-1">
+                  Admin User
+                  <span className="material-symbols-outlined text-[#006b2c] text-[18px] fill-current" title="Verified Reviewer" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                </p>
+                <p className="font-['Inter'] text-sm text-[#3e4a3d]">Civil Services Aspirant • 42 Bookings</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </Card>
-      </Reveal>
-      </div>
-    </main>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-20 px-4 md:px-16 bg-[#006b2c] text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="font-['Lexend'] text-3xl md:text-5xl font-bold mb-6">Ready to find your perfect study space?</h2>
+          <p className="font-['Inter'] text-lg text-[#f7fff2]/90 mb-10 max-w-2xl mx-auto">Join thousands of students who have upgraded their study environment with StudyNook&apos;s verified network.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/centres" className="bg-[#f7f9fb] text-[#006b2c] px-8 py-4 rounded-xl font-['Inter'] text-sm hover:bg-[#eceef0] transition-all shadow-lg font-bold text-lg">
+              Explore Study Centres
+            </Link>
+            <Link href="/owner/centres/new" className="bg-transparent text-white border-2 border-white px-8 py-4 rounded-xl font-['Inter'] text-sm hover:bg-white/10 transition-colors font-bold text-lg">
+              List Your Centre
+            </Link>
+          </div>
+          <div className="mt-8 flex items-center justify-center gap-2 text-[#f7fff2]/80 text-sm">
+            <span className="material-symbols-outlined text-[18px]">lock</span>
+            <span>Secure 256-bit encrypted bookings</span>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
