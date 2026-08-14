@@ -7,6 +7,14 @@ type DB = Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient
 export interface OwnerBookingMetrics {
   today: number; upcoming: number; revenue: number;
   checkIns: number; noShows: number; waitlist: number; occupancyPct: number;
+  passBreakdown: {
+    hourly: number;
+    daily: number;
+    weekly: number;
+    monthly: number;
+    quarterly: number;
+    yearly: number;
+  };
 }
 
 /** All metrics scoped to the given owner's centres. */
@@ -15,7 +23,10 @@ export async function getOwnerMetrics(db: DB, ownerId: string): Promise<OwnerBoo
   const { data: centres } = await db.from('centres').select('id, capacity').eq('owner_id', ownerId);
   const centreIds = (centres ?? []).map((c) => c.id);
   if (centreIds.length === 0) {
-    return { today: 0, upcoming: 0, revenue: 0, checkIns: 0, noShows: 0, waitlist: 0, occupancyPct: 0 };
+    return {
+      today: 0, upcoming: 0, revenue: 0, checkIns: 0, noShows: 0, waitlist: 0, occupancyPct: 0,
+      passBreakdown: { hourly: 0, daily: 0, weekly: 0, monthly: 0, quarterly: 0, yearly: 0 },
+    };
   }
   const totalCapacity = (centres ?? []).reduce((s, c) => s + (c.capacity ?? 0), 0);
 
@@ -24,7 +35,7 @@ export async function getOwnerMetrics(db: DB, ownerId: string): Promise<OwnerBoo
   const endToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
   const startMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-  const [today, upcoming, checkIns, noShows, activeNow, paid, resourceIds] = await Promise.all([
+  const [today, upcoming, checkIns, noShows, activeNow, paid, resourceIds, allActiveBookings] = await Promise.all([
     db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).in('status', ['confirmed', 'checked_in', 'completed']).eq('payment', 'paid').gte('starts_at', startToday).lt('starts_at', endToday),
     db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).gte('starts_at', endToday).eq('status', 'confirmed').eq('payment', 'paid'),
     db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).eq('status', 'checked_in'),
@@ -32,9 +43,22 @@ export async function getOwnerMetrics(db: DB, ownerId: string): Promise<OwnerBoo
     db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).in('status', ['confirmed', 'checked_in']).lte('starts_at', endToday).gte('ends_at', startToday),
     db.from('bookings').select('amount').in('centre_id', centreIds).in('payment', ['paid', 'partially_refunded']).gte('created_at', startMonth),
     db.from('resources').select('id').in('centre_id', centreIds),
+    db.from('bookings').select('period').in('centre_id', centreIds).in('status', ['confirmed', 'checked_in']).eq('payment', 'paid'),
   ]);
 
   const revenue = (paid.data ?? []).reduce((s, r) => s + Number(r.amount ?? 0), 0);
+
+  // Pass breakdown calculations
+  const passBreakdown = { hourly: 0, daily: 0, weekly: 0, monthly: 0, quarterly: 0, yearly: 0 };
+  (allActiveBookings.data ?? []).forEach((b) => {
+    const p = (b.period || '').toLowerCase();
+    if (p === 'hour') passBreakdown.hourly++;
+    else if (p === 'day') passBreakdown.daily++;
+    else if (p === 'week' || p === 'fortnight') passBreakdown.weekly++;
+    else if (p === 'month') passBreakdown.monthly++;
+    else if (p === 'quarter' || p === 'half_year') passBreakdown.quarterly++;
+    else if (p === 'year') passBreakdown.yearly++;
+  });
 
   // Waitlist across this owner's resources.
   const rIds = (resourceIds.data ?? []).map((r) => r.id);
@@ -49,6 +73,7 @@ export async function getOwnerMetrics(db: DB, ownerId: string): Promise<OwnerBoo
   return {
     today: today.count ?? 0, upcoming: upcoming.count ?? 0, revenue,
     checkIns: checkIns.count ?? 0, noShows: noShows.count ?? 0, waitlist, occupancyPct,
+    passBreakdown,
   };
 }
 
