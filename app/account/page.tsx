@@ -70,9 +70,9 @@ export default async function AccountPage() {
 
   type BookingCategory = 'Pending Payment' | 'Upcoming' | 'Active' | 'Completed' | 'Cancelled' | 'Refunded' | 'Expired';
   function categorize(b: NonNullable<typeof bookings>[number]): BookingCategory {
-    if (b.payment === 'refunded' || b.payment === 'partially_refunded' || b.payment === 'refund_pending') return 'Refunded';
     if (b.status === 'cancelled') return 'Cancelled';
     if (b.status === 'expired') return 'Expired';
+    if (b.payment === 'refunded' || b.payment === 'partially_refunded' || b.payment === 'refund_pending') return 'Refunded';
     if (b.payment !== 'paid') return 'Pending Payment';
     const now = Date.now();
     const endsMs = new Date(b.ends_at).getTime();

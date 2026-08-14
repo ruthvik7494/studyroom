@@ -11,12 +11,32 @@ export async function reviewRefund(raw: unknown): Promise<Result<{ ok: true }>> 
   return action(reviewRefundSchema, raw, async (input) => {
     await requireRole('owner', 'admin');
     const db = await createClient();
+
+    // Fetch refund record to get associated booking ID
+    const { data: refund } = await db.from('refunds').select('booking_id').eq('id', input.refundId).single();
+
     const { error } = await db.rpc('review_refund', {
       p_refund_id: input.refundId,
       p_approve: input.approve,
       p_note: input.note ?? undefined,
     });
     if (error) throw error;
+
+    // If refund was rejected, update booking state back to active & confirmed (charge stands)
+    if (!input.approve && refund?.booking_id) {
+      const { admin } = await import('@/lib/supabase/admin');
+      await admin
+        .from('bookings')
+        .update({
+          status: 'confirmed',
+          payment: 'paid',
+          cancelled_at: null,
+          cancelled_by: null,
+          cancel_reason: null,
+        })
+        .eq('id', refund.booking_id);
+    }
+
     revalidatePath('/owner/refunds');
     revalidatePath('/account');
     return { ok: true };
