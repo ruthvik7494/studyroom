@@ -18,18 +18,16 @@ const lexend = Lexend({ subsets: ['latin'], variable: '--font-lexend', display: 
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 
 // Runs before hydration (in <head>, blocking) so the page never flashes the
-// wrong theme: apply `dark` from localStorage if set, otherwise fall back to
-// the OS preference. Kept as a plain string (not an imported file) so it can
-// be inlined directly — a <script src> here would itself cause a flash
-// while it loads.
+// wrong theme: defaults to light mode for everyone unless explicitly set to 'dark' in localStorage.
 const NO_FLASH_THEME_SCRIPT = `
 (function() {
   try {
     var stored = localStorage.getItem('studynook-theme');
-    var theme = stored === 'dark' || stored === 'light'
-      ? stored
-      : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    if (theme === 'dark') document.documentElement.classList.add('dark');
+    if (stored === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   } catch (e) {}
 })();
 `;
