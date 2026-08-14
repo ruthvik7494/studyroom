@@ -11,6 +11,7 @@ import { BookingStatusBadge, PaymentStatusBadge } from '@/components/booking-sta
 import { ReviewActions } from '@/features/reviews/components/review-actions';
 import { RemoveSavedButton } from '@/features/saved/components/remove-saved-button';
 import { RemoveBookingButton } from '@/features/bookings/components/remove-booking-button';
+import { CancelRequestModalButton } from '@/features/bookings/components/cancel-request-modal-button';
 import { StudentBookingCalendar } from '@/features/bookings/components/student-booking-calendar';
 import { formatINR } from '@/lib/utils';
 
@@ -265,14 +266,9 @@ export default async function AccountPage() {
                               </div>
                             )}
 
-                            {/* Upcoming / Confirmed Bookings: Cancel & Refund Request */}
-                            {(cat === 'Upcoming' || cat === 'Active' || b.status === 'confirmed') && c && (
-                              <Link
-                                href={`/centres/${c.slug}/book/confirmed?id=${b.id}`}
-                                className="rounded-full border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors"
-                              >
-                                Cancel Request
-                              </Link>
+                            {/* Upcoming / Confirmed Bookings: Cancel & Refund Request Modal */}
+                            {(cat === 'Upcoming' || cat === 'Active' || b.status === 'confirmed') && b.status !== 'cancelled' && b.status !== 'expired' && c && (
+                              <CancelRequestModalButton bookingId={b.id} />
                             )}
 
                             {b.payment === 'paid' && b.invoice_number && (
