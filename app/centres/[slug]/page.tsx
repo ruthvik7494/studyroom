@@ -192,16 +192,13 @@ export default async function CentreDetailPage({ params }: PageProps) {
   ];
 
   return (
-    <main>
+    <main className="bg-[#f7f9fb] text-[#191c1e] min-h-screen antialiased selection:bg-[#16a34a]/20 selection:text-[#16a34a]">
       {isPublic && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}
 
-      {/* Full-width header/cover image. No fixed height — a fixed box forces a
-          choice between cropping (object-cover) or letterboxing (object-contain);
-          a plain full-width image with auto height shows the photo's real
-          proportions, always full width, never cropped. */}
-      <div className="relative w-full overflow-hidden bg-slate-900 h-[280px] sm:h-[360px] flex items-center justify-center">
+      {/* Single Cover Pic Hero Banner (Blurred Glassmorphism Background + Centered Original Foreground) */}
+      <div className="relative w-full overflow-hidden bg-slate-900 h-[280px] sm:h-[380px] flex items-center justify-center">
         {centre.cover_url ? (
           <>
             {/* Stretched & subtle blurred background image */}
@@ -210,15 +207,15 @@ export default async function CentreDetailPage({ params }: PageProps) {
               src={centre.cover_url}
               alt=""
               aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover blur-md scale-105 opacity-80 pointer-events-none"
+              className="absolute inset-0 w-full h-full object-cover blur-md scale-105 opacity-75 pointer-events-none"
             />
-            <div className="absolute inset-0 bg-black/15 backdrop-blur-xs pointer-events-none" />
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-xs pointer-events-none" />
 
             {/* Original uncropped image centered in foreground */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={centre.cover_url}
-              alt={`${centre.name} study space`}
+              alt={`${centre.name} cover photo`}
               className="relative z-10 max-h-full max-w-full object-contain shadow-2xl"
             />
           </>
@@ -226,350 +223,292 @@ export default async function CentreDetailPage({ params }: PageProps) {
           <span className="flex h-[260px] w-full items-center justify-center text-8xl sm:h-[340px]" aria-hidden>{centre.emoji}</span>
         )}
         {centre.gallery.length > 0 && (
-          <a href="#gallery-heading" className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-background shadow-md">
+          <a href="#gallery" className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur hover:bg-black/80 shadow-md transition-all">
             <span aria-hidden>📷</span> View all {centre.gallery.length} photos
           </a>
         )}
       </div>
 
-      <div className="mx-auto max-w-6xl px-6">
-        <HeaderLayoutSwitcher
-          centre={centre}
-          fullAddress={fullAddress}
-          schedule={schedule}
-          todayOpen={todayOpen}
-          totalSeats={totalSeats}
-          social={social}
-        />
+      {/* Sticky Executive Navigation Bar (Placed AFTER Cover Pic) */}
+      <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-y border-[#e0e3e5] shadow-xs mt-6">
+        <div className="flex justify-between items-center px-4 md:px-8 py-3.5 max-w-7xl mx-auto">
+          <div className="font-['Lexend',sans-serif] text-lg font-bold text-[#191c1e] tracking-tight uppercase flex items-center gap-2">
+            <span>{centre.name}</span>
+            {centre.is_verified && (
+              <span className="text-[10px] font-extrabold bg-[#16a34a]/10 text-[#16a34a] border border-[#16a34a]/20 px-2 py-0.5 rounded-full normal-case">
+                ✓ Verified
+              </span>
+            )}
+          </div>
 
+          {/* Desktop Nav Links */}
+          <div className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider text-[#565e74]">
+            <a className="hover:text-[#16a34a] transition-colors" href="#about">About</a>
+            <a className="hover:text-[#16a34a] transition-colors" href="#spaces">Spaces</a>
+            <a className="hover:text-[#16a34a] transition-colors" href="#facilities">Facilities</a>
+            <a className="hover:text-[#16a34a] transition-colors" href="#pricing">Pricing</a>
+            <a className="hover:text-[#16a34a] transition-colors" href="#gallery">Gallery</a>
+            <a className="hover:text-[#16a34a] transition-colors" href="#reviews">Reviews</a>
+            <a className="hover:text-[#16a34a] transition-colors" href="#contact">Contact</a>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {centre.phone && (
+              <a href={`tel:${centre.phone}`} className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#565e74] hover:text-[#191c1e]">
+                <span>📞</span> {centre.phone}
+              </a>
+            )}
+            <Link href={`/centres/${centre.slug}/book`} className="bg-[#16a34a] text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl hover:bg-[#15803d] transition-all shadow-xs">
+              Book Now
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 space-y-6">
         {canPreview && (
-          <div className="mt-4 rounded-md border border-brand-gold/40 bg-accent px-4 py-2 text-sm text-accent-foreground" role="status">
-            Preview — this listing is <strong>{centre.status.replace('_', ' ')}</strong> and not visible to the public.
+          <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-800 flex items-center justify-between" role="status">
+            <span>⚠️ Preview Mode — Listing is <strong>{centre.status.replace('_', ' ')}</strong> and hidden from the public.</span>
+            <Link href={`/owner/centres/${centre.id}`} className="underline">Edit Listing</Link>
           </div>
         )}
 
-        {/* Secondary actions — kept as real, working functionality even though the reference doesn't show them in this exact spot */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {isPublic && viewer && <SaveButton centreId={centre.id} initialSaved={saved} />}
-          <ShareButton title={centre.name} url={pageUrl} />
-          {isPublic && !centre.owner_id && viewer && (
-            <a href="#claim-heading" className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold hover:bg-secondary">
-              <span aria-hidden>🏷</span> Claim listing
-            </a>
-          )}
-        </div>
+        {/* Main 2-Column Content Canvas */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Main Column */}
+          <div className="lg:col-span-2 space-y-12">
+            {/* Title & Metadata Header */}
+            <header className="space-y-6">
+              <div className="flex flex-wrap items-center gap-4 mb-2 border-b border-[#bdcaba]/30 pb-4">
+                <span className="inline-flex items-center gap-1.5 text-[#16a34a] text-xs font-medium uppercase tracking-widest">
+                  <span className="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse"></span>
+                  {totalSeats > 0 ? `${totalSeats} Seats Available` : 'Seats Available'}
+                </span>
+                <span className="w-px h-4 bg-[#bdcaba]/50"></span>
+                {centre.women_safe_verified && (
+                  <>
+                    <span className="inline-flex items-center gap-1.5 text-[#565e74] text-xs font-medium uppercase tracking-widest">
+                      Women-safe
+                    </span>
+                    <span className="w-px h-4 bg-[#bdcaba]/50"></span>
+                  </>
+                )}
+                <span className={`inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest ${todayOpen ? 'text-[#565e74]' : 'text-rose-600'}`}>
+                  {todayOpen ? 'Open Now' : 'Closed Now'}
+                </span>
+              </div>
 
-        <nav aria-label="Section links" className="mt-4 flex gap-5 overflow-x-auto border-b text-sm font-semibold text-muted-foreground">
-          {[
-            ['About', 'description-heading'], ['Amenities', 'amenities-heading'], ['Pricing', 'pricing-heading'],
-            ['Gallery', 'gallery-heading'], ['Reviews', 'reviews-heading'], ['Location', 'map-heading'],
-          ].map(([label, id]) => (
-            <a key={id} href={`#${id}`} className="shrink-0 border-b-2 border-transparent pb-2.5 hover:border-primary hover:text-foreground">
-              {label}
-            </a>
-          ))}
-        </nav>
+              <h1 className="font-['Lexend',sans-serif] text-4xl md:text-5xl font-extrabold text-[#191c1e] uppercase tracking-tight">
+                {centre.name}
+              </h1>
 
-        <PricingSyncProvider pricing={centre.resources[0] ? ((centre.resources[0].pricing ?? {}) as Record<string, number>) : null}>
-        <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          {/* Left column — main content */}
-          <div className="space-y-6 lg:col-span-2">
-            <DetailSectionCard
-              icon="☰"
-              title="About"
-              headingId="description-heading"
-            >
-              {centre.description ? (
-                <p className="whitespace-pre-line text-sm text-foreground/80">{centre.description}</p>
-              ) : (
-                <p className="text-sm text-muted-foreground">No description yet.</p>
-              )}
-              <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                <span aria-hidden>{spaceType.icon}</span>{spaceType.label}
-              </span>
-            </DetailSectionCard>
+              <div className="flex flex-wrap items-center gap-6 text-[#565e74] text-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#191c1e] text-base">★</span>
+                  <span className="font-semibold text-[#191c1e]">{centre.rating.toFixed(1)}</span>
+                  <a href="#reviews" className="hover:text-[#191c1e] transition-colors cursor-pointer border-b border-[#bdcaba]">({centre.reviews_count} review{centre.reviews_count !== 1 ? 's' : ''})</a>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">📍</span>
+                  <span>{fullAddress}</span>
+                </div>
+              </div>
 
-            <DetailSectionCard icon="🎫" title="Seat Pricing" headingId="pricing-heading">
-              {centre.resources.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Pricing details coming soon.</p>
-              ) : (
-                <>
-                  <PricingTabs
-                    slug={centre.slug}
-                    resource={{ id: centre.resources[0]!.id, label: centre.resources[0]!.label, tier: centre.resources[0]!.tier, pricing: (centre.resources[0]!.pricing ?? {}) as Record<string, number> }}
-                  />
-                  {centre.resources.length > 1 && (
-                    <div className="mt-5 space-y-3 border-t pt-4">
-                      <p className="text-xs font-semibold text-muted-foreground">Other options at this centre</p>
-                      {centre.resources.slice(1).map((r) => {
-                        const pricing = (r.pricing ?? {}) as Record<string, number>;
-                        const periods = availablePeriods(pricing);
-                        return (
-                          <Card key={r.id} className="p-4">
-                            <p className="font-semibold">{r.label}</p>
-                            <p className="text-xs capitalize text-muted-foreground">{r.resource_type.replace('_', ' ')}{r.tier ? ` · ${r.tier}` : ''}</p>
-                            {periods.length === 0 ? (
-                              <p className="mt-2 text-sm text-muted-foreground">—</p>
-                            ) : (
-                              <dl className="mt-2 space-y-0.5">
-                                {periods.map((p) => (
-                                  <div key={p} className="flex items-center justify-between text-sm">
-                                    <dt className="text-muted-foreground">{PERIOD_LABEL[p]}</dt>
-                                    <dd className="font-display font-bold text-brand-green">{formatINR(priceForPeriod(pricing, p)!)}</dd>
-                                  </div>
-                                ))}
-                              </dl>
-                            )}
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              )}
-            </DetailSectionCard>
+              {/* Quick Action Buttons */}
+              <div className="flex flex-wrap items-center gap-4 pt-6">
+                {centre.phone && (
+                  <a href={`tel:${centre.phone}`} className="flex items-center gap-2 px-5 py-2.5 border border-[#bdcaba] hover:border-[#191c1e] transition-colors text-[#191c1e] text-xs font-medium rounded uppercase tracking-wider">
+                    <span>📞</span> Call
+                  </a>
+                )}
+                {social.whatsapp && (
+                  <a href={social.whatsapp} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-5 py-2.5 border border-[#bdcaba] hover:border-[#191c1e] transition-colors text-[#191c1e] text-xs font-medium rounded uppercase tracking-wider">
+                    <span>💬</span> WhatsApp
+                  </a>
+                )}
+                {centre.website && (
+                  <a href={centre.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-5 py-2.5 border border-[#bdcaba] hover:border-[#191c1e] transition-colors text-[#191c1e] text-xs font-medium rounded uppercase tracking-wider">
+                    <span>🌐</span> Website
+                  </a>
+                )}
+                <div className="flex-grow"></div>
+                {isPublic && viewer && <SaveButton centreId={centre.id} initialSaved={saved} />}
+                <ShareButton title={centre.name} url={pageUrl} />
+              </div>
+            </header>
 
-            {todayBlocks.length > 0 && (
-              <DetailSectionCard icon="🕐" title="Today's Seat Availability">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {todayBlocks.map((b) => {
-                    const pct = b.capacity > 0 ? b.seatsFree / b.capacity : 0;
-                    const style = b.isPast
-                      ? 'bg-secondary/50 text-muted-foreground/60'
-                      : pct === 0 ? 'bg-red-50 text-red-700'
-                      : pct < 0.3 ? 'bg-amber-50 text-amber-700'
-                      : 'bg-emerald-50 text-emerald-700';
-                    return (
-                      <div key={b.label} className={cn('rounded-lg p-3 text-center', style)}>
-                        <p className="text-xs font-medium opacity-80">{b.label}</p>
-                        <p className="mt-1 font-display text-lg font-bold">{b.isPast ? '—' : b.seatsFree}</p>
-                        <p className="text-[11px] opacity-70">{b.isPast ? 'Passed' : `of ${b.capacity} seats`}</p>
+            {/* About Section */}
+            <section className="pt-12 border-t border-[#bdcaba]/30" id="about">
+              <h2 className="font-['Lexend',sans-serif] text-2xl font-bold mb-6 text-[#191c1e] uppercase tracking-wide">About this space</h2>
+              <div className="text-base text-[#565e74] leading-loose space-y-6 max-w-3xl">
+                {centre.description ? (
+                  <p className="whitespace-pre-line">{centre.description}</p>
+                ) : (
+                  <p>Welcome to {centre.name}. Designed for serious aspirants and professionals, offering pristine study environments equipped with ergonomic seating, silent zones, and high-speed connectivity.</p>
+                )}
+              </div>
+            </section>
+
+            {/* Select Space Type Grid */}
+            <section className="pt-10 border-t border-[#e0e3e5] space-y-6" id="spaces">
+              <h2 className="font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e] uppercase tracking-wide">Select Space Type</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {centre.resources.map((res, idx) => {
+                  const pricing = (res.pricing ?? {}) as Record<string, number>;
+                  const startPrice = pricing.month || pricing.hour || pricing.day || pricing.week || pricing.quarter;
+
+                  return (
+                    <div key={res.id} className="border border-[#e0e3e5] rounded-lg bg-white overflow-hidden flex flex-col hover:border-[#16a34a] transition-all">
+                      <div className="p-5 flex flex-col flex-1 space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-[10px] font-extrabold text-[#16a34a] uppercase tracking-wider block">Space {idx + 1}</span>
+                            <h3 className="font-['Lexend',sans-serif] font-bold text-[#191c1e] text-lg">{res.label || `Study Space ${idx + 1}`}</h3>
+                          </div>
+                          <span className="text-xs font-bold bg-[#16a34a]/10 text-[#16a34a] px-2.5 py-1 rounded-full">
+                            {res.unit_count ?? 10} Seats
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-[#565e74] capitalize">Type: {res.resource_type.replace('_', ' ')} {res.tier ? `(${res.tier})` : ''}</p>
+
+                        <div className="mt-auto pt-4 border-t border-[#e0e3e5] flex justify-between items-center">
+                          <div>
+                            <span className="text-[10px] text-[#565e74] uppercase block">Starting from</span>
+                            <span className="font-bold text-[#191c1e] text-base">{startPrice ? `₹${startPrice}` : '—'}</span>
+                          </div>
+                          <Link href={`/centres/${centre.slug}/book`} className="text-xs font-bold text-[#16a34a] hover:underline uppercase tracking-wider">
+                            View Plans →
+                          </Link>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </DetailSectionCard>
-            )}
-
-            {centre.tags && centre.tags.length > 0 && (
-              <DetailSectionCard icon="✨" title="Highlights">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {centre.tags.map((tag) => (
-                    <div key={tag} className="flex items-center gap-2 text-sm text-foreground/80">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm" aria-hidden>✨</span>
-                      {tag}
                     </div>
-                  ))}
-                </div>
-              </DetailSectionCard>
-            )}
+                  );
+                })}
+              </div>
+            </section>
 
-            {centre.amenities.length > 0 && (
-              <DetailSectionCard icon="🏛" title="Facilities" headingId="amenities-heading">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {centre.amenities.map((a) => (
-                    <div key={a.slug} className="flex items-center gap-2 text-sm text-foreground/80">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm" aria-hidden>{a.icon ?? '•'}</span>
-                      {a.label}
-                    </div>
-                  ))}
-                </div>
-              </DetailSectionCard>
-            )}
+            {/* Highlights & Facilities */}
+            <section className="pt-10 border-t border-[#e0e3e5] space-y-6" id="facilities">
+              <h2 className="font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e] uppercase tracking-wide">Highlights & Facilities</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 border border-[#e0e3e5] bg-white rounded-lg overflow-hidden">
+                {centre.amenities.map((a) => (
+                  <div key={a.slug} className="flex items-center gap-3 p-4 border-b border-r border-[#e0e3e5] text-xs font-semibold text-[#191c1e]">
+                    <span className="text-base text-[#16a34a]">{a.icon ?? '✓'}</span>
+                    <span>{a.label}</span>
+                  </div>
+                ))}
+                {(!centre.amenities || centre.amenities.length === 0) && (
+                  <span className="text-xs text-[#8e99a8] italic p-4 col-span-3">No amenities listed yet.</span>
+                )}
+              </div>
+            </section>
 
+            {/* Choose Your Plan Section */}
+            <section className="pt-10 border-t border-[#e0e3e5] space-y-6" id="pricing">
+              <h2 className="font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e] uppercase tracking-wide">Pricing Rates</h2>
+              <PricingSyncProvider pricing={centre.resources[0] ? ((centre.resources[0].pricing ?? {}) as Record<string, number>) : null}>
+                <PricingTabs
+                  slug={centre.slug}
+                  resource={{ id: centre.resources[0]!.id, label: centre.resources[0]!.label, tier: centre.resources[0]!.tier, pricing: (centre.resources[0]!.pricing ?? {}) as Record<string, number> }}
+                />
+              </PricingSyncProvider>
+            </section>
+
+            {/* Photo Gallery */}
             {centre.gallery.length > 0 && (
-              <DetailSectionCard icon="🖼" title="Gallery" headingId="gallery-heading">
+              <section className="pt-10 border-t border-[#e0e3e5] space-y-6" id="gallery">
+                <h2 className="font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e] uppercase tracking-wide">Photo Gallery</h2>
                 <GalleryLightbox
                   images={centre.gallery.map((img) => ({ id: img.id, url: galleryUrl(img.storage_path), alt: img.alt ?? `${centre.name} photo` }))}
                   previewCount={6}
                 />
-              </DetailSectionCard>
+              </section>
             )}
 
-            {isPublic && !centre.owner_id && viewer && (
-              <DetailSectionCard icon="🏷" title="Own this centre?" headingId="claim-heading">
-                <p className="mb-3 text-sm text-muted-foreground">Claim it to manage the listing, respond to enquiries and update details.</p>
-                <ClaimForm centreId={centre.id} />
-              </DetailSectionCard>
-            )}
-
-            <DetailSectionCard icon="💬" title="Reviews" headingId="reviews-heading">
-              {isPublic && viewer && viewer.id !== centre.owner_id && (
-                <div className="mb-4"><ReviewForm centreId={centre.id} /></div>
-              )}
-              {isPublic && !viewer && (
-                <p className="mb-4 text-sm text-muted-foreground">
-                  <a href={`/login?next=/centres/${centre.slug}`} className="font-semibold underline">Sign in</a> to write a review.
-                </p>
-              )}
-
-              {reviews.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No reviews yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {reviews.map((rv) => (
-                    <Card key={rv.id} className="p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-brand-gold2" aria-label={`${rv.rating} out of 5`}>{'★'.repeat(rv.rating)}<span className="text-muted-foreground/40">{'★'.repeat(5 - rv.rating)}</span></span>
-                        {rv.is_verified && <Badge variant="success">✓ Verified visit</Badge>}
-                        <span className="ml-auto text-xs text-muted-foreground">{new Date(rv.created_at).toLocaleDateString('en-IN')}</span>
-                      </div>
-                      {rv.body && <p className="mt-2 text-sm text-foreground/80">{rv.body}</p>}
-                      <div className="mt-1 flex items-center justify-between">
-                        <p className="text-xs text-muted-foreground">— {rv.author?.full_name ?? 'Student'}</p>
-                        <ReportReviewButton reviewId={rv.id} />
-                      </div>
-                    </Card>
-                  ))}
+            {/* Location & Contact */}
+            <section className="pt-10 border-t border-[#e0e3e5] space-y-6" id="contact">
+              <h2 className="font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e] uppercase tracking-wide">Location & Contact</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4 text-xs">
+                  <div>
+                    <span className="font-bold text-[#565e74] uppercase tracking-wider block mb-1">Address</span>
+                    <p className="text-[#191c1e] font-semibold">{fullAddress || 'Location details available on request.'}</p>
+                  </div>
+                  {centre.phone && (
+                    <div>
+                      <span className="font-bold text-[#565e74] uppercase tracking-wider block mb-1">Phone</span>
+                      <a href={`tel:${centre.phone}`} className="text-[#16a34a] font-bold hover:underline">{centre.phone}</a>
+                    </div>
+                  )}
+                  {centre.business_email && (
+                    <div>
+                      <span className="font-bold text-[#565e74] uppercase tracking-wider block mb-1">Email</span>
+                      <a href={`mailto:${centre.business_email}`} className="text-[#16a34a] font-bold hover:underline">{centre.business_email}</a>
+                    </div>
+                  )}
                 </div>
+
+                <div className="bg-white p-5 rounded-xl border border-[#e0e3e5]">
+                  <h3 className="font-['Lexend',sans-serif] text-xs font-bold text-[#191c1e] uppercase tracking-wide mb-3">Send Enquiry</h3>
+                  {isPublic && <EnquiryForm centreId={centre.id} />}
+                </div>
+              </div>
+            </section>
+
+            {/* Reviews */}
+            <section className="pt-10 border-t border-[#e0e3e5] space-y-6" id="reviews">
+              <div className="flex justify-between items-center border-b border-[#e0e3e5] pb-4">
+                <h2 className="font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e] uppercase tracking-wide">
+                  ★ {centre.rating.toFixed(1)} · {reviews.length} Reviews
+                </h2>
+              </div>
+              {isPublic && viewer && viewer.id !== centre.owner_id && (
+                <ReviewForm centreId={centre.id} />
               )}
-            </DetailSectionCard>
+              <div className="space-y-4">
+                {reviews.map((rv) => (
+                  <div key={rv.id} className="p-4 rounded-xl border border-[#e0e3e5] bg-[#f8faf8] text-xs space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[#191c1e]">{rv.author?.full_name ?? 'Student'}</span>
+                      <span className="text-amber-500 font-bold">★ {rv.rating}/5</span>
+                    </div>
+                    {rv.body && <p className="text-[#565e74]">{rv.body}</p>}
+                  </div>
+                ))}
+                {reviews.length === 0 && (
+                  <span className="text-xs text-[#8e99a8] italic">No reviews yet for this study room.</span>
+                )}
+              </div>
+            </section>
           </div>
 
-          {/* Right column — no longer sticky (removed per request); the top
-              card visually overlaps the cover image via a negative margin,
-              matching the reference. */}
-          <div className="space-y-6 lg:-mt-20">
-            <BookingSidebar
-              slug={centre.slug}
-              isPublic={isPublic}
-              pricing={centre.resources[0] ? ((centre.resources[0].pricing ?? {}) as Record<string, number>) : null}
-              seatsFree={centre.occupancy?.seatsFree ?? null}
-              phone={centre.phone}
-              whatsapp={social.whatsapp || null}
-              studentsCount={studentsCount}
-            />
+          {/* Right Column Sticky Booking Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              <BookingSidebar
+                slug={centre.slug}
+                isPublic={isPublic}
+                pricing={centre.resources[0] ? ((centre.resources[0].pricing ?? {}) as Record<string, number>) : null}
+                seatsFree={centre.occupancy?.seatsFree ?? null}
+                phone={centre.phone}
+                whatsapp={social.whatsapp || null}
+                studentsCount={studentsCount}
+              />
 
-            {ownerProfile?.full_name && (
-              <Card className="p-4">
-                <p className="mb-2 text-xs font-semibold text-muted-foreground">Centre Owner</p>
-                <div className="flex items-center gap-3">
-                  {ownerProfile.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={ownerProfile.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-                  ) : (
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                      {ownerProfile.full_name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                  <p className="font-semibold">{ownerProfile.full_name}</p>
-                </div>
-                {ownerProfile.bio && (
-                  <p className="mt-3 text-sm text-muted-foreground">{ownerProfile.bio}</p>
-                )}
-                {(ownerProfile.phone || ownerProfile.public_email) && (
-                  <div className="mt-3 space-y-1.5 border-t pt-3 text-sm">
-                    {ownerProfile.phone && (
-                      <a href={`tel:${ownerProfile.phone}`} className="flex items-center gap-2 text-primary hover:underline">
-                        <span aria-hidden>📞</span> {ownerProfile.phone}
-                      </a>
-                    )}
-                    {ownerProfile.public_email && (
-                      <a href={`mailto:${ownerProfile.public_email}`} className="flex items-center gap-2 text-primary hover:underline">
-                        <span aria-hidden>✉️</span> {ownerProfile.public_email}
-                      </a>
-                    )}
-                  </div>
-                )}
-              </Card>
-            )}
-
-            <Card className="p-4" id="hours-heading">
-              {schedule ? (
-                <OpeningHoursCard todayOpen={todayOpen} todayText={todayText} days={schedule} nowLabel={nowLabel} />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span aria-hidden className="text-lg">🕐</span>
-                  <span className="font-bold">Hours</span>
-                  <span className="ml-auto text-sm text-muted-foreground">Not listed</span>
-                </div>
-              )}
-            </Card>
-
-            {/* Location — map, address, contact & social all together, matching the reference's single "Location" card */}
-            <Card className="p-5" id="map-heading">
-              <div className="mb-4 flex items-center gap-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg text-primary" aria-hidden>📍</span>
-                <h2 className="font-display text-base font-bold">Location</h2>
-              </div>
-              {centre.lat != null && centre.lng != null && MAPBOX_TOKEN && (
-                <div className="relative mb-4 overflow-hidden rounded-xl">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+2d6a4f(${centre.lng},${centre.lat})/${centre.lng},${centre.lat},14,0/500x220@2x?access_token=${MAPBOX_TOKEN}`}
-                    alt={`Map showing ${centre.name}'s location`}
-                    className="h-40 w-full object-cover"
-                  />
-                  {centre.is_verified && (
-                    <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-[11px] font-semibold">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />VERIFIED LOCATION
-                    </span>
-                  )}
-                </div>
-              )}
-              <div className="space-y-3 text-sm">
-                {fullAddress && (
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>📍</span>
-                    <span>{fullAddress}</span>
-                  </div>
-                )}
-                {centre.phone && (
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>📞</span>
-                    <a href={`tel:${centre.phone}`} className="text-primary hover:underline">{centre.phone}</a>
-                  </div>
-                )}
-                {centre.alt_phone && (
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>📞</span>
-                    <a href={`tel:${centre.alt_phone}`} className="text-primary hover:underline">{centre.alt_phone}</a>
-                    <span className="text-xs text-muted-foreground">(alternate)</span>
-                  </div>
-                )}
-                {centre.business_email && (
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>✉️</span>
-                    <a href={`mailto:${centre.business_email}`} className="text-primary hover:underline">{centre.business_email}</a>
-                  </div>
-                )}
-                {centre.website && (
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base text-primary" aria-hidden>🌐</span>
-                    <a href={centre.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{centre.website}</a>
-                  </div>
+              <div className="bg-white p-5 rounded-2xl border border-[#e0e3e5] shadow-xs space-y-3" id="hours-heading">
+                <h3 className="font-['Lexend',sans-serif] text-xs font-bold text-[#191c1e] uppercase tracking-wider border-b border-[#f2f4f6] pb-2">
+                  Operating Hours
+                </h3>
+                {schedule ? (
+                  <OpeningHoursCard todayOpen={todayOpen} todayText={todayText} days={schedule} nowLabel={nowLabel} />
+                ) : (
+                  <span className="text-xs text-[#8e99a8] italic">Hours schedule not listed</span>
                 )}
               </div>
-              {socialLinks.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
-                  {socialLinks.map(([label, url, platform]) => (
-                    <a key={label} href={url} target="_blank" rel="noopener noreferrer" title={label} className="group flex h-9 w-9 items-center justify-center rounded-full border hover:bg-secondary">
-                      <SocialIcon platform={platform} />
-                    </a>
-                  ))}
-                </div>
-              )}
-            </Card>
-
-            {centre.status === 'approved' && (
-              <DetailSectionCard icon="✉" title="Contact Form" headingId="contact-heading">
-                <EnquiryForm centreId={centre.id} />
-              </DetailSectionCard>
-            )}
+            </div>
           </div>
         </div>
-        </PricingSyncProvider>
-
-        {centre.similar.length > 0 && (
-          <section aria-labelledby="similar-heading" className="mt-8">
-            <h2 id="similar-heading" className="mb-3 font-display text-lg font-bold">You may also be interested in</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {centre.similar.map((s) => (
-                <CentreCard key={s.id} centre={s} />
-              ))}
-            </div>
-          </section>
-        )}
       </div>
     </main>
   );

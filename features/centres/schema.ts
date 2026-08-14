@@ -132,6 +132,7 @@ const flexibleWebsiteUrl = () =>
 
 export const centreUpsertSchema = z.object({
   name: z.string().trim().min(1, 'Centre Name is required').default('Test Centre'),
+  roomName: z.string().trim().optional().default('AC Room'),
   address: z.string().trim().optional().or(z.literal('')).default('Test Address'),
   city: z.string().trim().optional().or(z.literal('')).default('Delhi'),
   state: z.string().trim().optional().or(z.literal('')).default('Delhi'),
@@ -167,7 +168,7 @@ export const centreUpsertSchema = z.object({
   seats: z.coerce.number().optional().default(10),
   about: z.string().trim().optional().or(z.literal('')).default('Test Description for centre.'),
   amenityIds: z.array(z.string().uuid()).max(40).default([]),
-  tags: z.array(z.enum(['Quiet', 'Premium', 'Affordable', 'AC', 'Library', '24x7', 'Students', 'Professionals'])).max(20).default([]),
+  tags: z.array(z.string().trim().max(30)).max(20).default([]),
   womenSafeClaim: z.coerce.boolean().default(false),
   /** Exactly 7 entries, index 0 = Sunday .. 6 = Saturday. */
   hours: z.array(dayHoursSchema).length(7).default(DEFAULT_WEEKLY_HOURS),
@@ -178,6 +179,15 @@ export const centreUpsertSchema = z.object({
   twitter: domainUrl(['twitter.com', 'x.com'], 'X (Twitter)'),
   whatsapp: domainUrl(['wa.me', 'whatsapp.com'], 'WhatsApp'),
   googleBusiness: domainUrl(['g.page', 'goo.gl', 'google.com'], 'Google Business'),
+  extraSpaces: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string().optional(),
+      seats: z.string().optional(),
+      prices: z.record(z.string(), z.string()).optional(),
+      tags: z.array(z.string()).optional(),
+    })
+  ).optional().default([]),
 });
 export type CentreUpsert = z.infer<typeof centreUpsertSchema>;
 

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { centreUpsertSchema, withHttps, type CentreUpsert } from '../schema';
-import { createCentre, updateCentre, uploadCentreImage, submitForReview } from '../actions';
+import { createCentre, updateCentre, uploadCentreImage, uploadCentreLogo, submitForReview, removeCentreLogo, removeCentreCover } from '../actions';
 import { DeletePhotoButton } from './delete-photo-button';
 import {
   Wifi,
@@ -129,17 +129,24 @@ export function ListingWizardV2(props: Props) {
   const [step, setStep] = useState(0);
   const [maxUnlocked, setMaxUnlocked] = useState(props.mode === 'edit' ? 6 : 0);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [phase, setPhase] = useState<'idle' | 'saving' | 'uploading'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'saving' | 'uploading' | 'published'>('idle');
 
   const [pinLoading, setPinLoading] = useState(false);
   const [amenityStyle, setAmenityStyle] = useState<'horizontal' | 'chips' | 'pills' | 'cards'>('horizontal');
+  const [customTagInput, setCustomTagInput] = useState('');
+  const [allCustomTags, setAllCustomTags] = useState<string[]>(props.defaults?.tags || []);
+  const [extraSpaces, setExtraSpaces] = useState<Array<{ id: string; name: string; seats: string; prices: Record<string, string>; tags: string[] }>>((props.defaults?.extraSpaces as any) || []);
   const [copyHoursSourceDay, setCopyHoursSourceDay] = useState<number | null>(null);
   const [copyHoursTargets, setCopyHoursTargets] = useState<number[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [logoRemoved, setLogoRemoved] = useState(false);
+  const [coverRemoved, setCoverRemoved] = useState(false);
   const [galleryFiles, setGalleryFiles] = useState<Record<string, File[]>>({});
   const [extraFiles, setExtraFiles] = useState<File[]>([]);
+  const [previewModalUrl, setPreviewModalUrl] = useState<string | null>(null);
   const submitIntent = useRef<'draft' | 'publish'>('draft');
+  const isSilentAutoSave = useRef(false);
 
   const onGalleryChange = (slot: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -165,6 +172,10 @@ export function ListingWizardV2(props: Props) {
     });
   };
 
+  const removeExtraFile = (indexToRemove: number) => {
+    setExtraFiles((prev) => prev.filter((_, i) => i !== indexToRemove));
+  };
+
   const onExtraChange = (e: React.ChangeEvent<HTMLInputElement>) => setExtraFiles(Array.from(e.target.files ?? []));
 
   const { register, handleSubmit, watch, setValue, trigger, formState: { errors } } = useForm<CentreUpsert>({
@@ -185,20 +196,44 @@ export function ListingWizardV2(props: Props) {
     return res.ok ? null : res.error.message;
   };
 
+  const [draftSaveSuccess, setDraftSaveSuccess] = useState<string | null>(null);
+
+  const [createdCentreId, setCreatedCentreId] = useState<string | null>(props.centreId || null);
+
   const doSubmit = async (formValues: CentreUpsert) => {
     setServerError(null);
     setPhase('saving');
     try {
-      const res = props.mode === 'create'
-        ? await createCentre(formValues)
-        : await updateCentre({ ...formValues, centreId: props.centreId! });
+      const payload = { ...formValues, extraSpaces };
+      const currentCentreId = createdCentreId || props.centreId;
+      const res = props.mode === 'create' && !currentCentreId
+        ? await createCentre(payload)
+        : await updateCentre({ ...payload, centreId: currentCentreId! });
       if (!res.ok) { setServerError(res.error.message); setPhase('idle'); return; }
 
-      const centreId = props.mode === 'create' && 'id' in res.data ? res.data.id : props.centreId!;
+      const centreId = (props.mode === 'create' && !currentCentreId && 'id' in res.data) ? res.data.id : currentCentreId!;
+      if (props.mode === 'create' && !createdCentreId && centreId) {
+        setCreatedCentreId(centreId);
+      }
       if (centreId) {
         setPhase('uploading');
-        if (coverFile) await uploadOne(centreId, coverFile, { isCover: true });
-        if (logoFile) await uploadOne(centreId, logoFile);
+        if (logoRemoved) await removeCentreLogo({ centreId });
+        else if (logoFile) {
+          const fd = new FormData();
+          fd.set('centreId', centreId);
+          fd.set('file', logoFile);
+          await uploadCentreLogo(fd);
+          setLogoFile(null);
+        }
+
+        if (coverRemoved) await removeCentreCover({ centreId });
+        else if (coverFile) {
+          const err = await uploadOne(centreId, coverFile, { isCover: true });
+          if (!err) {
+            setCoverFile(null);
+            setCoverRemoved(false);
+          }
+        }
 
         const allGalleryFiles = [
           ...Object.entries(galleryFiles).flatMap(([slot, files]) => files.map((file) => ({ slot, file }))),
@@ -208,17 +243,30 @@ export function ListingWizardV2(props: Props) {
         for (const { slot, file } of allGalleryFiles) {
           await uploadOne(centreId, file, slot ? { category: slot } : {});
         }
+        setGalleryFiles({});
+        setExtraFiles([]);
 
         if (submitIntent.current === 'publish') {
           await submitForReview(centreId);
+          setPhase('published');
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          router.push(props.targetRedirectUrl || '/admin/centres/all');
+          router.refresh();
+          return;
         }
       }
 
-      router.push(props.targetRedirectUrl || '/owner/centres');
-      router.refresh();
+      setPhase('idle');
+      if (!isSilentAutoSave.current) {
+        setDraftSaveSuccess('Draft saved successfully! All your progress has been stored.');
+        router.refresh();
+        setTimeout(() => setDraftSaveSuccess(null), 3000);
+      }
+      isSilentAutoSave.current = false;
     } catch {
       setServerError('An unexpected error occurred. Please try again.');
       setPhase('idle');
+      isSilentAutoSave.current = false;
     }
   };
 
@@ -243,6 +291,12 @@ export function ListingWizardV2(props: Props) {
         if (!isValid) return;
       }
     }
+
+    // Auto-save progress silently in backend on every step navigation
+    submitIntent.current = 'draft';
+    isSilentAutoSave.current = true;
+    handleSubmit(doSubmit)();
+
     setMaxUnlocked((m) => Math.max(m, target));
     setStep(target);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -256,12 +310,13 @@ export function ListingWizardV2(props: Props) {
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
+            disabled={phase !== 'idle'}
             onClick={() => { submitIntent.current = 'draft'; handleSubmit(doSubmit)(); }}
-            className="text-sm font-semibold text-[#16a34a]"
+            className="text-xs font-semibold border-[#16a34a] text-[#16a34a] hover:bg-[#16a34a] hover:text-white rounded-xl cursor-pointer"
           >
-            Save Draft
+            {phase === 'saving' ? 'Saving Draft...' : phase === 'uploading' ? 'Uploading Media...' : '💾 Save Draft'}
           </Button>
         </div>
       </div>
@@ -300,6 +355,13 @@ export function ListingWizardV2(props: Props) {
         </div>
 
 
+        {draftSaveSuccess && (
+          <div className="mb-6 bg-[#dcfce7] text-[#15803d] p-4 rounded-xl text-sm font-semibold border border-[#86efac] flex items-center gap-2 shadow-xs animate-in fade-in slide-in-from-top-2">
+            <span>✓</span>
+            <span>{draftSaveSuccess}</span>
+          </div>
+        )}
+
         {serverError && (
           <div className="mb-6 bg-[#ffdad6] text-[#93000a] p-4 rounded-xl text-sm font-semibold border border-[#ba1a1a]/20">
             ⚠️ {serverError}
@@ -337,12 +399,37 @@ export function ListingWizardV2(props: Props) {
                     </label>
                     <textarea
                       id="about"
-                      rows={3}
+                      rows={6}
                       placeholder="A brief overview of your space..."
-                      className="w-full bg-[#f2f4f6] border border-[#bdcaba] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#16a34a] resize-none"
+                      className="w-full bg-[#f2f4f6] border border-[#bdcaba] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#16a34a] resize-y"
                       {...register('about')}
                     />
                     {errors.about && <p className="text-xs text-[#ba1a1a] mt-1">{errors.about.message}</p>}
+
+                    {/* 5 Sample Description Suggestions */}
+                    <div className="mt-3 space-y-2">
+                      <span className="text-[11px] font-bold text-[#565e74] uppercase tracking-wider block">
+                        💡 Click a sample to auto-fill description:
+                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {[
+                          "Welcome to our premier study space designed for serious aspirants and professionals. We offer a 100% disturbance-free, fully air-conditioned environment equipped with ultra-fast fiber Wi-Fi, ergonomic executive seating, dedicated power sockets at every desk, and personal storage lockers. With 24/7 CCTV security, purified RO drinking water, clean washrooms, and a calm atmosphere, our center provides the ideal focus zone to maximize your daily productivity.",
+                          "Our modern reading room is thoughtfully built to deliver an unmatched learning experience. Featuring spacious individual cubicles with anti-glare study lamps, full power backup, high-speed internet, and dedicated silent zones, students can study without any interruption. We also provide tea and coffee facilities, two-wheeler parking, and round-the-clock access so you can prepare comfortably for your exams.",
+                          "Designed specifically for competitive exam preparation (UPSC, NEET, JEE, CA, Banking), our study hub combines peaceful ambient lighting with top-tier ergonomic setup. Every student gets a personal study desk with power outlets, high-speed Wi-Fi, reference book library access, and secure locker storage. Experience a disciplined community of like-minded learners committed to achieving excellence.",
+                          "Enjoy a quiet, safe, and motivating study hall experience located right in your neighborhood. Our space features fully climatized interiors, ergonomic mesh chairs designed for long sitting hours, uninterrupted Wi-Fi, and individual charging points. Verified women-safe facilities, biometric access control, and dedicated washrooms ensure total peace of mind while you study.",
+                          "Boost your study routine in a premium, quiet workspace engineered for deep concentration. We provide high-speed fiber connection, comfortable cushioned desks with personal lighting, RO water dispensers, and clean break areas. Operating 24x7 with strict noise control rules and security surveillance, our facility guarantees a productive, stress-free study session every day."
+                        ].map((sample, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setValue('about', sample, { shouldValidate: true })}
+                            className="bg-[#f8faf8] hover:bg-[#16a34a] hover:text-white hover:border-[#16a34a] border border-[#bdcaba] rounded-lg px-3.5 py-1.5 text-xs font-bold text-[#16a34a] transition-all cursor-pointer shadow-2xs select-none"
+                          >
+                            Sample {idx + 1}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -354,27 +441,121 @@ export function ListingWizardV2(props: Props) {
                   <p className="text-xs text-[#565e74] mt-1">Logos and cover images that represent your brand.</p>
                 </div>
                 <div className="col-span-12 lg:col-span-8 grid grid-cols-12 gap-4">
+                  {/* Business Logo Preview */}
                   <div className="col-span-12 md:col-span-6">
-                    <label className="block text-xs font-semibold text-[#565e74] mb-1.5">
-                      Business Logo <span className="text-[#ba1a1a]">*</span>
-                    </label>
-                    <label className="h-[150px] w-full bg-[#f2f4f6] rounded-xl border-2 border-dashed border-[#bdcaba] hover:border-[#16a34a] transition-colors flex flex-col items-center justify-center cursor-pointer p-4 text-center">
-                      <span className="text-2xl mb-1">📷</span>
-                      <span className="text-xs font-bold text-[#16a34a]">{logoFile ? logoFile.name : 'Logo'}</span>
-                      <span className="text-[10px] text-[#565e74] mt-1">Max 5MB</span>
-                      <input type="file" accept="image/*" className="sr-only" onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)} />
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-[#565e74]">
+                        Business Logo <span className="text-[#ba1a1a]">*</span>
+                      </label>
+                      {(logoFile || (!logoRemoved && props.photos?.logoUrl)) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLogoFile(null);
+                            setLogoRemoved(true);
+                          }}
+                          className="text-xs font-bold text-rose-600 hover:underline cursor-pointer flex items-center gap-1"
+                        >
+                          🗑️ Remove Logo
+                        </button>
+                      )}
+                    </div>
+                    <label className="h-[120px] w-full bg-[#f2f4f6] rounded-xl border border-[#bdcaba] hover:border-slate-400 transition-colors flex flex-col items-center justify-center cursor-pointer p-2 text-center relative overflow-hidden group">
+                      {logoFile ? (
+                        <img
+                          src={URL.createObjectURL(logoFile)}
+                          alt="Logo Preview"
+                          className="absolute inset-0 w-full h-full object-contain p-2 bg-white"
+                        />
+                      ) : (!logoRemoved && props.photos?.logoUrl) ? (
+                        <img
+                          src={props.photos.logoUrl}
+                          alt="Saved Logo"
+                          className="absolute inset-0 w-full h-full object-contain p-2 bg-white"
+                        />
+                      ) : (
+                        <>
+                          <span className="text-xl mb-0.5">📷</span>
+                          <span className="text-xs font-bold text-slate-700">Upload Logo</span>
+                          <span className="text-[10px] text-[#565e74] mt-0.5">PNG, JPG, WebP — Max 5MB</span>
+                        </>
+                      )}
+                      {(logoFile || (!logoRemoved && props.photos?.logoUrl)) && (
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-bold gap-1">
+                          <span>🔄 Change Logo</span>
+                          <span className="text-[10px] font-normal">{logoFile ? logoFile.name : 'Saved Image'}</span>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            setLogoFile(e.target.files[0]);
+                            setLogoRemoved(false);
+                          }
+                        }}
+                      />
                     </label>
                   </div>
 
+                  {/* Cover Image Preview */}
                   <div className="col-span-12 md:col-span-6">
-                    <label className="block text-xs font-semibold text-[#565e74] mb-1.5">
-                      Cover Image <span className="text-[#ba1a1a]">*</span>
-                    </label>
-                    <label className="h-[150px] w-full bg-[#f2f4f6] rounded-xl border-2 border-dashed border-[#bdcaba] hover:border-[#16a34a] transition-colors flex flex-col items-center justify-center cursor-pointer p-4 text-center">
-                      <span className="text-2xl mb-1">🖼️</span>
-                      <span className="text-xs font-bold text-[#16a34a]">{coverFile ? coverFile.name : 'Cover Image'}</span>
-                      <span className="text-[10px] text-[#565e74] mt-1">1920x1080 recommended</span>
-                      <input type="file" accept="image/*" className="sr-only" onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)} />
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-[#565e74]">
+                        Cover Image <span className="text-[#ba1a1a]">*</span>
+                      </label>
+                      {(coverFile || (!coverRemoved && props.photos?.coverUrl)) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCoverFile(null);
+                            setCoverRemoved(true);
+                          }}
+                          className="text-xs font-bold text-rose-600 hover:underline cursor-pointer flex items-center gap-1"
+                        >
+                          🗑️ Remove Cover
+                        </button>
+                      )}
+                    </div>
+                    <label className="h-[120px] w-full bg-[#f2f4f6] rounded-xl border border-[#bdcaba] hover:border-slate-400 transition-colors flex flex-col items-center justify-center cursor-pointer p-2 text-center relative overflow-hidden group">
+                      {coverFile ? (
+                        <img
+                          src={URL.createObjectURL(coverFile)}
+                          alt="Cover Preview"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (!coverRemoved && props.photos?.coverUrl) ? (
+                        <img
+                          src={props.photos.coverUrl}
+                          alt="Saved Cover"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <>
+                          <span className="text-2xl mb-1">🖼️</span>
+                          <span className="text-xs font-bold text-[#16a34a]">Upload Cover Image</span>
+                          <span className="text-[10px] text-[#565e74] mt-1">1920x1080 recommended</span>
+                        </>
+                      )}
+                      {(coverFile || (!coverRemoved && props.photos?.coverUrl)) && (
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-bold gap-1">
+                          <span>🔄 Change Cover</span>
+                          <span className="text-[10px] font-normal">{coverFile ? coverFile.name : 'Saved Image'}</span>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            setCoverFile(e.target.files[0]);
+                            setCoverRemoved(false);
+                          }
+                        }}
+                      />
                     </label>
                   </div>
                 </div>
@@ -632,18 +813,20 @@ export function ListingWizardV2(props: Props) {
                 </div>
               </div>
 
-              {/* Row 2: Space Details (Dynamic Multiple Spaces Management) */}
+              {/* Row 2: Space Details (Simple Clean Row Layout with Prices & Tags) */}
               <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f2f4f6] pb-4">
                   <div>
                     <h3 className="text-lg font-bold text-[#191c1e] font-['Lexend',sans-serif]">Space Details</h3>
-                    <p className="text-xs text-[#565e74] mt-0.5">Add, customize, and configure as many room spaces as your centre offers.</p>
+                    <p className="text-xs text-[#565e74] mt-0.5">Specify room details, seat capacity, pricing rates, and facility tags.</p>
                   </div>
                   <Button
                     type="button"
                     onClick={() => {
-                      const currentTags = values.tags || [];
-                      setValue('tags', [...currentTags, `Room ${currentTags.length + 1}` as any]);
+                      setExtraSpaces((prev) => [
+                        ...prev,
+                        { id: Date.now().toString(), name: 'AC Room', seats: '', prices: {}, tags: ['AC', 'Library'] },
+                      ]);
                     }}
                     className="bg-[#16a34a] hover:bg-[#16a34a]/90 text-white rounded-xl text-xs font-bold px-4 py-2 flex items-center gap-1.5 shadow-xs"
                   >
@@ -651,111 +834,420 @@ export function ListingWizardV2(props: Props) {
                   </Button>
                 </div>
 
-                {/* List of Configured Spaces */}
-                <div className="space-y-6">
-                  {/* Primary / Default Space */}
-                  <div className="p-5 bg-[#f8faf8] rounded-2xl border border-[#e0e3e5] space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#16a34a] uppercase tracking-wider">Space 1 (Primary Space)</span>
-                      <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full">Default</span>
+                {/* Primary Space Row */}
+                <div className="space-y-4 border-b border-[#f2f4f6] pb-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#16a34a] uppercase tracking-wider">Primary Space</span>
+                  </div>
+
+                  {/* Row 1: Room Name & Seats */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-semibold text-[#565e74] mb-1">Room Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Special AC Rooms"
+                        className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#16a34a]"
+                        {...register('roomName')}
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Room Name *</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Standard AC Study Hall"
-                          className="w-full bg-white border border-[#bdcaba] rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#16a34a]"
-                          {...register('name')}
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#565e74] mb-1">Seats</label>
+                      <input
+                        type="number"
+                        min={1}
+                        placeholder="e.g. 43"
+                        className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#16a34a]"
+                        {...register('seats')}
+                      />
+                    </div>
+                  </div>
 
+                  {/* Row 2: All 7 Pricing Rates in 1 Single Row */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#191c1e] uppercase tracking-wider mb-2">Pricing Rates</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
                       <div>
-                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Seats *</label>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Hourly</label>
                         <input
                           type="number"
-                          min={1}
-                          placeholder="e.g. 43"
-                          className="w-full bg-white border border-[#bdcaba] rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#16a34a]"
-                          {...register('seats')}
+                          placeholder="₹"
+                          className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#16a34a]"
+                          {...register('priceHourly')}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Daily</label>
+                        <input
+                          type="number"
+                          placeholder="₹"
+                          className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#16a34a]"
+                          {...register('priceDaily')}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Weekly</label>
+                        <input
+                          type="number"
+                          placeholder="₹"
+                          className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#16a34a]"
+                          {...register('priceWeekly')}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Monthly</label>
+                        <input
+                          type="number"
+                          placeholder="₹"
+                          className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#16a34a]"
+                          {...register('priceMonthly')}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Quarterly</label>
+                        <input
+                          type="number"
+                          placeholder="₹"
+                          className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#16a34a]"
+                          {...register('priceQuarterly')}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Half Yearly</label>
+                        <input
+                          type="number"
+                          placeholder="₹"
+                          className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#16a34a]"
+                          {...register('priceHalfYearly')}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Yearly</label>
+                        <input
+                          type="number"
+                          placeholder="₹"
+                          className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#16a34a]"
+                          {...register('priceYearly')}
                         />
                       </div>
                     </div>
+                  </div>
 
-                    {/* Special Facilities & Custom Tags */}
-                    <div className="space-y-2">
-                      <label className="block text-xs font-semibold text-[#565e74]">Special Facilities &amp; Tags</label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {['Quiet', 'AC', 'Library', '24x7', 'Ergonomic Seating', 'Individual Power Outlets'].map((tag) => {
-                          const isChecked = values.tags?.includes(tag as any);
-                          return (
+                  {/* Facility Tags (Single line inline with title) */}
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <span className="text-xs font-bold text-[#565e74] shrink-0">Facility Tags:</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {Array.from(new Set(['AC', 'Library', 'Power Outlet', 'Ergo Seating', 'Silent Zone', 'CCTV', ...allCustomTags])).map((tag) => {
+                        const isChecked = values.tags?.includes(tag);
+                        const isBuiltin = ['AC', 'Library', 'Power Outlet', 'Ergo Seating', 'Silent Zone', 'CCTV'].includes(tag);
+
+                        return (
+                          <div
+                            key={tag}
+                            className={cn(
+                              "inline-flex items-center rounded-full text-xs font-semibold border transition-all select-none overflow-hidden",
+                              isChecked
+                                ? "bg-slate-900 text-white border-slate-900"
+                                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                            )}
+                          >
                             <button
-                              key={tag}
                               type="button"
                               onClick={() => {
                                 const list = values.tags || [];
                                 if (isChecked) {
-                                  setValue('tags', list.filter((t) => t !== tag) as any);
+                                  setValue('tags', list.filter((t) => t !== tag));
                                 } else {
-                                  setValue('tags', [...list, tag as any]);
+                                  setValue('tags', [...list, tag]);
                                 }
                               }}
+                              className="px-3 py-1 flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>{isChecked ? `✓ ${tag}` : `+ ${tag}`}</span>
+                            </button>
+
+                            {/* Delete Cross (Only for Custom Tags) */}
+                            {!isBuiltin && (
+                              <button
+                                type="button"
+                                title={`Delete "${tag}" tag`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Delete from form selection
+                                  setValue('tags', (values.tags || []).filter((t) => t !== tag));
+                                  // Delete from custom tag list
+                                  setAllCustomTags((prev) => prev.filter((t) => t !== tag));
+                                }}
+                                className={cn(
+                                  "px-2.5 py-1 hover:text-red-400 font-bold transition-colors cursor-pointer text-[11px] flex items-center justify-center border-l",
+                                  isChecked ? "text-slate-300 border-slate-700 hover:bg-slate-800" : "text-slate-400 border-slate-200 hover:bg-slate-100"
+                                )}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Custom User Tag Input */}
+                      <div className="flex items-center gap-1.5 ml-1">
+                        <input
+                          type="text"
+                          value={customTagInput}
+                          onChange={(e) => setCustomTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (customTagInput.trim()) {
+                                const newTag = customTagInput.trim();
+                                if (!allCustomTags.includes(newTag)) {
+                                  setAllCustomTags((prev) => [...prev, newTag]);
+                                }
+                                const list = values.tags || [];
+                                if (!list.includes(newTag)) {
+                                  setValue('tags', [...list, newTag]);
+                                }
+                                setCustomTagInput('');
+                              }
+                            }
+                          }}
+                          placeholder="+ Add custom tag..."
+                          className="bg-[#f8faf8] border border-[#bdcaba] rounded-full px-3 py-1 text-xs focus:outline-none focus:border-[#16a34a] w-36"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customTagInput.trim()) {
+                              const newTag = customTagInput.trim();
+                              if (!allCustomTags.includes(newTag)) {
+                                setAllCustomTags((prev) => [...prev, newTag]);
+                              }
+                              const list = values.tags || [];
+                              if (!list.includes(newTag)) {
+                                setValue('tags', [...list, newTag]);
+                              }
+                              setCustomTagInput('');
+                            }
+                          }}
+                          className="text-xs font-bold text-[#16a34a] hover:underline px-1 cursor-pointer"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dynamically Added Additional Spaces */}
+                {extraSpaces.map((space, idx) => (
+                  <div key={space.id} className="space-y-4 border-b border-[#f2f4f6] pb-6">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Space {idx + 2}</span>
+                      <button
+                        type="button"
+                        onClick={() => setExtraSpaces((prev) => prev.filter((s) => s.id !== space.id))}
+                        className="text-xs font-bold text-rose-600 hover:underline"
+                      >
+                        ✕ Remove Space
+                      </button>
+                    </div>
+
+                    {/* Row 1: Room Name & Seats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Room Name</label>
+                        <input
+                          type="text"
+                          value={space.name}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setExtraSpaces((prev) => prev.map((s) => (s.id === space.id ? { ...s, name: val } : s)));
+                          }}
+                          placeholder="e.g. Non-AC Hall"
+                          className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#16a34a]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#565e74] mb-1">Seats</label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={space.seats}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setExtraSpaces((prev) => prev.map((s) => (s.id === space.id ? { ...s, seats: val } : s)));
+                          }}
+                          placeholder="e.g. 20"
+                          className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#16a34a]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 2: All 7 Price Rates */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#191c1e] uppercase tracking-wider mb-2">Pricing Rates</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
+                        {[
+                          { key: 'priceHourly', label: 'Hourly' },
+                          { key: 'priceDaily', label: 'Daily' },
+                          { key: 'priceWeekly', label: 'Weekly' },
+                          { key: 'priceMonthly', label: 'Monthly' },
+                          { key: 'priceQuarterly', label: 'Quarterly' },
+                          { key: 'priceHalfYearly', label: 'Half Yearly' },
+                          { key: 'priceYearly', label: 'Yearly' },
+                        ].map((period) => (
+                          <div key={period.key}>
+                            <label className="block text-xs font-semibold text-[#565e74] mb-1">{period.label}</label>
+                            <input
+                              type="number"
+                              placeholder="₹"
+                              value={space.prices[period.key] || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setExtraSpaces((prev) =>
+                                  prev.map((s) =>
+                                    s.id === space.id
+                                      ? { ...s, prices: { ...s.prices, [period.key]: val } }
+                                      : s
+                                  )
+                                );
+                              }}
+                              className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#16a34a]"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Facility Tags (Single line inline with title) */}
+                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                      <span className="text-xs font-bold text-[#565e74] shrink-0">Facility Tags:</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {Array.from(new Set(['AC', 'Library', 'Power Outlet', 'Ergo Seating', 'Silent Zone', 'CCTV', ...allCustomTags])).map((tag) => {
+                          const isChecked = space.tags?.includes(tag);
+                          const isBuiltin = ['AC', 'Library', 'Power Outlet', 'Ergo Seating', 'Silent Zone', 'CCTV'].includes(tag);
+
+                          return (
+                            <div
+                              key={tag}
                               className={cn(
-                                "px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer select-none",
+                                "inline-flex items-center rounded-full text-xs font-semibold border transition-all select-none overflow-hidden",
                                 isChecked
                                   ? "bg-slate-900 text-white border-slate-900"
                                   : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
                               )}
                             >
-                              {isChecked ? `✓ ${tag}` : `+ ${tag}`}
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExtraSpaces((prev) =>
+                                    prev.map((s) => {
+                                      if (s.id !== space.id) return s;
+                                      const currentTags = s.tags || [];
+                                      const nextTags = isChecked
+                                        ? currentTags.filter((t) => t !== tag)
+                                        : [...currentTags, tag];
+                                      return { ...s, tags: nextTags };
+                                    })
+                                  );
+                                }}
+                                className="px-3 py-1 flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>{isChecked ? `✓ ${tag}` : `+ ${tag}`}</span>
+                              </button>
+
+                              {/* Delete Cross (Only for Custom Tags) */}
+                              {!isBuiltin && (
+                                <button
+                                  type="button"
+                                  title={`Delete "${tag}" tag`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExtraSpaces((prev) =>
+                                      prev.map((s) => ({
+                                        ...s,
+                                        tags: (s.tags || []).filter((t) => t !== tag),
+                                      }))
+                                    );
+                                    setValue('tags', (values.tags || []).filter((t) => t !== tag));
+                                    setAllCustomTags((prev) => prev.filter((t) => t !== tag));
+                                  }}
+                                  className={cn(
+                                    "px-2.5 py-1 hover:text-red-400 font-bold transition-colors cursor-pointer text-[11px] flex items-center justify-center border-l",
+                                    isChecked ? "text-slate-300 border-slate-700 hover:bg-slate-800" : "text-slate-400 border-slate-200 hover:bg-slate-100"
+                                  )}
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </div>
                           );
                         })}
+
+                        {/* Custom User Tag Input for Extra Space */}
+                        <div className="flex items-center gap-1.5 ml-1">
+                          <input
+                            type="text"
+                            value={customTagInput}
+                            onChange={(e) => setCustomTagInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (customTagInput.trim()) {
+                                  const newTag = customTagInput.trim();
+                                  if (!allCustomTags.includes(newTag)) {
+                                    setAllCustomTags((prev) => [...prev, newTag]);
+                                  }
+                                  setExtraSpaces((prev) =>
+                                    prev.map((s) => {
+                                      if (s.id !== space.id) return s;
+                                      const currentTags = s.tags || [];
+                                      return currentTags.includes(newTag) ? s : { ...s, tags: [...currentTags, newTag] };
+                                    })
+                                  );
+                                  setCustomTagInput('');
+                                }
+                              }
+                            }}
+                            placeholder="+ Add custom tag..."
+                            className="bg-[#f8faf8] border border-[#bdcaba] rounded-full px-3 py-1 text-xs focus:outline-none focus:border-[#16a34a] w-36"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (customTagInput.trim()) {
+                                const newTag = customTagInput.trim();
+                                if (!allCustomTags.includes(newTag)) {
+                                  setAllCustomTags((prev) => [...prev, newTag]);
+                                }
+                                setExtraSpaces((prev) =>
+                                  prev.map((s) => {
+                                    if (s.id !== space.id) return s;
+                                    const currentTags = s.tags || [];
+                                    return currentTags.includes(newTag) ? s : { ...s, tags: [...currentTags, newTag] };
+                                  })
+                                );
+                                setCustomTagInput('');
+                              }
+                            }}
+                            className="text-xs font-bold text-[#16a34a] hover:underline px-1 cursor-pointer"
+                          >
+                            Add
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Additional Spaces dynamically added */}
-                  {(values.tags || []).filter(t => !['Quiet', 'AC', 'Library', '24x7', 'Ergonomic Seating', 'Individual Power Outlets'].includes(t)).map((spaceTag, idx) => (
-                    <div key={idx} className="p-5 bg-white rounded-2xl border border-[#e0e3e5] space-y-4 shadow-2xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Space {idx + 2}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const list = values.tags || [];
-                            setValue('tags', list.filter((t) => t !== spaceTag) as any);
-                          }}
-                          className="text-xs font-bold text-rose-600 hover:underline"
-                        >
-                          ✕ Remove Space
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-[#565e74] mb-1">Room Name *</label>
-                          <input
-                            type="text"
-                            defaultValue={spaceTag}
-                            className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#16a34a]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-[#565e74] mb-1">Seats *</label>
-                          <input
-                            type="number"
-                            min={1}
-                            placeholder="e.g. 20"
-                            className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#16a34a]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
           )}
@@ -816,9 +1308,18 @@ export function ListingWizardV2(props: Props) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {GALLERY_SLOTS.map((slot) => {
-                  const existing = props.mode === 'edit' && props.photos ? props.photos.gallery.filter((g) => g.category === slot) : [];
+                  const existing = props.mode === 'edit' && props.photos
+                    ? props.photos.gallery.filter((g) => {
+                        if (!g.category || g.category === 'gallery') {
+                          return slot === 'Reading Hall' || slot === 'Other Facilities';
+                        }
+                        const catLower = g.category.trim().toLowerCase();
+                        const slotLower = slot.trim().toLowerCase();
+                        return catLower === slotLower || catLower.includes(slotLower) || slotLower.includes(catLower);
+                      })
+                    : [];
                   const picked = galleryFiles[slot] ?? [];
                   const pickedUrls = picked.map((f) => URL.createObjectURL(f));
                   const existingUrls = existing.map((g) => g.url);
@@ -826,7 +1327,7 @@ export function ListingWizardV2(props: Props) {
                   const extraCount = Math.max(0, allPreviews.length - 2);
 
                   return (
-                    <div key={slot} className="bg-white p-4 rounded-2xl border border-[#e0e3e5] shadow-xs flex flex-col justify-between">
+                    <div key={slot} className="bg-white p-5 rounded-2xl border border-[#e0e3e5] shadow-xs flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-sm font-bold text-[#191c1e]">{slot}</p>
@@ -838,7 +1339,7 @@ export function ListingWizardV2(props: Props) {
                         </div>
                         <label
                           htmlFor={`gallery-v2-${slot}`}
-                          className="relative flex aspect-[4/3] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-[#bdcaba] bg-[#f8fafc] hover:border-[#16a34a] transition-colors group"
+                          className="relative flex h-[110px] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-[#bdcaba] bg-[#f8fafc] hover:border-slate-400 transition-colors group"
                         >
 
 
@@ -878,19 +1379,27 @@ export function ListingWizardV2(props: Props) {
                         />
                       </div>
 
-                      <div className="mt-3 space-y-2">
+                      <div className="mt-4 space-y-3">
                         {picked.length > 0 && (
                           <div>
-                            <p className="text-[11px] font-semibold text-[#16a34a] mb-1.5 flex items-center gap-1">
+                            <p className="text-xs font-semibold text-[#16a34a] mb-2 flex items-center gap-1">
                               ✓ {picked.length} new photo{picked.length > 1 ? 's' : ''} selected:
                             </p>
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-nowrap overflow-x-auto pb-2 gap-3 scrollbar-thin">
                               {picked.map((file, pIdx) => {
                                 const url = pickedUrls[pIdx];
                                 return (
-                                  <div key={pIdx} className="relative h-12 w-12 rounded-lg overflow-hidden border border-[#bdcaba] group shrink-0 shadow-2xs">
+                                  <div
+                                    key={pIdx}
+                                    onClick={() => url && setPreviewModalUrl(url)}
+                                    className="relative h-28 w-28 md:h-32 md:w-32 border border-[#bdcaba] group shrink-0 shadow-sm cursor-pointer overflow-hidden bg-slate-900"
+                                    title="Click to view full size"
+                                  >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={url} alt={file.name} className="h-full w-full object-cover" />
+                                    <img src={url} alt={file.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold gap-1">
+                                      🔍 View
+                                    </div>
                                     <button
                                       type="button"
                                       onClick={(e) => {
@@ -898,7 +1407,7 @@ export function ListingWizardV2(props: Props) {
                                         e.stopPropagation();
                                         removePickedFile(slot, pIdx);
                                       }}
-                                      className="absolute top-0.5 right-0.5 bg-black/75 hover:bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-bold transition-colors z-20 cursor-pointer"
+                                      className="absolute top-1.5 right-1.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-colors cursor-pointer"
                                       title="Remove photo"
                                     >
                                       ✕
@@ -912,12 +1421,20 @@ export function ListingWizardV2(props: Props) {
 
                         {existing.length > 0 && (
                           <div>
-                            <p className="text-[11px] font-medium text-[#565e74] mb-1">Saved photos:</p>
-                            <div className="flex flex-wrap gap-1.5">
+                            <p className="text-xs font-semibold text-[#565e74] mb-2">Saved photos (Click to view big):</p>
+                            <div className="flex flex-nowrap overflow-x-auto pb-2 gap-3 scrollbar-thin">
                               {existing.map((g) => (
-                                <div key={g.id} className="relative h-12 w-12 rounded-lg overflow-hidden border border-[#bdcaba] shrink-0 shadow-2xs">
+                                <div
+                                  key={g.id}
+                                  onClick={() => setPreviewModalUrl(g.url)}
+                                  className="relative h-28 w-28 md:h-32 md:w-32 border border-[#bdcaba] shrink-0 shadow-sm cursor-pointer overflow-hidden group bg-slate-900"
+                                  title="Click to view full size"
+                                >
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={g.url} alt="" className="h-full w-full rounded object-cover" />
+                                  <img src={g.url} alt="" className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold gap-1">
+                                    🔍 View
+                                  </div>
                                   <DeletePhotoButton imageId={g.id} />
                                 </div>
                               ))}
@@ -925,7 +1442,7 @@ export function ListingWizardV2(props: Props) {
                           </div>
                         )}
 
-                        {!picked.length && !existing.length && <p className="text-[11px] text-[#8e99a8]">No file chosen</p>}
+                        {!picked.length && !existing.length && <p className="text-xs text-[#8e99a8] italic">No photos in this category yet</p>}
                       </div>
                     </div>
                   );
@@ -938,11 +1455,19 @@ export function ListingWizardV2(props: Props) {
                   <p className="text-xs text-[#565e74] mt-0.5">Select several at once for anything beyond the categories above.</p>
                 </div>
                 {props.mode === 'edit' && props.photos && props.photos.gallery.filter((g) => !g.category || !GALLERY_SLOTS.includes(g.category)).length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-3">
                     {props.photos.gallery.filter((g) => !g.category || !GALLERY_SLOTS.includes(g.category)).map((g) => (
-                      <div key={g.id} className="relative h-14 w-14">
+                      <div
+                        key={g.id}
+                        onClick={() => setPreviewModalUrl(g.url)}
+                        className="relative h-28 w-28 md:h-32 md:w-32 border border-[#bdcaba] shrink-0 shadow-sm cursor-pointer overflow-hidden group bg-slate-900"
+                        title="Click to view full size"
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={g.url} alt="" className="h-full w-full rounded object-cover" />
+                        <img src={g.url} alt="" className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold gap-1">
+                          🔍 View
+                        </div>
                         <DeletePhotoButton imageId={g.id} />
                       </div>
                     ))}
@@ -957,26 +1482,34 @@ export function ListingWizardV2(props: Props) {
                   className="block w-full text-xs text-[#565e74] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#16a34a]/10 file:text-[#16a34a] hover:file:bg-[#16a34a]/20 cursor-pointer"
                 />
 
-                {extraFiles.length > 0 ? (
+                {extraFiles.length > 0 && (
                   <div className="space-y-2 pt-1">
-                    <p className="text-[11px] font-semibold text-[#16a34a] flex items-center gap-1">
+                    <p className="text-xs font-semibold text-[#16a34a] flex items-center gap-1">
                       ✓ {extraFiles.length} additional photo{extraFiles.length > 1 ? 's' : ''} selected:
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3">
                       {extraFiles.map((file, idx) => {
                         const url = URL.createObjectURL(file);
                         return (
-                          <div key={idx} className="relative h-16 w-16 rounded-xl overflow-hidden border border-[#bdcaba] group shrink-0 shadow-xs">
+                          <div
+                            key={idx}
+                            onClick={() => setPreviewModalUrl(url)}
+                            className="relative h-28 w-28 md:h-32 md:w-32 border border-[#bdcaba] group shrink-0 shadow-sm cursor-pointer overflow-hidden bg-slate-900"
+                            title="Click to view full size"
+                          >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={url} alt={file.name} className="h-full w-full object-cover" />
+                            <img src={url} alt={file.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold gap-1">
+                              🔍 View
+                            </div>
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                setExtraFiles((prev) => prev.filter((_, i) => i !== idx));
+                                removeExtraFile(idx);
                               }}
-                              className="absolute top-1 right-1 bg-black/75 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold transition-colors z-20 cursor-pointer shadow-xs"
+                              className="absolute top-1.5 right-1.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-colors cursor-pointer"
                               title="Remove photo"
                             >
                               ✕
@@ -986,8 +1519,6 @@ export function ListingWizardV2(props: Props) {
                       })}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-xs text-[#8e99a8]">No file chosen</p>
                 )}
               </div>
             </div>
@@ -1060,66 +1591,188 @@ export function ListingWizardV2(props: Props) {
                 </div>
               </div>
 
-              {/* Grid 2: Pricing & Operating Hours */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Pricing Overview */}
-                <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs space-y-4">
-                  <div className="flex items-center justify-between border-b border-[#f2f4f6] pb-3">
-                    <h4 className="text-sm font-bold text-[#191c1e] uppercase tracking-wider">Pricing Plans</h4>
-                    <button type="button" onClick={() => goto(1)} className="text-xs font-bold text-[#16a34a] hover:underline">✏️ Edit Pricing</button>
+              {/* Grid 2: Spaces, Pricing & Facility Tags */}
+              <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs space-y-6">
+                <div className="flex items-center justify-between border-b border-[#f2f4f6] pb-3">
+                  <div>
+                    <h4 className="text-base font-bold text-[#191c1e] font-['Lexend',sans-serif]">Spaces, Pricing & Tags</h4>
+                    <p className="text-xs text-[#565e74] mt-0.5">Review all configured study rooms, seating, rates, and facility tags.</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {[
-                      { label: 'Hourly', val: values.priceHourly },
-                      { label: 'Daily', val: values.priceDaily },
-                      { label: 'Weekly', val: values.priceWeekly },
-                      { label: 'Fortnightly', val: values.priceFortnightly },
-                      { label: 'Monthly', val: values.priceMonthly },
-                      { label: 'Quarterly', val: values.priceQuarterly },
-                      { label: 'Half-Yearly', val: values.priceHalfYearly },
-                      { label: 'Yearly', val: values.priceYearly },
-                    ].map((p) => (
-                      <div key={p.label} className="p-2.5 bg-[#f8faf8] rounded-xl border border-[#e0e3e5] flex justify-between items-center">
-                        <span className="text-[#565e74] font-medium">{p.label}:</span>
-                        <span className="font-bold text-[#16a34a]">{p.val ? `₹${p.val}` : '—'}</span>
-                      </div>
-                    ))}
+                  <button type="button" onClick={() => goto(1)} className="text-xs font-bold text-[#16a34a] hover:underline">✏️ Edit Spaces</button>
+                </div>
+
+                {/* Primary Space Details */}
+                <div className="bg-[#f8faf8] p-5 rounded-2xl border border-[#e0e3e5] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-[#16a34a] uppercase tracking-wider">Primary Space</span>
+                    <span className="text-xs font-bold bg-[#16a34a]/10 text-[#16a34a] px-3 py-1 rounded-full">
+                      {values.seats} Seats
+                    </span>
+                  </div>
+
+                  <div className="text-xs">
+                    <span className="font-semibold text-[#565e74] block">Room Name:</span>
+                    <span className="font-bold text-[#191c1e] text-sm">{values.roomName || 'Primary Study Hall'}</span>
+                  </div>
+
+                  {/* Primary Pricing Rates */}
+                  <div>
+                    <span className="text-xs font-bold text-[#565e74] block mb-2">Pricing Rates:</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 text-xs">
+                      {[
+                        { label: 'Hourly', val: values.priceHourly },
+                        { label: 'Daily', val: values.priceDaily },
+                        { label: 'Weekly', val: values.priceWeekly },
+                        { label: 'Monthly', val: values.priceMonthly },
+                        { label: 'Quarterly', val: values.priceQuarterly },
+                        { label: 'Half-Yearly', val: values.priceHalfYearly },
+                        { label: 'Yearly', val: values.priceYearly },
+                      ].map((p) => (
+                        <div key={p.label} className="p-2 bg-white rounded-xl border border-[#e0e3e5] text-center">
+                          <span className="text-[#565e74] text-[11px] block">{p.label}</span>
+                          <span className="font-bold text-[#16a34a]">{p.val ? `₹${p.val}` : '—'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Primary Space Facility Tags */}
+                  <div>
+                    <span className="text-xs font-bold text-[#565e74] block mb-1.5">Facility Tags:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {values.tags && values.tags.length > 0 ? (
+                        values.tags.map((t) => (
+                          <span key={t} className="bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">
+                            ✓ {t}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[#8e99a8] text-xs">No facility tags selected</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Space & Amenities */}
+                {/* Additional Dynamic Spaces (Space 2, Space 3, etc.) */}
+                {extraSpaces.map((space, idx) => (
+                  <div key={space.id} className="bg-[#f8faf8] p-5 rounded-2xl border border-[#e0e3e5] space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Space {idx + 2}</span>
+                      <span className="text-xs font-bold bg-slate-200 text-slate-800 px-3 py-1 rounded-full">
+                        {space.seats ? `${space.seats} Seats` : 'Capacity unspecified'}
+                      </span>
+                    </div>
+
+                    <div className="text-xs">
+                      <span className="font-semibold text-[#565e74] block">Room Name:</span>
+                      <span className="font-bold text-[#191c1e] text-sm">{space.name || `Space ${idx + 2}`}</span>
+                    </div>
+
+                    {/* Extra Space Pricing Rates */}
+                    <div>
+                      <span className="text-xs font-bold text-[#565e74] block mb-2">Pricing Rates:</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-xs">
+                        {[
+                          { label: 'Hourly', val: space.prices?.priceHourly },
+                          { label: 'Daily', val: space.prices?.priceDaily },
+                          { label: 'Weekly', val: space.prices?.priceWeekly },
+                          { label: 'Monthly', val: space.prices?.priceMonthly },
+                          { label: 'Half-Yearly', val: space.prices?.priceHalfYearly },
+                          { label: 'Yearly', val: space.prices?.priceYearly },
+                        ].map((p) => (
+                          <div key={p.label} className="p-2 bg-white rounded-xl border border-[#e0e3e5] text-center">
+                            <span className="text-[#565e74] text-[11px] block">{p.label}</span>
+                            <span className="font-bold text-[#16a34a]">{p.val ? `₹${p.val}` : '—'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Extra Space Tags */}
+                    <div>
+                      <span className="text-xs font-bold text-[#565e74] block mb-1.5">Facility Tags:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {space.tags && space.tags.length > 0 ? (
+                          space.tags.map((t) => (
+                            <span key={t} className="bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">
+                              ✓ {t}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[#8e99a8] text-xs">No tags configured</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Grid 3: Operating Hours & Centre Facilities */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Operating Hours */}
                 <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs space-y-4">
                   <div className="flex items-center justify-between border-b border-[#f2f4f6] pb-3">
-                    <h4 className="text-sm font-bold text-[#191c1e] uppercase tracking-wider">Space & Amenities</h4>
-                    <button type="button" onClick={() => goto(1)} className="text-xs font-bold text-[#16a34a] hover:underline">✏️ Edit Details</button>
-                  </div>
-                  <div className="space-y-3 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#565e74]">Space Type:</span>
-                      <span className="font-bold text-[#191c1e] capitalize">{values.spaceType ? values.spaceType.replace('_', ' ') : '-'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#565e74]">Seating Capacity:</span>
-                      <span className="font-bold text-[#16a34a]">{values.seats} seats</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#565e74]">Women-Safe Access:</span>
-                      <span className="font-bold text-[#191c1e]">{values.womenSafeClaim ? 'Yes ✅' : 'No'}</span>
-                    </div>
                     <div>
-                      <span className="font-semibold text-[#565e74] block mb-1.5">Selected Facilities:</span>
-                      <div className="flex flex-wrap gap-1.5">
+                      <h4 className="text-base font-bold text-[#191c1e] font-['Lexend',sans-serif]">Operating Hours</h4>
+                      <p className="text-xs text-[#565e74] mt-0.5">Weekly Schedule</p>
+                    </div>
+                    <button type="button" onClick={() => goto(1)} className="text-xs font-bold text-[#16a34a] hover:underline">✏️ Edit Hours</button>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    {DAY_ORDER.map((dayIdx) => {
+                      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIdx] ?? 'Sunday';
+                      const hourObj = values.hours?.[dayIdx];
+                      const isOpen = hourObj?.isOpen ?? true;
+
+                      return (
+                        <div key={dayIdx} className="flex justify-between items-center py-1 border-b border-[#f8fafc]">
+                          <span className="font-semibold text-[#565e74]">{dayName}:</span>
+                          {isOpen ? (
+                            <span className="font-bold text-[#16a34a] bg-[#16a34a]/10 px-2.5 py-0.5 rounded-md">
+                              {hourObj?.openingTime || '09:00'} - {hourObj?.closingTime || '22:00'}
+                            </span>
+                          ) : (
+                            <span className="font-bold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-md">Closed</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Centre Facilities & Amenities */}
+                <div className="bg-white p-6 rounded-2xl border border-[#e0e3e5] shadow-xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-[#f2f4f6] pb-3">
+                    <div>
+                      <h4 className="text-base font-bold text-[#191c1e] font-['Lexend',sans-serif]">Facilities & Amenities</h4>
+                      <p className="text-xs text-[#565e74] mt-0.5">Centre-wide amenities</p>
+                    </div>
+                    <button type="button" onClick={() => goto(1)} className="text-xs font-bold text-[#16a34a] hover:underline">✏️ Edit Facilities</button>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <span className="font-semibold text-[#565e74] block mb-2">Selected Facilities:</span>
+                      <div className="flex flex-wrap gap-2">
                         {values.amenityIds && values.amenityIds.length > 0 ? (
                           props.amenities.filter((a) => values.amenityIds.includes(a.id)).map((a) => (
-                            <span key={a.id} className="bg-[#16a34a]/10 text-[#16a34a] border border-[#16a34a]/20 text-[11px] font-bold px-2.5 py-1 rounded-full">
+                            <span key={a.id} className="bg-[#16a34a] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-2xs">
                               ✓ {a.label}
                             </span>
                           ))
                         ) : (
-                          <span className="text-[#8e99a8]">No amenities selected</span>
+                          <span className="text-[#8e99a8] italic">No centre amenities selected</span>
                         )}
                       </div>
                     </div>
+                    {values.womenSafeClaim && (
+                      <div className="pt-2">
+                        <span className="text-xs font-bold text-[#16a34a] bg-[#16a34a]/10 border border-[#16a34a]/20 px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5">
+                          🛡️ This centre has verified women-safe facilities
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1158,31 +1811,65 @@ export function ListingWizardV2(props: Props) {
                     <button type="button" onClick={() => goto(3)} className="text-xs font-bold text-[#16a34a] hover:underline">✏️ Edit Gallery</button>
                   </div>
                   <div className="space-y-3 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#565e74]">Business Logo:</span>
-                      <span className="font-bold text-[#16a34a]">{logoFile ? `✓ Selected (${logoFile.name})` : props.photos?.logoUrl ? '✓ Saved' : 'Not uploaded'}</span>
+                    {/* Business Logo Preview */}
+                    <div className="space-y-1">
+                      <span className="font-semibold text-[#565e74] block">Business Logo:</span>
+                      {logoFile ? (
+                        <div className="h-16 w-16 rounded-xl border border-[#bdcaba] overflow-hidden bg-white shadow-2xs">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={URL.createObjectURL(logoFile)} alt="Logo" className="h-full w-full object-contain p-1" />
+                        </div>
+                      ) : (!logoRemoved && props.photos?.logoUrl) ? (
+                        <div className="h-16 w-16 rounded-xl border border-[#bdcaba] overflow-hidden bg-white shadow-2xs">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={props.photos.logoUrl} alt="Saved Logo" className="h-full w-full object-contain p-1" />
+                        </div>
+                      ) : (
+                        <span className="text-[#8e99a8] italic">No logo provided</span>
+                      )}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#565e74]">Cover Image:</span>
-                      <span className="font-bold text-[#16a34a]">{coverFile ? `✓ Selected (${coverFile.name})` : props.photos?.coverUrl ? '✓ Saved' : 'Not uploaded'}</span>
+
+                    {/* Cover Image Preview */}
+                    <div className="space-y-1">
+                      <span className="font-semibold text-[#565e74] block">Cover Image:</span>
+                      {coverFile ? (
+                        <div className="h-20 w-36 rounded-xl border border-[#bdcaba] overflow-hidden bg-slate-100 shadow-2xs">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={URL.createObjectURL(coverFile)} alt="Cover" className="h-full w-full object-cover" />
+                        </div>
+                      ) : (!coverRemoved && props.photos?.coverUrl) ? (
+                        <div className="h-20 w-36 rounded-xl border border-[#bdcaba] overflow-hidden bg-slate-100 shadow-2xs">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={props.photos.coverUrl} alt="Saved Cover" className="h-full w-full object-cover" />
+                        </div>
+                      ) : (
+                        <span className="text-[#8e99a8] italic">No cover image provided</span>
+                      )}
                     </div>
+
                     <div>
-                      <span className="font-semibold text-[#565e74] block mb-1">Gallery Categories Picked:</span>
-                      <div className="space-y-1">
-                        {Object.entries(galleryFiles).map(([slot, files]) => (
-                          <div key={slot} className="flex justify-between text-[#191c1e]">
-                            <span>{slot}:</span>
-                            <span className="font-bold">{files.length} photo{files.length > 1 ? 's' : ''}</span>
+                      <span className="font-semibold text-[#565e74] block mb-2">Gallery Photos:</span>
+                      <div className="flex flex-wrap gap-2">
+                        {/* Freshly Selected Gallery Files */}
+                        {Object.entries(galleryFiles).flatMap(([slot, files]) =>
+                          files.map((file, idx) => (
+                            <div key={`picked-${slot}-${idx}`} className="h-16 w-16 border border-[#bdcaba] overflow-hidden bg-slate-900 shadow-2xs relative group" title={`${slot}: ${file.name}`}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={URL.createObjectURL(file)} alt={file.name} className="h-full w-full object-cover" />
+                              <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] font-bold text-white text-center py-0.5 truncate px-0.5">{slot}</span>
+                            </div>
+                          ))
+                        )}
+                        {/* Saved Database Gallery Photos */}
+                        {props.photos?.gallery?.map((g) => (
+                          <div key={`saved-${g.id}`} className="h-16 w-16 border border-[#bdcaba] overflow-hidden bg-slate-900 shadow-2xs relative group" title={g.category || 'Gallery'}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={g.url} alt="" className="h-full w-full object-cover" />
+                            <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] font-bold text-white text-center py-0.5 truncate px-0.5">{g.category || 'Gallery'}</span>
                           </div>
                         ))}
-                        {extraFiles.length > 0 && (
-                          <div className="flex justify-between text-[#191c1e]">
-                            <span>Additional Photos:</span>
-                            <span className="font-bold">{extraFiles.length} photo{extraFiles.length > 1 ? 's' : ''}</span>
-                          </div>
-                        )}
-                        {!Object.keys(galleryFiles).length && !extraFiles.length && (
-                          <span className="text-[#8e99a8]">No gallery photos selected</span>
+                        {!Object.keys(galleryFiles).length && !extraFiles.length && (!props.photos?.gallery || props.photos.gallery.length === 0) && (
+                          <span className="text-[#8e99a8] italic">No gallery photos uploaded</span>
                         )}
                       </div>
                     </div>
@@ -1218,15 +1905,61 @@ export function ListingWizardV2(props: Props) {
             ) : (
               <Button
                 type="button"
+                disabled={phase !== 'idle'}
                 onClick={() => { submitIntent.current = 'publish'; handleSubmit(doSubmit)(); }}
-                className="bg-[#16a34a] hover:bg-[#16a34a]/90 text-white px-8 py-2.5 rounded-xl font-bold text-sm shadow-md"
+                className={`text-white px-8 py-2.5 rounded-xl font-bold text-sm shadow-md flex items-center gap-2 transition-all disabled:cursor-not-allowed ${
+                  phase === 'published'
+                    ? 'bg-[#16a34a] hover:bg-[#16a34a]'
+                    : 'bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-70'
+                }`}
               >
-                Publish Listing
+                {phase === 'published' ? (
+                  <span className="flex items-center gap-1.5 text-white font-bold">
+                    ✓ Published!
+                  </span>
+                ) : phase !== 'idle' ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Publishing...</span>
+                  </>
+                ) : (
+                  <span>Publish Listing</span>
+                )}
               </Button>
             )}
           </div>
         </form>
       </div>
+
+      {/* Lightbox Image Preview Modal */}
+      {previewModalUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
+          onClick={() => setPreviewModalUrl(null)}
+        >
+          <div className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center pointer-events-auto">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewModalUrl}
+              alt="Enlarged photo preview"
+              className="max-h-[85vh] max-w-full object-contain border-2 border-white/20 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              type="button"
+              onClick={() => setPreviewModalUrl(null)}
+              className="absolute -top-12 right-0 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 hover:bg-rose-600 text-white font-bold text-lg transition-colors cursor-pointer"
+              title="Close image"
+            >
+              ✕
+            </button>
+            <p className="text-white/70 text-xs font-semibold mt-3">Click anywhere to close</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

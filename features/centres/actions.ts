@@ -60,10 +60,10 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       alt_phone: input.altPhone || null,
       business_email: input.businessEmail || null,
       website: input.website || null,
-      google_place_id: input.googlePlaceId ?? null,
       description: input.about || null,
       capacity: input.seats, // drives the "seats free" occupancy badge — was missing entirely, defaulted to 0
-      is_published: false,
+      status: user.role === 'admin' ? 'approved' : 'draft',
+      is_published: user.role === 'admin',
       // is_verified is deliberately NOT settable here — that's an admin
       // attestation, reviewed alongside the listing during approval, not
       // something an owner can claim for themselves.
@@ -130,16 +130,20 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
 
 const updateSchema = centreUpsertSchema.partial().extend({ centreId: z.string().uuid() });
 
-/** Update an owner's own listing (any field of the upsert schema). */
+/** Update an owner's or admin's listing (any field of the upsert schema). */
 export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> {
   return action(updateSchema, raw, async (input) => {
-    const user = await requireRole('owner');
-    const db = await createClient();
+    const user = await requireRole('owner'); // admins automatically satisfy requireRole('owner')
+    const userDb = await createClient();
+    const db = user.role === 'admin' ? adminDb : userDb;
     const { centreId, ...fields } = input;
 
-    // Ownership is enforced by RLS; this pre-check gives a friendly error.
+    // Ownership is enforced for owners; admins can edit any listing.
     const { data: owned } = await db.from('centres').select('owner_id').eq('id', centreId).maybeSingle();
-    if (!owned || owned.owner_id !== user.id) throw new ActionError('FORBIDDEN', 'That listing isn’t yours to edit.');
+    if (!owned) throw new ActionError('NOT_FOUND', 'Listing not found.');
+    if (user.role !== 'admin' && owned.owner_id !== user.id) {
+      throw new ActionError('FORBIDDEN', 'That listing isn’t yours to edit.');
+    }
 
     const patch: Record<string, unknown> = {};
     if (fields.name !== undefined) patch.name = fields.name;
@@ -180,18 +184,19 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
       await logAudit('centre.updated', 'centre', centreId, { by: user.id, fieldsChanged: Object.keys(patch) });
     }
 
-    // Pricing/seats live on the centre's resource row, not on centres itself.
+    // Pricing/seats/roomName live on the centre's resource row, not on centres itself.
     const priceFields = [
       fields.priceHourly, fields.priceDaily, fields.priceWeekly, fields.priceFortnightly,
       fields.priceMonthly, fields.priceQuarterly, fields.priceHalfYearly, fields.priceYearly,
     ];
-    if (priceFields.some((v) => v !== undefined) || fields.seats !== undefined) {
+    if (priceFields.some((v) => v !== undefined) || fields.seats !== undefined || fields.roomName !== undefined) {
       const { data: resource } = await db.from('resources').select('id, pricing').eq('centre_id', centreId).limit(1).maybeSingle();
       if (resource) {
         const resourcePatch: Record<string, unknown> = {};
+        if (fields.roomName !== undefined) resourcePatch.label = fields.roomName;
         if (fields.seats !== undefined) resourcePatch.unit_count = fields.seats;
         if (priceFields.some((v) => v !== undefined)) {
-          const pricing: Record<string, number> = {};
+          const pricing: Record<string, number> = { ...((resource.pricing ?? {}) as Record<string, number>) };
           if (fields.priceHourly !== undefined) pricing.hour = fields.priceHourly as number;
           if (fields.priceDaily !== undefined) pricing.day = fields.priceDaily as number;
           if (fields.priceWeekly !== undefined) pricing.week = fields.priceWeekly as number;
@@ -205,16 +210,49 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
         const { error: resourceErr } = await db.from('resources').update(resourcePatch as never).eq('id', resource.id);
         if (resourceErr) throw resourceErr;
 
-        // Pricing/seat-capacity changes directly affect what students are
-        // charged and how many seats can be booked — worth a real audit
-        // trail, which nothing was writing before.
-        if (resourcePatch.pricing || resourcePatch.unit_count !== undefined) {
+        if (resourcePatch.pricing || resourcePatch.unit_count !== undefined || resourcePatch.label !== undefined) {
           await logAudit('centre.pricing_updated', 'resource', resource.id, {
             by: user.id,
             ...(resourcePatch.pricing ? { pricingBefore: resource.pricing, pricingAfter: resourcePatch.pricing } : {}),
             ...(resourcePatch.unit_count !== undefined ? { seatsAfter: resourcePatch.unit_count } : {}),
           });
         }
+      }
+    }
+
+    // Handle dynamic extra spaces (Syncing secondary resources)
+    if (fields.extraSpaces !== undefined) {
+      // Fetch existing extra resources (resource_type != 'seat' or tier != 'open')
+      const { data: existingResources } = await db.from('resources').select('id').eq('centre_id', centreId);
+      const primaryResourceId = existingResources?.[0]?.id;
+
+      // Delete non-primary resources and recreate/sync extra spaces
+      if (existingResources && existingResources.length > 1) {
+        const extraIdsToDelete = existingResources.slice(1).map((r) => r.id);
+        await db.from('resources').delete().in('id', extraIdsToDelete);
+      }
+
+      if (fields.extraSpaces.length > 0) {
+        const rowsToInsert = fields.extraSpaces.map((space) => {
+          const pricing: Record<string, number> = {};
+          if (space.prices?.priceHourly) pricing.hour = parseFloat(space.prices.priceHourly);
+          if (space.prices?.priceDaily) pricing.day = parseFloat(space.prices.priceDaily);
+          if (space.prices?.priceWeekly) pricing.week = parseFloat(space.prices.priceWeekly);
+          if (space.prices?.priceMonthly) pricing.month = parseFloat(space.prices.priceMonthly);
+          if (space.prices?.priceQuarterly) pricing.quarter = parseFloat(space.prices.priceQuarterly);
+          if (space.prices?.priceHalfYearly) pricing.half_year = parseFloat(space.prices.priceHalfYearly);
+          if (space.prices?.priceYearly) pricing.year = parseFloat(space.prices.priceYearly);
+
+          return {
+            centre_id: centreId,
+            resource_type: 'seat' as const,
+            label: space.name || 'Additional Space',
+            unit_count: parseInt(space.seats || '10', 10),
+            pricing,
+          };
+        });
+
+        await db.from('resources').insert(rowsToInsert);
       }
     }
 
@@ -245,6 +283,7 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
     }
 
     revalidatePath('/owner/centres');
+    revalidatePath('/admin/centres');
     revalidatePath('/centres');
     return { ok: true as const };
   });
@@ -255,8 +294,21 @@ const submitSchema = z.object({ centreId: z.string().uuid() });
 /** Submit a draft for admin review (draft/rejected → pending_review). */
 export async function submitForReview(raw: unknown): Promise<Result<{ ok: true }>> {
   return action(submitSchema, raw, async (input) => {
-    await requireRole('owner');
+    const user = await requireRole('owner');
     const db = await createClient();
+
+    if (user.role === 'admin') {
+      const { error: appErr } = await adminDb
+        .from('centres')
+        .update({ status: 'approved', is_published: true })
+        .eq('id', input.centreId);
+      if (appErr) throw appErr;
+      revalidatePath('/owner/centres');
+      revalidatePath('/admin/centres');
+      revalidatePath('/centres');
+      return { ok: true as const };
+    }
+
     const { error } = await db.rpc('submit_centre_for_review', { p_centre_id: input.centreId });
     if (error) {
       if (error.message.includes('FORBIDDEN')) throw new ActionError('FORBIDDEN', 'That listing isn’t yours.');
@@ -373,6 +425,7 @@ export async function uploadCentreImage(formData: FormData): Promise<Result<{ st
   }
 
   revalidatePath('/owner/centres');
+  revalidatePath('/admin/centres');
   revalidatePath('/centres');
   return ok({ storagePath: path });
 }
@@ -407,6 +460,43 @@ export async function uploadCentreLogo(formData: FormData): Promise<Result<{ url
   revalidatePath('/owner/centres');
   revalidatePath('/centres');
   return ok({ url: pub.publicUrl });
+}
+
+/** Clear/remove the centre's business logo. */
+export async function removeCentreLogo(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(z.object({ centreId: z.string().uuid() }), raw, async (input) => {
+    const user = await requireRole('owner');
+    const { data: centre } = await adminDb.from('centres').select('id, owner_id, logo_url').eq('id', input.centreId).maybeSingle();
+    if (!centre) throw new ActionError('NOT_FOUND', 'Centre not found.');
+    if (centre.owner_id !== user.id && user.role !== 'admin') throw new ActionError('FORBIDDEN', 'That listing isn’t yours.');
+
+    await adminDb.from('centres').update({ logo_url: null }).eq('id', input.centreId);
+    revalidatePath('/owner/centres');
+    revalidatePath('/centres');
+    return { ok: true as const };
+  });
+}
+
+/** Clear/remove the centre's cover image. */
+export async function removeCentreCover(raw: unknown): Promise<Result<{ ok: true }>> {
+  return action(z.object({ centreId: z.string().uuid() }), raw, async (input) => {
+    const user = await requireRole('owner');
+    const { data: centre } = await adminDb.from('centres').select('id, owner_id, cover_url').eq('id', input.centreId).maybeSingle();
+    if (!centre) throw new ActionError('NOT_FOUND', 'Centre not found.');
+    if (centre.owner_id !== user.id && user.role !== 'admin') throw new ActionError('FORBIDDEN', 'That listing isn’t yours.');
+
+    await adminDb.from('centres').update({ cover_url: null }).eq('id', input.centreId);
+    // Also remove from listing_images if marked as cover
+    const { data: img } = await adminDb.from('listing_images').select('id, storage_path').eq('centre_id', input.centreId).eq('is_cover', true).maybeSingle();
+    if (img) {
+      await adminDb.storage.from('listing-images').remove([img.storage_path]);
+      await adminDb.from('listing_images').delete().eq('id', img.id);
+    }
+
+    revalidatePath('/owner/centres');
+    revalidatePath('/centres');
+    return { ok: true as const };
+  });
 }
 
 /** Replace the centre's amenity set with the selected amenity IDs. */

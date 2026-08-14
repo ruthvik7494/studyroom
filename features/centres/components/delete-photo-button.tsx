@@ -7,7 +7,9 @@ export function DeletePhotoButton({ imageId }: { imageId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  const run = () => {
+  const run = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     startTransition(async () => {
       await deleteListingImage({ imageId });
       router.refresh();
@@ -21,9 +23,13 @@ export function DeletePhotoButton({ imageId }: { imageId: string }) {
       disabled={pending}
       aria-label="Remove photo"
       title="Remove photo"
-      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs font-bold text-white hover:bg-black/80 disabled:opacity-50"
+      className="absolute top-1.5 right-1.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all cursor-pointer disabled:opacity-80"
     >
-      {pending ? '…' : '✕'}
+      {pending ? (
+        <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+      ) : (
+        <span className="text-xs font-black leading-none">✕</span>
+      )}
     </button>
   );
 }
