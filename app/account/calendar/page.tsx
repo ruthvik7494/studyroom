@@ -31,7 +31,7 @@ export default async function StudentCalendarPage() {
   });
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="w-full space-y-6">
       <div>
         <h1 className="font-['Lexend',sans-serif] text-2xl font-bold text-[#191c1e]">
           My Booking Calendar 📅
@@ -41,7 +41,7 @@ export default async function StudentCalendarPage() {
         </p>
       </div>
 
-      <div className="max-w-xl">
+      <div className="w-full">
         <StudentBookingCalendar bookings={calendarItems} />
       </div>
     </div>
