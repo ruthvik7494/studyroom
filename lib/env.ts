@@ -24,7 +24,7 @@ function optional(value: string | undefined): string | undefined {
 }
 
 const DEFAULT_URL = 'https://fvhbbhppbazjeqpccwom.supabase.co';
-const DEFAULT_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2aGJiaHBwYmF6amVxcGNjd29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MDg6NzMsImV4cCI6MjEwMjA4NDY3M30.jn8E_5i_lP-Us51kIjN28R3JHLuSrC6UYMw43ZPkZDk';
+const DEFAULT_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2aGJiaHBwYmF6amVxcGNjd29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MDg2NzMsImV4cCI6MjEwMjA4NDY3M30.jn8E_5i_lP-Us51kIjN28R3JHLuSrC6UYMw43ZPkZDk';
 const DEFAULT_SERVICE_ROLE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2aGJiaHBwYmF6amVxcGNjd29tIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjUwODY3MywiZXhwIjoyMTAyMDg0NjczfQ.7R_xLHuW5zDteaTKC3XR2FPmJA5sjVAE1PofASzOAPM';
 
 /** Required for the app to run at all (Supabase). Validated eagerly on import. */
