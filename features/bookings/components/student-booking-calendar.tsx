@@ -43,118 +43,137 @@ export function StudentBookingCalendar({ bookings }: { bookings: BookingCalendar
   const selectedBookings = bookingMap.get(selectedDateStr) ?? [];
 
   return (
-    <Card className="p-4 bg-white shadow-sm border border-[#e0e3e5] rounded-2xl">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-['Lexend',sans-serif] text-sm font-bold text-[#191c1e]">
-          📅 Booking Calendar
-        </h3>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={prevMonth}
-            className="h-7 w-7 flex items-center justify-center rounded-lg border text-xs hover:bg-[#f2f4f6] text-[#565e74]"
-          >
-            ←
-          </button>
-          <span className="text-xs font-semibold px-2 text-[#191c1e] min-w-[90px] text-center">
-            {monthName}
-          </span>
-          <button
-            onClick={nextMonth}
-            className="h-7 w-7 flex items-center justify-center rounded-lg border text-xs hover:bg-[#f2f4f6] text-[#565e74]"
-          >
-            →
-          </button>
-        </div>
-      </div>
+    <Card className="p-6 bg-white shadow-sm border border-[#e0e3e5] rounded-2xl">
+      <div className="grid md:grid-cols-[340px_1fr] gap-8 items-start">
+        {/* Left Side: Calendar Month View */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-['Lexend',sans-serif] text-base font-bold text-[#191c1e] flex items-center gap-2">
+              <span>📅</span> Booking Calendar
+            </h3>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={prevMonth}
+                className="h-8 w-8 flex items-center justify-center rounded-lg border text-xs hover:bg-[#f2f4f6] text-[#565e74]"
+              >
+                ←
+              </button>
+              <span className="text-xs font-semibold px-2 text-[#191c1e] min-w-[100px] text-center">
+                {monthName}
+              </span>
+              <button
+                onClick={nextMonth}
+                className="h-8 w-8 flex items-center justify-center rounded-lg border text-xs hover:bg-[#f2f4f6] text-[#565e74]"
+              >
+                →
+              </button>
+            </div>
+          </div>
 
-      {/* Weekday Labels */}
-      <div className="grid grid-cols-7 text-center text-[10px] font-bold uppercase text-[#565e74] mb-1">
-        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-      </div>
+          {/* Weekday Labels */}
+          <div className="grid grid-cols-7 text-center text-[11px] font-bold uppercase text-[#565e74] mb-2">
+            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+          </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1 text-center text-xs">
-        {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-          <div key={`empty-${i}`} className="h-8" />
-        ))}
-        {Array.from({ length: daysInMonth }).map((_, i) => {
-          const dayNum = i + 1;
-          const dateObj = new Date(year, month, dayNum);
-          // Format local date string YYYY-MM-DD
-          const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-          const hasBooking = bookingMap.has(dateKey);
-          const isSelected = selectedDateStr === dateKey;
-          const isToday = today.toISOString().slice(0, 10) === dateKey;
-
-          return (
-            <button
-              key={dateKey}
-              onClick={() => setSelectedDateStr(dateKey)}
-              className={`h-8 w-full rounded-lg flex flex-col items-center justify-center relative transition-colors ${
-                isSelected
-                  ? 'bg-[#006b2c] text-white font-bold'
-                  : isToday
-                  ? 'bg-[#006b2c]/10 text-[#006b2c] font-bold'
-                  : 'hover:bg-[#f2f4f6] text-[#191c1e]'
-              }`}
-            >
-              <span>{dayNum}</span>
-              {hasBooking && (
-                <span
-                  className={`h-1.5 w-1.5 rounded-full absolute bottom-1 ${
-                    isSelected ? 'bg-white' : 'bg-[#16a34a]'
-                  }`}
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Selected Day Details */}
-      <div className="mt-4 pt-3 border-t border-[#e0e3e5]">
-        <p className="text-xs font-bold text-[#565e74] uppercase tracking-wider mb-2">
-          {new Date(selectedDateStr + 'T00:00:00').toLocaleDateString('en-IN', {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short',
-          })}
-        </p>
-
-        {selectedBookings.length === 0 ? (
-          <p className="text-xs text-[#565e74] italic">No bookings for this date.</p>
-        ) : (
-          <div className="space-y-2">
-            {selectedBookings.map((b) => {
-              const start = new Date(b.starts_at);
-              const end = new Date(b.ends_at);
-              const isHourly = b.period === 'hour';
-              const timeStr = isHourly
-                ? `${start.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })} - ${end.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })}`
-                : `${b.period.toUpperCase()} PASS`;
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1 text-center text-xs">
+            {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+              <div key={`empty-${i}`} className="h-9" />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const dayNum = i + 1;
+              const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+              const hasBooking = bookingMap.has(dateKey);
+              const isSelected = selectedDateStr === dateKey;
+              const isToday = today.toISOString().slice(0, 10) === dateKey;
 
               return (
-                <div
-                  key={b.id}
-                  className="p-2.5 rounded-xl bg-[#f8faf8] border border-[#16a34a]/20 text-xs"
+                <button
+                  key={dateKey}
+                  onClick={() => setSelectedDateStr(dateKey)}
+                  className={`h-9 w-full rounded-xl flex flex-col items-center justify-center relative transition-colors ${
+                    isSelected
+                      ? 'bg-[#006b2c] text-white font-bold shadow-sm'
+                      : isToday
+                      ? 'bg-[#006b2c]/10 text-[#006b2c] font-bold'
+                      : 'hover:bg-[#f2f4f6] text-[#191c1e]'
+                  }`}
                 >
-                  <p className="font-bold text-[#191c1e]">{b.centreName}</p>
-                  <p className="text-[11px] font-semibold text-[#006b2c] mt-0.5">⏱ {timeStr}</p>
-                  <div className="mt-1 flex items-center justify-between text-[10px]">
-                    <span className="capitalize text-[#565e74]">{b.period}</span>
+                  <span>{dayNum}</span>
+                  {hasBooking && (
                     <span
-                      className={`font-semibold capitalize ${
-                        b.status === 'confirmed' ? 'text-[#16a34a]' : 'text-amber-700'
+                      className={`h-1.5 w-1.5 rounded-full absolute bottom-1 ${
+                        isSelected ? 'bg-white' : 'bg-[#16a34a]'
                       }`}
-                    >
-                      {b.status}
-                    </span>
-                  </div>
-                </div>
+                    />
+                  )}
+                </button>
               );
             })}
           </div>
-        )}
+        </div>
+
+        {/* Right Side: Event Details for Selected Day */}
+        <div className="md:border-l md:border-[#e0e3e5] md:pl-8">
+          <div className="flex items-center justify-between pb-3 border-b border-[#e0e3e5] mb-4">
+            <p className="text-sm font-bold text-[#191c1e] uppercase tracking-wide">
+              {new Date(selectedDateStr + 'T00:00:00').toLocaleDateString('en-IN', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+            <span className="text-xs font-semibold text-[#565e74] bg-[#f2f4f6] px-2.5 py-1 rounded-full">
+              {selectedBookings.length} {selectedBookings.length === 1 ? 'Booking' : 'Bookings'}
+            </span>
+          </div>
+
+          {selectedBookings.length === 0 ? (
+            <div className="py-12 text-center text-sm text-[#565e74] italic">
+              No bookings scheduled for this date.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {selectedBookings.map((b) => {
+                const start = new Date(b.starts_at);
+                const end = new Date(b.ends_at);
+                const isHourly = b.period === 'hour';
+                const timeStr = isHourly
+                  ? `${start.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })} - ${end.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+                  : `${b.period.toUpperCase()} PASS`;
+
+                return (
+                  <div
+                    key={b.id}
+                    className="p-4 rounded-xl bg-[#f8faf8] border border-[#16a34a]/30 flex flex-wrap items-center justify-between gap-3"
+                  >
+                    <div>
+                      <p className="font-bold text-[#191c1e] text-base">{b.centreName}</p>
+                      <p className="text-xs font-semibold text-[#006b2c] mt-1 flex items-center gap-1">
+                        <span>⏱</span> {timeStr}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium capitalize text-[#565e74] bg-white border px-2.5 py-1 rounded-md">
+                        {b.period}
+                      </span>
+                      <span
+                        className={`text-xs font-bold capitalize px-3 py-1 rounded-full ${
+                          b.status === 'confirmed'
+                            ? 'bg-[#16a34a]/10 text-[#16a34a]'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {b.status}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );
