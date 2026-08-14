@@ -114,24 +114,28 @@ export default async function AllCentresPage({ searchParams }: PageProps) {
       </div>
 
       <Card className="overflow-hidden rounded-2xl">
-        {/* Search — same GET form/behavior, redesigned as an inset pill search bar */}
-        <div className="border-b p-4">
-          <form action="/admin/centres/all" method="get" className="relative max-w-md">
-            {tab !== 'active' && <input type="hidden" name="tab" value={tab} />}
-            <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-              <SearchIcon />
-            </span>
-            <input
-              type="text"
-              name="q"
-              defaultValue={q ?? ''}
-              placeholder="Search"
-              aria-label="Search by name"
-              className="h-12 w-full rounded-xl border bg-background pl-11 pr-24 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-            <Button type="submit" size="sm" className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg">Search</Button>
-          </form>
-          <p className="mt-3 text-sm text-muted-foreground">{result.total} centre{result.total === 1 ? '' : 's'}</p>
+        {/* Search — redesigned with wider layout, clear spacing, and prominent input bar */}
+        <div className="border-b p-5 md:p-6 bg-slate-50/50">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <form action="/admin/centres/all" method="get" className="relative w-full max-w-2xl">
+              {tab !== 'active' && <input type="hidden" name="tab" value={tab} />}
+              <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <SearchIcon />
+              </span>
+              <input
+                type="text"
+                name="q"
+                defaultValue={q ?? ''}
+                placeholder="Search centres by name, location, or owner..."
+                aria-label="Search by name"
+                className="h-14 w-full rounded-2xl border border-slate-300 bg-white pl-12 pr-32 text-base placeholder:text-muted-foreground shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:border-emerald-500"
+              />
+              <Button type="submit" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl px-6 h-10 bg-emerald-600 hover:bg-emerald-700 font-bold text-white text-sm shadow-xs">Search</Button>
+            </form>
+            <p className="text-xs md:text-sm font-semibold text-slate-500 shrink-0">
+              Showing <span className="font-bold text-slate-800">{result.total}</span> centre{result.total === 1 ? '' : 's'}
+            </p>
+          </div>
         </div>
 
         {result.items.length === 0 ? (

@@ -292,11 +292,6 @@ export function ListingWizardV2(props: Props) {
       }
     }
 
-    // Auto-save progress silently in backend on every step navigation
-    submitIntent.current = 'draft';
-    isSilentAutoSave.current = true;
-    handleSubmit(doSubmit)();
-
     setMaxUnlocked((m) => Math.max(m, target));
     setStep(target);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -308,6 +303,49 @@ export function ListingWizardV2(props: Props) {
       <div className="bg-white border-b border-[#e0e3e5] px-6 py-4 flex items-center justify-between shadow-xs sticky top-0 z-30">
         <h1 className="text-xl font-bold text-[#16a34a] font-['Lexend',sans-serif]">StudyNook Partner Onboarding</h1>
         <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setValue('name', 'Vijaya Executive Study Lounge');
+              setValue('about', 'Premium quiet study room with high-speed WiFi, ergonomic seating, AC halls, and 24/7 CCTV surveillance.');
+              setValue('phone', '9876543210');
+              setValue('altPhone', '9123456789');
+              setValue('businessEmail', 'vijayastudy@gmail.com');
+              setValue('website', 'vijayastudycenter.in');
+              setValue('address', 'Plot No. 42, Metro Pillar 108, Jubilee Hills');
+              setValue('city', 'Hyderabad');
+              setValue('state', 'Telangana');
+              setValue('postcode', '500033');
+              setValue('roomName', 'General Executive Hall');
+              setValue('seats', 30);
+              setValue('priceHourly', 25);
+              setValue('priceDaily', 150);
+              setValue('priceWeekly', 800);
+              setValue('priceMonthly', 2500);
+              setValue('priceQuarterly', 6500);
+              setValue('priceHalfYearly', 12000);
+              setValue('priceYearly', 22000);
+              setValue('facebook', 'facebook.com/vijayastudy');
+              setValue('instagram', 'instagram.com/vijayastudy');
+              setValue('youtube', 'youtube.com/@vijayastudy');
+              setValue('whatsapp', '9876543210');
+              setExtraSpaces([
+                {
+                  id: 'extra-demo-1',
+                  name: 'Silent AC Cabin',
+                  seats: '15',
+                  prices: { priceHourly: '40', priceDaily: '220', priceMonthly: '3500' },
+                  tags: ['AC', 'Silent Zone', 'Ergo Seating'],
+                },
+              ]);
+            }}
+            className="text-xs font-bold bg-[#f1f5f9] text-slate-700 hover:bg-slate-200 rounded-xl cursor-pointer"
+          >
+            ⚡ Quick Auto-Fill Form
+          </Button>
+
           <Button
             type="button"
             variant="outline"
@@ -1248,6 +1286,22 @@ export function ListingWizardV2(props: Props) {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Total Seats Summation Banner */}
+              <div className="bg-[#f0fdf4] border border-[#bbf7d0] p-4 rounded-2xl flex items-center justify-between shadow-2xs mt-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-full bg-[#16a34a] text-white font-bold text-sm flex items-center justify-center">🪑</span>
+                  <div>
+                    <h4 className="text-xs font-bold text-[#15803d] uppercase tracking-wider">Total Centre Capacity</h4>
+                    <p className="text-xs text-[#166534]">Summation of seats across all configured room spaces</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-extrabold text-[#15803d]">
+                    {Number(values.seats || 0) + extraSpaces.reduce((sum, s) => sum + (parseInt(s.seats || '0', 10) || 0), 0)} Seats Total
+                  </span>
+                </div>
               </div>
             </div>
           )}

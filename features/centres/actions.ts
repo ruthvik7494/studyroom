@@ -95,11 +95,35 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
       centre_id: centre.id,
       resource_type: 'seat',
       tier: 'open',
-      label: 'General seating',
+      label: input.roomName || 'General seating',
       unit_count: input.seats,
       pricing,
     });
     if (resourceErr) throw resourceErr;
+
+    if (input.extraSpaces && input.extraSpaces.length > 0) {
+      const extraRows = input.extraSpaces.map((space) => {
+        const extraPricing: Record<string, number> = {};
+        if (space.prices?.priceHourly) extraPricing.hour = parseFloat(space.prices.priceHourly);
+        if (space.prices?.priceDaily) extraPricing.day = parseFloat(space.prices.priceDaily);
+        if (space.prices?.priceWeekly) extraPricing.week = parseFloat(space.prices.priceWeekly);
+        if (space.prices?.priceMonthly) extraPricing.month = parseFloat(space.prices.priceMonthly);
+        if (space.prices?.priceQuarterly) extraPricing.quarter = parseFloat(space.prices.priceQuarterly);
+        if (space.prices?.priceHalfYearly) extraPricing.half_year = parseFloat(space.prices.priceHalfYearly);
+        if (space.prices?.priceYearly) extraPricing.year = parseFloat(space.prices.priceYearly);
+
+        return {
+          centre_id: centre.id,
+          resource_type: 'seat' as const,
+          label: space.name || 'Additional Space',
+          unit_count: parseInt(space.seats || '10', 10),
+          pricing: extraPricing,
+        };
+      });
+
+      const { error: extraErr } = await supabase.from('resources').insert(extraRows);
+      if (extraErr) throw extraErr;
+    }
 
     if (input.amenityIds && input.amenityIds.length) {
       const rows = input.amenityIds.map((amenity_id) => ({ centre_id: centre.id, amenity_id }));
