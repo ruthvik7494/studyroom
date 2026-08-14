@@ -18,45 +18,56 @@ export function BookingSidebar({
   whatsapp: string | null;
   studentsCount: number;
 }) {
+  const actualPrice = pricing?.fortnight || pricing?.month || pricing?.week || (pricing && Object.values(pricing).find(v => !!v));
+  const startPrice = actualPrice || '12,000';
+  const periodLabel = actualPrice 
+    ? (pricing?.fortnight ? '/2 weeks' : pricing?.month ? '/month' : pricing?.week ? '/week' : '') 
+    : '/2 weeks';
+
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <SidebarPrice pricing={pricing} />
-
-        {seatsFree !== null && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-sm font-semibold text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />{seatsFree} Seats Available
-          </p>
-        )}
-
-        <div className="mt-4 space-y-2">
-          {isPublic && (
-            <Link href={`/centres/${slug}/book`} className="block w-full rounded-lg bg-primary py-2.5 text-center text-sm font-bold text-primary-foreground hover:bg-primary/90">
-              Book Now
-            </Link>
-          )}
-          <a href="#pricing-heading" className="block w-full rounded-lg border py-2.5 text-center text-sm font-bold hover:bg-secondary">
-            Check Availability
-          </a>
-          {whatsapp && (
-            <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="block w-full rounded-lg border border-[#25D366]/40 bg-[#25D366]/5 py-2.5 text-center text-sm font-bold text-[#128C36] hover:bg-[#25D366]/10">
-              💬 Chat on WhatsApp
-            </a>
-          )}
-          {phone && (
-            <a href={`tel:${phone}`} className="block w-full rounded-lg border py-2.5 text-center text-sm font-bold hover:bg-secondary">
-              📞 Call Owner
-            </a>
-          )}
-        </div>
-
-        <div className="mt-4 space-y-2.5 border-t pt-4 text-sm">
-          <p className="flex items-center gap-2"><span aria-hidden>✅</span>Instant confirmation — no waiting for approval</p>
-          <p className="flex items-center gap-2"><span aria-hidden>💳</span>Transparent pricing, no hidden charges</p>
-          <p className="flex items-center gap-2"><span aria-hidden>🔒</span>Secure payments via Razorpay</p>
-          {studentsCount > 0 && (
-            <p className="flex items-center gap-2"><span aria-hidden>🔔</span>Trusted by {studentsCount}+ students on StudyNook</p>
-          )}
+    <div className="bg-white border border-[#bdcaba]/50 p-8 rounded-sm">
+      <div className="mb-8 pb-8 border-b border-[#bdcaba]/30">
+        <div className="text-[#565e74] text-xs font-bold uppercase tracking-widest mb-2">Starting price</div>
+        <div className="font-['Lexend',sans-serif] text-4xl text-[#191c1e] font-bold flex items-baseline gap-2">
+          ₹{startPrice}
+          <span className="text-sm text-[#565e74] font-normal">{periodLabel}</span>
         </div>
       </div>
+      
+      <div className="flex flex-col gap-4 mb-8">
+        {isPublic && (
+          <Link href={`/centres/${slug}/book`} className="block w-full text-center bg-[#16a34a] text-white text-xs font-bold py-4 rounded-sm hover:bg-[#15803d] transition-colors uppercase tracking-widest shadow-sm">
+            Book Now
+          </Link>
+        )}
+      </div>
+
+      <div className="flex items-center gap-4 p-4 border border-[#bdcaba]/30 rounded-sm mb-8">
+        <div className={`w-2 h-2 rounded-full ${seatsFree !== 0 ? 'bg-[#16a34a] animate-pulse' : 'bg-rose-500'}`}></div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-[#191c1e]">
+            {seatsFree !== null ? `${seatsFree} seats available` : 'Availability limited'}
+          </div>
+          <div className="text-xs text-[#565e74] mt-1">Today, book your spot</div>
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-6 border-t border-[#bdcaba]/30">
+        <div className="flex items-center gap-4 text-sm text-[#565e74]">
+          <svg className="text-[#191c1e]" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Instant confirmation
+        </div>
+        <div className="flex items-center gap-4 text-sm text-[#565e74]">
+          <svg className="text-[#191c1e]" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          Transparent pricing
+        </div>
+        {studentsCount > 0 && (
+          <div className="flex items-center gap-4 text-sm text-[#565e74]">
+            <svg className="text-[#191c1e]" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Trusted by {studentsCount}+ students
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

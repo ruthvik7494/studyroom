@@ -41,54 +41,89 @@ export function EnquiryForm({ centreId }: { centreId: string }) {
 
   if (sent) {
     return (
-      <div className="rounded-md bg-accent p-4 text-sm" role="status">
-        <p className="font-semibold text-brand-green">Enquiry sent ✓</p>
-        <p className="mt-1 text-muted-foreground">The centre will get back to you by email. We’ve sent you a confirmation too.</p>
-        <button className="mt-2 text-sm font-semibold underline" onClick={() => setSent(false)}>Send another</button>
+      <div className="bg-white p-8 border border-[#bdcaba]/50 rounded-sm" role="status">
+        <p className="font-['Lexend',sans-serif] text-xl font-bold text-[#16a34a] mb-2 uppercase tracking-wide">Enquiry sent ✓</p>
+        <p className="text-sm text-[#565e74] mb-4">The centre will get back to you by email. We’ve sent you a confirmation too.</p>
+        <button className="text-xs font-bold text-[#191c1e] underline uppercase tracking-wider" onClick={() => setSent(false)}>Send another</button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
-      <input type="hidden" {...register('centreId')} />
+    <div className="bg-white p-8 border border-[#bdcaba]/50 rounded-sm">
+      <h3 className="font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e] mb-6 uppercase tracking-wide">Send us a message</h3>
+      
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+        <input type="hidden" {...register('centreId')} />
 
-      <div>
-        <Label htmlFor="enq-name">Name</Label>
-        <Input id="enq-name" autoComplete="name" aria-invalid={!!errors.name} {...register('name')} />
-        {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>}
-      </div>
+        <div>
+          <label className="block text-xs font-bold text-[#565e74] mb-2 uppercase tracking-wider" htmlFor="enq-name">Name</label>
+          <input 
+            id="enq-name" 
+            autoComplete="name" 
+            aria-invalid={!!errors.name} 
+            placeholder="Your Name"
+            className="w-full rounded-sm border border-[#bdcaba]/50 focus:border-[#191c1e] focus:ring-0 bg-white text-[#191c1e] text-sm p-3 outline-none transition-colors"
+            {...register('name')} 
+          />
+          {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>}
+        </div>
 
-      <div>
-        <Label htmlFor="enq-email">Email</Label>
-        <Input id="enq-email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register('email')} />
-        {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>}
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-xs font-bold text-[#565e74] mb-2 uppercase tracking-wider" htmlFor="enq-email">Email</label>
+            <input 
+              id="enq-email" 
+              type="email" 
+              autoComplete="email" 
+              aria-invalid={!!errors.email} 
+              placeholder="Your Email"
+              className="w-full rounded-sm border border-[#bdcaba]/50 focus:border-[#191c1e] focus:ring-0 bg-white text-[#191c1e] text-sm p-3 outline-none transition-colors"
+              {...register('email')} 
+            />
+            {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>}
+          </div>
 
-      <div>
-        <Label htmlFor="enq-phone">Phone <span className="text-muted-foreground">(optional)</span></Label>
-        <Input id="enq-phone" type="tel" inputMode="numeric" maxLength={10} placeholder="9876543210" autoComplete="tel" aria-invalid={!!errors.phone} {...register('phone')} />
-        {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>}
-      </div>
+          <div>
+            <label className="block text-xs font-bold text-[#565e74] mb-2 uppercase tracking-wider" htmlFor="enq-phone">Phone</label>
+            <input 
+              id="enq-phone" 
+              type="tel" 
+              inputMode="numeric" 
+              maxLength={10} 
+              placeholder="Your Phone" 
+              autoComplete="tel" 
+              aria-invalid={!!errors.phone} 
+              className="w-full rounded-sm border border-[#bdcaba]/50 focus:border-[#191c1e] focus:ring-0 bg-white text-[#191c1e] text-sm p-3 outline-none transition-colors"
+              {...register('phone')} 
+            />
+            {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>}
+          </div>
+        </div>
 
-      <div>
-        <Label htmlFor="enq-message">Message</Label>
-        <textarea
-          id="enq-message"
-          rows={4}
-          aria-invalid={!!errors.message}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          placeholder="Hi, I’d like to know about availability and monthly plans…"
-          {...register('message')}
-        />
-        {errors.message && <p className="mt-1 text-xs text-destructive">{errors.message.message}</p>}
-      </div>
+        <div>
+          <label className="block text-xs font-bold text-[#565e74] mb-2 uppercase tracking-wider" htmlFor="enq-message">Message</label>
+          <textarea
+            id="enq-message"
+            rows={4}
+            aria-invalid={!!errors.message}
+            className="w-full rounded-sm border border-[#bdcaba]/50 focus:border-[#191c1e] focus:ring-0 bg-white text-[#191c1e] text-sm p-3 outline-none transition-colors"
+            placeholder="How can we help you?"
+            {...register('message')}
+          />
+          {errors.message && <p className="mt-1 text-xs text-destructive">{errors.message.message}</p>}
+        </div>
 
-      {serverError && <p className="text-sm text-destructive" role="alert">{serverError}</p>}
+        {serverError && <p className="text-sm text-destructive" role="alert">{serverError}</p>}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? 'Sending…' : 'Send enquiry'}
-      </Button>
-    </form>
+        <button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="w-full bg-[#191c1e] text-white text-xs font-bold py-3.5 rounded-sm hover:bg-[#191c1e]/90 transition-colors uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? 'Sending…' : 'Send Message'}
+        </button>
+      </form>
+    </div>
   );
 }
