@@ -30,20 +30,24 @@ export default async function BookPage({ params, searchParams }: Params) {
   const cancelCutoffHours = rules?.cancel_cutoff_hours ?? 12;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
-      <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted-foreground">
-        <Link href="/centres" className="hover:underline">Centres</Link> ›{' '}
-        <Link href={`/centres/${centre.slug}`} className="hover:underline">{centre.name}</Link> ›{' '}
-        <span className="text-foreground">Book</span>
+    <main className="mx-auto max-w-6xl px-6 py-10 font-sans">
+      <nav aria-label="Breadcrumb" className="mb-6 text-xs text-[#565e74] uppercase tracking-wider font-semibold">
+        <Link href="/centres" className="hover:text-[#191c1e] transition-colors">Centres</Link> ›{' '}
+        <Link href={`/centres/${centre.slug}`} className="hover:text-[#191c1e] transition-colors">{centre.name}</Link> ›{' '}
+        <span className="text-[#191c1e] font-bold">Book</span>
       </nav>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="font-display text-2xl font-bold">Book a seat at {centre.name}</h1>
+      <div className="flex flex-wrap items-center gap-3 mb-2">
+        <h1 className="font-['Lexend',sans-serif] text-2xl md:text-3xl font-bold text-[#191c1e] uppercase tracking-wide">
+          Book a seat at {centre.name}
+        </h1>
         {centre.is_verified && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">✓ Verified centre</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#16a34a]/10 px-3 py-1 text-xs font-bold text-[#16a34a] border border-[#16a34a]/20">
+            ✓ Verified centre
+          </span>
         )}
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">Choose an option and how long you need it.</p>
+      <p className="text-sm text-[#565e74] leading-relaxed mb-6">Select your preferred space and duration.</p>
 
       {!user ? (
         <div className="mt-6 rounded-lg border bg-accent p-4 text-sm">

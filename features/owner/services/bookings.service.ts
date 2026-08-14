@@ -25,8 +25,8 @@ export async function getOwnerMetrics(db: DB, ownerId: string): Promise<OwnerBoo
   const startMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
   const [today, upcoming, checkIns, noShows, activeNow, paid, resourceIds] = await Promise.all([
-    db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).gte('starts_at', startToday).lt('starts_at', endToday),
-    db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).gte('starts_at', endToday).in('status', ['pending', 'confirmed']),
+    db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).in('status', ['confirmed', 'checked_in', 'completed']).eq('payment', 'paid').gte('starts_at', startToday).lt('starts_at', endToday),
+    db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).gte('starts_at', endToday).eq('status', 'confirmed').eq('payment', 'paid'),
     db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).eq('status', 'checked_in'),
     db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).eq('status', 'no_show'),
     db.from('bookings').select('id', { count: 'exact', head: true }).in('centre_id', centreIds).in('status', ['confirmed', 'checked_in']).lte('starts_at', endToday).gte('ends_at', startToday),

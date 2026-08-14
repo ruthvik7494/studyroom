@@ -5,6 +5,7 @@ import { noindex } from '@/lib/seo';
 import { ListingWizardV2 } from '@/features/centres/components/listing-wizard-v2';
 
 export const metadata: Metadata = { title: 'Create Centre', ...noindex };
+export const dynamic = 'force-dynamic';
 
 export default async function AdminCreateCentrePage() {
   await requireRole('admin');

@@ -101,14 +101,15 @@ export function MobileMenu({ role, email, signOutAction }: MobileMenuProps) {
           <div className="mt-3 border-t pt-3">
             {email ? (
               <div className="flex items-center justify-between gap-3 px-1">
-                {role !== 'owner' && role !== 'admin' && (
-                  <Link href="/account" className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
-                      {email.charAt(0).toUpperCase()}
-                    </span>
-                    My Account
-                  </Link>
-                )}
+                <Link
+                  href={role === 'admin' ? '/admin' : role === 'owner' ? '/owner' : '/account'}
+                  className="flex items-center gap-2 text-sm font-semibold text-foreground"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#006b2c]/10 text-xs font-bold text-[#006b2c]">
+                    {email.charAt(0).toUpperCase()}
+                  </span>
+                  {role === 'admin' ? 'Admin Dashboard' : role === 'owner' ? 'Owner Dashboard' : 'My Account'}
+                </Link>
                 <form action={signOutAction}>
                   <button className="rounded-full border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground">
                     Sign out

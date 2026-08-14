@@ -7,6 +7,7 @@ import { DashboardShell, type SidebarNavItem } from '@/components/dashboard-shel
 import { AccountBlockedScreen } from '@/components/account-blocked-screen';
 
 export const metadata: Metadata = { title: 'Admin', ...noindex };
+export const dynamic = 'force-dynamic';
 
 const icon = (d: string) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><path d={d} strokeLinecap="round" strokeLinejoin="round" /></svg>

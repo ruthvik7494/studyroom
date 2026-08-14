@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { admin as adminDb } from '@/lib/supabase/admin';
 import { requireRole } from '@/lib/auth/rbac';
 import { action } from '@/lib/auth/action';
+import type { Json } from '@/types/database.types';
 import { centreUpsertSchema, socialLinksSchema, centreAmenitiesSchema, centreDocumentSchema } from './schema';
 import type { Result } from '@/lib/result';
 import { ActionError, ok, err } from '@/lib/result';
@@ -81,7 +82,7 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
     }).select('id, slug').single();
     if (error) throw error;
 
-    const pricing: Record<string, number> = {};
+    const pricing: Record<string, unknown> = {};
     if (input.priceHourly !== undefined) pricing.hour = input.priceHourly as number;
     if (input.priceDaily !== undefined) pricing.day = input.priceDaily as number;
     if (input.priceWeekly !== undefined) pricing.week = input.priceWeekly as number;
@@ -90,20 +91,22 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
     if (input.priceQuarterly !== undefined) pricing.quarter = input.priceQuarterly as number;
     if (input.priceHalfYearly !== undefined) pricing.half_year = input.priceHalfYearly as number;
     if (input.priceYearly !== undefined) pricing.year = input.priceYearly as number;
+    pricing.popular_period = input.popularPeriod || 'month';
+    if (input.tags && input.tags.length > 0) pricing.tags = input.tags;
 
     const { error: resourceErr } = await supabase.from('resources').insert({
       centre_id: centre.id,
       resource_type: 'seat',
       tier: 'open',
-      label: input.roomName || 'General seating',
+      label: input.roomName || 'General Seating',
       unit_count: input.seats,
-      pricing,
+      pricing: pricing as unknown as Json,
     });
     if (resourceErr) throw resourceErr;
 
     if (input.extraSpaces && input.extraSpaces.length > 0) {
       const extraRows = input.extraSpaces.map((space) => {
-        const extraPricing: Record<string, number> = {};
+        const extraPricing: Record<string, unknown> = {};
         if (space.prices?.priceHourly) extraPricing.hour = parseFloat(space.prices.priceHourly);
         if (space.prices?.priceDaily) extraPricing.day = parseFloat(space.prices.priceDaily);
         if (space.prices?.priceWeekly) extraPricing.week = parseFloat(space.prices.priceWeekly);
@@ -111,13 +114,15 @@ export async function createCentre(raw: unknown): Promise<Result<{ id: string; s
         if (space.prices?.priceQuarterly) extraPricing.quarter = parseFloat(space.prices.priceQuarterly);
         if (space.prices?.priceHalfYearly) extraPricing.half_year = parseFloat(space.prices.priceHalfYearly);
         if (space.prices?.priceYearly) extraPricing.year = parseFloat(space.prices.priceYearly);
+        extraPricing.popular_period = space.popularPeriod || 'month';
+        if (space.tags && space.tags.length > 0) extraPricing.tags = space.tags;
 
         return {
           centre_id: centre.id,
           resource_type: 'seat' as const,
           label: space.name || 'Additional Space',
           unit_count: parseInt(space.seats || '10', 10),
-          pricing: extraPricing,
+          pricing: extraPricing as unknown as Json,
         };
       });
 
@@ -214,13 +219,13 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
       fields.priceMonthly, fields.priceQuarterly, fields.priceHalfYearly, fields.priceYearly,
     ];
     if (priceFields.some((v) => v !== undefined) || fields.seats !== undefined || fields.roomName !== undefined) {
-      const { data: resource } = await db.from('resources').select('id, pricing').eq('centre_id', centreId).limit(1).maybeSingle();
+      const { data: resource } = await db.from('resources').select('id, pricing').eq('centre_id', centreId).order('id', { ascending: true }).limit(1).maybeSingle();
       if (resource) {
         const resourcePatch: Record<string, unknown> = {};
         if (fields.roomName !== undefined) resourcePatch.label = fields.roomName;
         if (fields.seats !== undefined) resourcePatch.unit_count = fields.seats;
-        if (priceFields.some((v) => v !== undefined)) {
-          const pricing: Record<string, number> = { ...((resource.pricing ?? {}) as Record<string, number>) };
+        if (priceFields.some((v) => v !== undefined) || fields.popularPeriod !== undefined || fields.tags !== undefined) {
+          const pricing: Record<string, unknown> = { ...((resource.pricing ?? {}) as Record<string, unknown>) };
           if (fields.priceHourly !== undefined) pricing.hour = fields.priceHourly as number;
           if (fields.priceDaily !== undefined) pricing.day = fields.priceDaily as number;
           if (fields.priceWeekly !== undefined) pricing.week = fields.priceWeekly as number;
@@ -229,7 +234,9 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
           if (fields.priceQuarterly !== undefined) pricing.quarter = fields.priceQuarterly as number;
           if (fields.priceHalfYearly !== undefined) pricing.half_year = fields.priceHalfYearly as number;
           if (fields.priceYearly !== undefined) pricing.year = fields.priceYearly as number;
-          resourcePatch.pricing = pricing;
+          if (fields.popularPeriod !== undefined) pricing.popular_period = fields.popularPeriod;
+          if (fields.tags !== undefined) pricing.tags = fields.tags;
+          resourcePatch.pricing = pricing as unknown as Json;
         }
         const { error: resourceErr } = await db.from('resources').update(resourcePatch as never).eq('id', resource.id);
         if (resourceErr) throw resourceErr;
@@ -247,7 +254,7 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
     // Handle dynamic extra spaces (Syncing secondary resources)
     if (fields.extraSpaces !== undefined) {
       // Fetch existing extra resources (resource_type != 'seat' or tier != 'open')
-      const { data: existingResources } = await db.from('resources').select('id').eq('centre_id', centreId);
+      const { data: existingResources } = await db.from('resources').select('id').eq('centre_id', centreId).order('id', { ascending: true });
       const primaryResourceId = existingResources?.[0]?.id;
 
       // Delete non-primary resources and recreate/sync extra spaces
@@ -258,7 +265,7 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
 
       if (fields.extraSpaces.length > 0) {
         const rowsToInsert = fields.extraSpaces.map((space) => {
-          const pricing: Record<string, number> = {};
+          const pricing: Record<string, unknown> = {};
           if (space.prices?.priceHourly) pricing.hour = parseFloat(space.prices.priceHourly);
           if (space.prices?.priceDaily) pricing.day = parseFloat(space.prices.priceDaily);
           if (space.prices?.priceWeekly) pricing.week = parseFloat(space.prices.priceWeekly);
@@ -266,13 +273,15 @@ export async function updateCentre(raw: unknown): Promise<Result<{ ok: true }>> 
           if (space.prices?.priceQuarterly) pricing.quarter = parseFloat(space.prices.priceQuarterly);
           if (space.prices?.priceHalfYearly) pricing.half_year = parseFloat(space.prices.priceHalfYearly);
           if (space.prices?.priceYearly) pricing.year = parseFloat(space.prices.priceYearly);
+          pricing.popular_period = space.popularPeriod || 'month';
+          if (space.tags && space.tags.length > 0) pricing.tags = space.tags;
 
           return {
             centre_id: centreId,
             resource_type: 'seat' as const,
             label: space.name || 'Additional Space',
             unit_count: parseInt(space.seats || '10', 10),
-            pricing,
+            pricing: pricing as unknown as Json,
           };
         });
 

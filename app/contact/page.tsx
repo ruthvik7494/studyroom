@@ -53,7 +53,7 @@ export default function ContactPage() {
               <span className="material-symbols-outlined">timer</span>
             </div>
             <div>
-              <div className="font-['Lexend'] text-2xl font-semibold text-[#191c1e]">&lt; 2 hours</div>
+              <div className="font-['Lexend'] text-2xl font-semibold text-[#191c1e]">&lt; 5 hours</div>
               <div className="font-['Inter'] text-xs font-medium text-[#3e4a3d] uppercase tracking-wider">Average Response Time</div>
             </div>
           </div>

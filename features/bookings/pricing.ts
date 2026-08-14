@@ -31,7 +31,6 @@ export const PERIOD_DAYS: Partial<Record<Period, number>> = {
 
 const DERIVED_FROM: Partial<Record<Period, { base: 'day' | 'month'; factor: number }>> = {
   week: { base: 'day', factor: 7 },
-  fortnight: { base: 'day', factor: 14 },
   quarter: { base: 'month', factor: 3 },
   half_year: { base: 'month', factor: 6 },
   year: { base: 'month', factor: 12 },
@@ -53,6 +52,6 @@ export function priceForPeriod(pricing: Record<string, number>, period: Period):
 
 /** Every period the resource can actually be booked for, given its stored pricing. */
 export function availablePeriods(pricing: Record<string, number>): Period[] {
-  const all: Period[] = ['hour', 'day', 'week', 'fortnight', 'month', 'quarter', 'half_year', 'year'];
+  const all: Period[] = ['hour', 'day', 'week', 'month', 'quarter', 'half_year', 'year'];
   return all.filter((p) => priceForPeriod(pricing, p) !== null);
 }

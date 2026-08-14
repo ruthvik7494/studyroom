@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { admin } from '@/lib/supabase/admin';
 import { requireUser } from '@/lib/auth/rbac';
@@ -9,12 +10,17 @@ import { Badge } from '@/components/ui/badge';
 import { BookingStatusBadge, PaymentStatusBadge } from '@/components/booking-status-badge';
 import { ReviewActions } from '@/features/reviews/components/review-actions';
 import { RemoveSavedButton } from '@/features/saved/components/remove-saved-button';
+import { RemoveBookingButton } from '@/features/bookings/components/remove-booking-button';
+import { StudentBookingCalendar } from '@/features/bookings/components/student-booking-calendar';
 import { formatINR } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'My account', ...noindex };
 
 export default async function AccountPage() {
   const user = await requireUser();
+  if (user.role === 'admin') redirect('/admin');
+  if (user.role === 'owner') redirect('/owner');
+
   const db = await createClient();
 
   const [{ data: bookingsRaw }, { data: profile }, { data: saved }, { data: reviews }] = await Promise.all([
@@ -101,10 +107,28 @@ export default async function AccountPage() {
 
   const pendingPaymentCount = grouped.get('Pending Payment')?.length ?? 0;
   const upcomingCount = grouped.get('Upcoming')?.length ?? 0;
+  const activeCount = grouped.get('Active')?.length ?? 0;
+  const completedCount = grouped.get('Completed')?.length ?? 0;
+  const confirmedTotalCount = upcomingCount + activeCount + completedCount;
+
   const { count: unreadCount } = await db.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null);
 
   // Recent activity — last few bookings regardless of category, for a quick glance.
   const recentActivity = (bookings ?? []).slice(0, 5);
+
+  // Calendar items payload
+  const calendarItems = (bookings ?? []).map((b) => {
+    const c = b.centres as unknown as { name: string } | null;
+    return {
+      id: b.id,
+      starts_at: b.starts_at,
+      ends_at: b.ends_at,
+      period: b.period,
+      status: b.status,
+      payment: b.payment,
+      centreName: c?.name ?? 'Centre',
+    };
+  });
 
   return (
     <div className="max-w-3xl">
@@ -131,13 +155,14 @@ export default async function AccountPage() {
           </Link>
         )}
         <Link href="/account/profile" className="rounded-full border px-4 py-2 text-xs font-semibold hover:bg-secondary">My profile</Link>
+        <Link href="/account/calendar" className="rounded-full border border-[#16a34a]/40 bg-[#16a34a]/10 px-4 py-2 text-xs font-bold text-[#16a34a] hover:bg-[#16a34a]/20 transition-colors">📅 Calendar</Link>
         <Link href="/account/notifications" className="rounded-full border px-4 py-2 text-xs font-semibold hover:bg-secondary">Notifications</Link>
       </div>
 
       {/* Booking statistics summary */}
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          ['Total bookings', bookings?.length ?? 0, '📅', 'bg-violet-100', 'text-violet-600'],
+          ['Confirmed bookings', confirmedTotalCount, '📅', 'bg-emerald-100', 'text-emerald-700'],
           ['Upcoming', upcomingCount, '⏭️', 'bg-blue-100', 'text-blue-600'],
           ['Saved centres', saved?.length ?? 0, '❤️', 'bg-rose-100', 'text-rose-600'],
           ['Reviews written', reviews?.length ?? 0, '⭐', 'bg-amber-100', 'text-amber-600'],
@@ -183,27 +208,7 @@ export default async function AccountPage() {
         </section>
       )}
 
-      {/* Recent activity */}
-      {recentActivity.length > 0 && (
-        <section className="mt-6">
-          <h2 className="mb-3 font-display text-lg font-bold">Recent activity</h2>
-          <Card className="divide-y p-0">
-            {recentActivity.map((b) => {
-              const c = b.centres as unknown as { name: string; slug: string } | null;
-              return (
-                <div key={b.id} className="flex items-center justify-between gap-2 p-3 text-sm">
-                  <span>
-                    <span className="font-semibold">{c?.name ?? 'Centre'}</span>
-                    <span className="text-muted-foreground"> · {new Date(b.created_at).toLocaleDateString('en-IN')}</span>
-                  </span>
-                  <BookingStatusBadge status={b.status} />
-                </div>
-              );
-            })}
-          </Card>
-        </section>
-      )}
-
+      {/* 1. My Bookings */}
       <section aria-labelledby="bookings-heading" className="mt-8" id="pending-payment">
         <h2 id="bookings-heading" className="mb-3 font-display text-lg font-bold">My bookings</h2>
         {!bookings || bookings.length === 0 ? (
@@ -231,23 +236,54 @@ export default async function AccountPage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <BookingStatusBadge status={b.status} />
                             <PaymentStatusBadge status={b.payment} />
+
+                            {/* Pending Payments: Remove | Pay Now */}
+                            {cat === 'Pending Payment' && c && (
+                              <div className="flex items-center gap-2 ml-1">
+                                <RemoveBookingButton bookingId={b.id} />
+                                <Link
+                                  href={`/centres/${c.slug}/book/confirmed?id=${b.id}`}
+                                  className="rounded-full bg-[#16a34a] px-3.5 py-1 text-xs font-bold text-white uppercase tracking-wider hover:bg-[#15803d] transition-colors"
+                                >
+                                  Pay Now →
+                                </Link>
+                              </div>
+                            )}
+
+                            {/* Expired / Completed / Cancelled: Remove | Book Again */}
+                            {canRebook && c && (
+                              <div className="flex items-center gap-2 ml-1">
+                                {(cat === 'Expired' || cat === 'Cancelled') && (
+                                  <RemoveBookingButton bookingId={b.id} />
+                                )}
+                                <Link
+                                  href={`/centres/${c.slug}/book?period=${b.period}${b.resource_id ? `&resource=${b.resource_id}` : ''}`}
+                                  className="rounded-full bg-primary px-3.5 py-1 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
+                                >
+                                  Book Again
+                                </Link>
+                              </div>
+                            )}
+
+                            {/* Upcoming / Confirmed Bookings: Cancel & Refund Request */}
+                            {(cat === 'Upcoming' || cat === 'Active' || b.status === 'confirmed') && c && (
+                              <Link
+                                href={`/centres/${c.slug}/book/confirmed?id=${b.id}`}
+                                className="rounded-full border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors"
+                              >
+                                Cancel Request
+                              </Link>
+                            )}
+
                             {b.payment === 'paid' && b.invoice_number && (
                               <Link href={`/account/bookings/${b.id}/invoice`} className="text-xs font-semibold underline hover:no-underline">
                                 Invoice
                               </Link>
                             )}
-                            {canRebook && c && (
-                              <Link
-                                href={`/centres/${c.slug}/book?period=${b.period}${b.resource_id ? `&resource=${b.resource_id}` : ''}`}
-                                className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                              >
-                                Book Again
-                              </Link>
-                            )}
                           </div>
                         </div>
 
-                        {/* Payment history — real refund records for this booking, if any */}
+                        {/* Payment history */}
                         {refunds.length > 0 && (
                           <div className="mt-3 space-y-1 border-t pt-3 text-xs text-muted-foreground">
                             <p className="font-semibold text-foreground">Payment history</p>
@@ -269,7 +305,7 @@ export default async function AccountPage() {
         )}
       </section>
 
-      {/* Favourite centres */}
+      {/* 2. Favourite centres */}
       <section aria-labelledby="saved-heading" className="mt-8">
         <h2 id="saved-heading" className="mb-3 font-display text-lg font-bold">Favourite centres</h2>
         {!saved || saved.length === 0 ? (
@@ -302,6 +338,27 @@ export default async function AccountPage() {
           </div>
         )}
       </section>
+
+      {/* 3. Recent activity */}
+      {recentActivity.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 font-display text-lg font-bold">Recent activity</h2>
+          <Card className="divide-y p-0">
+            {recentActivity.map((b) => {
+              const c = b.centres as unknown as { name: string; slug: string } | null;
+              return (
+                <div key={b.id} className="flex items-center justify-between gap-2 p-3 text-sm">
+                  <span>
+                    <span className="font-semibold">{c?.name ?? 'Centre'}</span>
+                    <span className="text-muted-foreground"> · {new Date(b.created_at).toLocaleDateString('en-IN')}</span>
+                  </span>
+                  <BookingStatusBadge status={b.status} />
+                </div>
+              );
+            })}
+          </Card>
+        </section>
+      )}
 
       {/* My reviews */}
       <section aria-labelledby="reviews-heading" className="mt-8">

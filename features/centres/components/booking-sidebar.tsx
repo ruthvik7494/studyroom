@@ -6,6 +6,7 @@ export function BookingSidebar({
   isPublic,
   pricing,
   seatsFree,
+  totalSeats,
   phone,
   whatsapp,
   studentsCount,
@@ -14,43 +15,80 @@ export function BookingSidebar({
   isPublic: boolean;
   pricing: Record<string, number> | null;
   seatsFree: number | null;
+  totalSeats?: number | null;
   phone: string | null;
   whatsapp: string | null;
   studentsCount: number;
 }) {
-  const actualPrice = pricing?.fortnight || pricing?.month || pricing?.week || (pricing && Object.values(pricing).find(v => !!v));
-  const startPrice = actualPrice || '12,000';
+  const actualPrice = pricing?.month || pricing?.week || pricing?.day || (pricing && Object.values(pricing).find(v => !!v));
+  const startPrice = actualPrice || '2,500';
   const periodLabel = actualPrice 
-    ? (pricing?.fortnight ? '/2 weeks' : pricing?.month ? '/month' : pricing?.week ? '/week' : '') 
-    : '/2 weeks';
+    ? (pricing?.month ? '/month' : pricing?.week ? '/week' : pricing?.day ? '/day' : '') 
+    : '/month';
 
   return (
     <div className="bg-white border border-[#bdcaba]/50 p-8 rounded-sm">
-      <div className="mb-8 pb-8 border-b border-[#bdcaba]/30">
-        <div className="text-[#565e74] text-xs font-bold uppercase tracking-widest mb-2">Starting price</div>
-        <div className="font-['Lexend',sans-serif] text-4xl text-[#191c1e] font-bold flex items-baseline gap-2">
-          ₹{startPrice}
-          <span className="text-sm text-[#565e74] font-normal">{periodLabel}</span>
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[#565e74] text-xs font-bold uppercase tracking-widest mb-1.5">Starting price</div>
+          <div className="font-['Lexend',sans-serif] text-3xl sm:text-4xl text-[#191c1e] font-bold flex items-baseline gap-1.5">
+            ₹{startPrice}
+            <span className="text-xs text-[#565e74] font-normal">{periodLabel}</span>
+          </div>
+        </div>
+
+        {/* Seat Availability Badge on Right Side */}
+        <div className="bg-[#16a34a]/10 border border-[#16a34a]/25 px-3 py-2 rounded-lg flex items-center gap-2 text-right shrink-0">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${seatsFree !== 0 ? 'bg-[#16a34a] animate-pulse' : 'bg-rose-500'}`} />
+          <div className="text-[11px] font-bold text-[#15803d]">
+            {seatsFree !== null ? (
+              totalSeats ? `${seatsFree} / ${totalSeats} Available` : `${seatsFree} Available`
+            ) : (
+              'Limited'
+            )}
+          </div>
         </div>
       </div>
       
-      <div className="flex flex-col gap-4 mb-8">
+      <div className="flex flex-col gap-3 mb-8">
         {isPublic && (
-          <Link href={`/centres/${slug}/book`} className="block w-full text-center bg-[#16a34a] text-white text-xs font-bold py-4 rounded-sm hover:bg-[#15803d] transition-colors uppercase tracking-widest shadow-sm">
+          <Link href={`/centres/${slug}/book`} className="block w-full text-center bg-[#16a34a] text-white hover:text-white text-xs font-bold py-4 rounded-sm hover:bg-[#15803d] transition-colors uppercase tracking-widest shadow-sm">
             Book Now
           </Link>
         )}
-      </div>
 
-      <div className="flex items-center gap-4 p-4 border border-[#bdcaba]/30 rounded-sm mb-8">
-        <div className={`w-2 h-2 rounded-full ${seatsFree !== 0 ? 'bg-[#16a34a] animate-pulse' : 'bg-rose-500'}`}></div>
-        <div className="flex-1">
-          <div className="text-sm font-bold text-[#191c1e]">
-            {seatsFree !== null ? `${seatsFree} seats available` : 'Availability limited'}
-          </div>
-          <div className="text-xs text-[#565e74] mt-1">Today, book your spot</div>
+        {/* WhatsApp & Call Action Buttons */}
+        <div className="grid grid-cols-2 gap-2.5 pt-1">
+          {(() => {
+            const waNum = (whatsapp || phone || '9876543210').replace(/\D/g, '');
+            const waUrl = `https://wa.me/91${waNum}`;
+            const callNum = (phone || '9876543210').replace(/\D/g, '');
+            const callUrl = `tel:${callNum}`;
+            return (
+              <>
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/20 border border-[#25D366]/30 py-2.5 px-2 rounded-sm text-xs font-bold transition-colors tracking-wider"
+                  title={`WhatsApp: ${waUrl}`}
+                >
+                  WhatsApp
+                </a>
+                <a
+                  href={callUrl}
+                  className="flex items-center justify-center bg-[#0b192c]/5 text-[#0b192c] hover:bg-[#0b192c]/10 border border-[#0b192c]/20 py-2.5 px-2 rounded-sm text-xs font-bold transition-colors tracking-wider"
+                  title={`Call: ${callNum}`}
+                >
+                  Call
+                </a>
+              </>
+            );
+          })()}
         </div>
       </div>
+
+
 
       <div className="space-y-4 pt-6 border-t border-[#bdcaba]/30">
         <div className="flex items-center gap-4 text-sm text-[#565e74]">

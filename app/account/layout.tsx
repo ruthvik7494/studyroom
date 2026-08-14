@@ -7,6 +7,7 @@ import { DashboardShell, type SidebarNavItem } from '@/components/dashboard-shel
 import { AccountBlockedScreen } from '@/components/account-blocked-screen';
 
 export const metadata: Metadata = { title: 'My Account', ...noindex };
+export const dynamic = 'force-dynamic';
 
 const icon = (d: string) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><path d={d} strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -15,6 +16,7 @@ const icon = (d: string) => (
 const NAV: SidebarNavItem[] = [
   { href: '/account', label: 'Dashboard', icon: icon('M4 12 12 4l8 8M6 10v10h12V10') },
   { href: '/account/profile', label: 'My Profile', icon: icon('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z') },
+  { href: '/account/calendar', label: 'Calendar', icon: icon('M8 3v3m8-3v3M4 8h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z') },
   { href: '/account/notifications', label: 'Notifications', icon: icon('M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 1 1-6 0m6 0H9') },
   { href: '/centres', label: 'Find a Study Space', icon: icon('M4 6h16M4 12h16M4 18h10') },
 ];

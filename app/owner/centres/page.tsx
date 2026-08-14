@@ -57,6 +57,9 @@ export default async function OwnerCentresPage() {
               <Badge variant={STATUS_VARIANT[c.status] ?? 'secondary'}>{c.status.replace('_', ' ')}</Badge>
               {c.status === 'approved' && <PublishToggle centreId={c.id} published={c.is_published} />}
               {(c.status === 'draft' || c.status === 'rejected') && <SubmitForReviewButton centreId={c.id} />}
+              <Link href={`/centres/${c.slug}`} target="_blank" className="text-sm font-semibold text-[#16a34a] hover:underline flex items-center gap-1">
+                View ↗
+              </Link>
               <Link href={`/owner/centres/${c.id}`} className="text-sm font-semibold underline">Edit</Link>
               {c.status === 'archived' ? <UnarchiveButton centreId={c.id} /> : <ArchiveButton centreId={c.id} />}
             </Card>

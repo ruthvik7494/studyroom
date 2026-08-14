@@ -34,11 +34,12 @@ export default async function EditListingPage({ params }: PageProps) {
 
   const pricing = (primaryResource?.pricing ?? {}) as Record<string, number>;
   const extraSpaces = secondaryResources.map((res, index) => {
-    const p = (res.pricing ?? {}) as Record<string, number>;
+    const p = (res.pricing ?? {}) as Record<string, unknown>;
     return {
       id: res.id || `extra-${index}`,
       name: res.label || `Space ${index + 2}`,
       seats: res.unit_count ? String(res.unit_count) : '',
+      popularPeriod: (p.popular_period as string) || 'month',
       prices: {
         priceHourly: p.hour ? String(p.hour) : '',
         priceDaily: p.day ? String(p.day) : '',
@@ -48,7 +49,7 @@ export default async function EditListingPage({ params }: PageProps) {
         priceHalfYearly: p.half_year ? String(p.half_year) : '',
         priceYearly: p.year ? String(p.year) : '',
       },
-      tags: ['AC', 'Library'],
+      tags: (Array.isArray(p.tags) && p.tags.length > 0 ? p.tags : ['AC', 'Library']) as string[],
     };
   });
   const social = (centre.social ?? {}) as Record<string, string>;

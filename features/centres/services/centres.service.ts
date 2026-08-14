@@ -252,7 +252,7 @@ export async function getCentreBySlug(db: DB, slug: string): Promise<CentreDetai
 
   const [{ data: resources }, { data: occ }, { data: images }, { data: amenityRows }] =
     await Promise.all([
-      db.from('resources').select('id, centre_id, resource_type, tier, label, unit_count, pricing, is_active, updated_at').eq('centre_id', centre.id).eq('is_active', true),
+      db.from('resources').select('id, centre_id, resource_type, tier, label, unit_count, pricing, is_active, updated_at').eq('centre_id', centre.id).eq('is_active', true).order('id', { ascending: true }),
       db.from('centre_live_occupancy').select('*').eq('centre_id', centre.id).maybeSingle(),
       db.from('listing_images').select('id, storage_path, alt, is_cover, sort_order, category').eq('centre_id', centre.id).order('sort_order', { ascending: true }),
       db.from('centre_amenities').select('amenities(slug, label, icon)').eq('centre_id', centre.id),

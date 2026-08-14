@@ -127,35 +127,34 @@ export function BookingPanel({
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Left — the booking form itself, unchanged logic, numbered steps */}
-        <div className="space-y-6">
-          <Card className="p-5">
-            <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">1</span>
-              Choose seating type
+        <div className="space-y-6 font-sans">
+          <Card className="p-6 border border-[#bdcaba]/40 shadow-xs">
+            <p className="mb-4 flex items-center gap-2.5 font-['Lexend',sans-serif] text-sm font-bold text-[#191c1e] uppercase tracking-wide">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#16a34a] text-xs font-bold text-white">1</span>
+              Choose space category
             </p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {resources.map((r) => (
-                <button key={r.id} type="button" onClick={() => setResourceId(r.id)} aria-pressed={resourceId === r.id} className="text-left">
-                  <Card className={cn('flex items-center gap-3 p-4 transition', resourceId === r.id ? 'ring-2 ring-primary' : 'hover:shadow-md')}>
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-lg" aria-hidden>🪑</span>
+                <button key={r.id} type="button" onClick={() => setResourceId(r.id)} aria-pressed={resourceId === r.id} className="text-left cursor-pointer">
+                  <div className={cn('flex items-center justify-between p-4 rounded-xl border transition-all', resourceId === r.id ? 'border-[#16a34a] bg-[#16a34a]/5 ring-1 ring-[#16a34a]' : 'border-[#bdcaba]/40 hover:border-[#191c1e] bg-white')}>
                     <span className="min-w-0">
-                      <span className="block truncate font-display font-semibold">{r.label}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{r.tier ?? 'Seat'}</span>
+                      <span className="block truncate font-['Lexend',sans-serif] font-bold text-sm text-[#191c1e]">{r.label}</span>
+                      {r.tier && <span className="block truncate text-xs text-[#565e74]">{r.tier}</span>}
                     </span>
-                    {resourceId === r.id && <span className="ml-auto shrink-0 text-primary" aria-hidden>✓</span>}
-                  </Card>
+                    {resourceId === r.id && <span className="shrink-0 text-[#16a34a] font-bold" aria-hidden>✓</span>}
+                  </div>
                 </button>
               ))}
             </div>
           </Card>
 
           {periods.length > 0 && (
-            <Card className="p-5">
-              <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">2</span>
+            <Card className="p-6 border border-[#bdcaba]/40 shadow-xs">
+              <p className="mb-4 flex items-center gap-2.5 font-['Lexend',sans-serif] text-sm font-bold text-[#191c1e] uppercase tracking-wide">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#16a34a] text-xs font-bold text-white">2</span>
                 Choose duration
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2.5">
                 {periods.map((p) => (
                   <button
                     key={p}
@@ -163,12 +162,12 @@ export function BookingPanel({
                     onClick={() => setPeriod(p)}
                     aria-pressed={period === p}
                     className={cn(
-                      'relative rounded-lg border px-4 py-2 text-sm font-semibold',
-                      period === p ? 'border-primary bg-accent text-foreground' : 'border-input text-muted-foreground hover:bg-secondary',
+                      'relative rounded-xl border px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer',
+                      period === p ? 'border-[#16a34a] bg-[#16a34a]/10 text-[#16a34a] shadow-xs' : 'border-[#bdcaba]/60 text-[#565e74] hover:border-[#191c1e] hover:text-[#191c1e] bg-white',
                     )}
                   >
                     {p === 'month' && (
-                      <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">Popular</span>
+                      <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-[#16a34a] px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-widest">Popular</span>
                     )}
                     {PERIOD_LABEL[p]} · {formatINR(priceForPeriod(selected!.pricing, p)!)}
                   </button>
@@ -177,9 +176,9 @@ export function BookingPanel({
             </Card>
           )}
 
-          <Card className="p-5">
-            <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">3</span>
+          <Card className="p-6 border border-[#bdcaba]/40 shadow-xs">
+            <p className="mb-4 flex items-center gap-2.5 font-['Lexend',sans-serif] text-sm font-bold text-[#191c1e] uppercase tracking-wide">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#16a34a] text-xs font-bold text-white">3</span>
               Select start date
             </p>
             <div className="flex flex-wrap items-center gap-3">
@@ -190,42 +189,36 @@ export function BookingPanel({
                 min={todayISO()}
                 max={maxDateISO()}
                 onChange={(e) => setDate(e.target.value)}
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-10 rounded-xl border border-[#bdcaba] bg-[#f8faf8] px-3.5 text-xs font-semibold text-[#191c1e] focus:outline-none focus:border-[#16a34a]"
               />
               {endDate && (
-                <p className="text-sm text-muted-foreground">
-                  Ends on <span className="font-medium text-foreground">{formatDateLong(endDate)}</span>
+                <p className="text-xs text-[#565e74]">
+                  Ends on <span className="font-bold text-[#191c1e]">{formatDateLong(endDate)}</span>
                 </p>
               )}
             </div>
-            <p className="mt-3 rounded-lg bg-primary/5 px-3 py-2 text-xs text-primary">
+            <p className="mt-3 rounded-lg bg-[#16a34a]/10 border border-[#16a34a]/20 px-3 py-2 text-xs font-semibold text-[#16a34a]">
               ℹ️ You can cancel or modify your booking anytime.
             </p>
           </Card>
 
-          <Card className="p-5">
-            <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">4</span>
+          <Card className="p-6 border border-[#bdcaba]/40 shadow-xs">
+            <p className="mb-4 flex items-center gap-2.5 font-['Lexend',sans-serif] text-sm font-bold text-[#191c1e] uppercase tracking-wide">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#16a34a] text-xs font-bold text-white">4</span>
               {isMultiHour ? 'Select start time (choose one or more)' : 'Availability'}
             </p>
             {loadingSlots ? (
-              <p className="text-sm text-muted-foreground">Checking availability…</p>
+              <p className="text-xs text-[#565e74]">Checking availability…</p>
             ) : closed ? (
-              <p className="text-sm font-medium text-destructive">
+              <p className="text-xs font-bold text-rose-600">
                 Closed on {new Date(`${date}T00:00:00+05:30`).toLocaleDateString('en-IN', { weekday: 'long', timeZone: 'Asia/Kolkata' })}s — pick another date.
               </p>
             ) : !isMultiHour ? (
-              // Daily/Weekly/Fortnightly/Monthly/Quarterly/Half-yearly/Yearly:
-              // no time-of-day concept — a day+ booking occupies the seat for
-              // the whole day, every day in the period, so there's nothing
-              // meaningful to pick an "hour" for. Show one clear status
-              // instead of a grid of hour buttons that don't actually affect
-              // whether the booking can be made.
               <div className={cn(
-                'flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold',
-                dayAvailable ? 'bg-status-free/10 text-status-free' : 'bg-status-full/10 text-status-full',
+                'flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-bold uppercase tracking-wider',
+                dayAvailable ? 'bg-[#16a34a]/10 text-[#16a34a] border border-[#16a34a]/30' : 'bg-rose-50 text-rose-700 border border-rose-200',
               )}>
-                <span className={cn('h-2.5 w-2.5 rounded-full', dayAvailable ? 'bg-status-free' : 'bg-status-full')} aria-hidden />
+                <span className={cn('h-2.5 w-2.5 rounded-full', dayAvailable ? 'bg-[#16a34a]' : 'bg-rose-600')} aria-hidden />
                 {dayAvailable ? `Available for ${PERIOD_LABEL[period]}` : 'Fully booked for this period — try another date.'}
               </div>
             ) : slots.length > 0 ? (
@@ -247,11 +240,11 @@ export function BookingPanel({
                       onClick={() => toggleHour(s.hour, s.is_available)}
                       title={title}
                       className={cn(
-                        'rounded-lg border px-3 py-2 text-sm font-semibold transition-colors',
-                        s.is_past && 'cursor-not-allowed border-transparent bg-secondary text-muted-foreground/60',
-                        !s.is_past && !s.is_available && 'cursor-not-allowed border-transparent bg-status-full text-white',
-                        !s.is_past && s.is_available && !isSelected && 'border-transparent bg-status-free text-white hover:opacity-80',
-                        !s.is_past && s.is_available && isSelected && 'border-primary bg-primary text-primary-foreground',
+                        'rounded-xl border px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer',
+                        s.is_past && 'cursor-not-allowed border-transparent bg-slate-100 text-slate-400',
+                        !s.is_past && !s.is_available && 'cursor-not-allowed border-transparent bg-rose-500 text-white',
+                        !s.is_past && s.is_available && !isSelected && 'border-[#bdcaba]/60 bg-white text-[#191c1e] hover:border-[#16a34a]',
+                        !s.is_past && s.is_available && isSelected && 'border-[#16a34a] bg-[#16a34a] text-white shadow-xs',
                       )}
                     >
                       {formatHour(s.hour)}
@@ -260,31 +253,31 @@ export function BookingPanel({
                 })}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No slots configured for this date.</p>
+              <p className="text-xs text-[#565e74]">No slots configured for this date.</p>
             )}
             {isMultiHour && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-free align-middle" /> Available</span>
-                <span className="mr-3"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-status-full align-middle" /> Fully booked</span>
-                <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-secondary align-middle" /> Past</span>
+              <p className="mt-3 text-[11px] text-[#565e74]">
+                <span className="mr-3"><span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#16a34a] align-middle" /> Available</span>
+                <span className="mr-3"><span className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-500 align-middle" /> Fully booked</span>
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-slate-300 align-middle" /> Past</span>
               </p>
             )}
           </Card>
 
           {(phone || whatsapp) && (
-            <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+            <Card className="flex flex-wrap items-center justify-between gap-3 p-5 border border-[#bdcaba]/40 shadow-xs">
               <div>
-                <p className="font-semibold">Need help?</p>
-                <p className="text-sm text-muted-foreground">Chat with us on WhatsApp or call us for assistance.</p>
+                <p className="font-['Lexend',sans-serif] text-xs font-bold text-[#191c1e] uppercase tracking-wider">Need help?</p>
+                <p className="text-xs text-[#565e74]">Chat with us on WhatsApp or call us for assistance.</p>
               </div>
               <div className="flex gap-2">
                 {whatsapp && (
-                  <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-[#25D366]/40 px-4 py-2 text-sm font-semibold text-[#128C36] hover:bg-[#25D366]/5">
+                  <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors">
                     💬 WhatsApp
                   </a>
                 )}
                 {phone && (
-                  <a href={`tel:${phone}`} className="inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-secondary">
+                  <a href={`tel:${phone}`} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors">
                     📞 Call us
                   </a>
                 )}
@@ -292,69 +285,73 @@ export function BookingPanel({
             </Card>
           )}
 
-          {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+          {error && <p className="text-xs font-bold text-rose-600" role="alert">{error}</p>}
         </div>
 
-        {/* Right — live booking summary, matching the reference's sidebar */}
+        {/* Right — live booking summary, matching detail page sidebar */}
         <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-          <Card className="overflow-hidden p-0">
-            <div className="relative h-32 w-full bg-secondary">
+          <Card className="overflow-hidden p-0 border border-[#bdcaba]/40 shadow-xs rounded-2xl">
+            <div className="relative h-32 w-full bg-slate-100">
               {coverUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={coverUrl} alt="" className="h-full w-full object-cover" />
               )}
-              <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-background/95 px-2 py-1 text-xs font-bold">
+              <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-[#191c1e] shadow-xs">
                 ★ {rating.toFixed(1)}
               </span>
             </div>
-            <div className="p-4">
-              <p className="font-display font-bold">{centreName}</p>
-              <p className="text-xs text-muted-foreground">📍 {centreArea ?? '—'}</p>
+            <div className="p-4 bg-white">
+              <p className="font-['Lexend',sans-serif] font-bold text-base text-[#191c1e]">{centreName}</p>
+              <p className="text-xs text-[#565e74]">📍 {centreArea ?? '—'}</p>
             </div>
           </Card>
 
-          <Card className="p-4 text-sm">
-            <p className="mb-2 font-semibold">Booking summary</p>
-            <dl className="space-y-1.5">
-              <div className="flex justify-between"><dt className="text-muted-foreground">Seating type</dt><dd>{selected?.label ?? '—'}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Duration</dt><dd>{PERIOD_LABEL[period]}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Start date</dt><dd>{formatDateShort(date)}</dd></div>
-              {endDate && <div className="flex justify-between"><dt className="text-muted-foreground">End date</dt><dd>{formatDateShort(endDate)}</dd></div>}
-              {isMultiHour && <div className="flex justify-between"><dt className="text-muted-foreground">Start time</dt><dd className="text-right">{startTimeLabel}</dd></div>}
+          <Card className="p-5 border border-[#bdcaba]/40 shadow-xs rounded-2xl bg-white text-xs">
+            <p className="mb-3 font-['Lexend',sans-serif] text-xs font-bold text-[#191c1e] uppercase tracking-wider border-b border-[#f2f4f6] pb-2">Booking Summary</p>
+            <dl className="space-y-2">
+              <div className="flex justify-between"><dt className="text-[#565e74]">Seating category</dt><dd className="font-bold text-[#191c1e]">{selected?.label ?? '—'}</dd></div>
+              <div className="flex justify-between"><dt className="text-[#565e74]">Duration</dt><dd className="font-bold text-[#191c1e]">{PERIOD_LABEL[period]}</dd></div>
+              <div className="flex justify-between"><dt className="text-[#565e74]">Start date</dt><dd className="font-semibold text-[#191c1e]">{formatDateShort(date)}</dd></div>
+              {endDate && <div className="flex justify-between"><dt className="text-[#565e74]">End date</dt><dd className="font-semibold text-[#191c1e]">{formatDateShort(endDate)}</dd></div>}
+              {isMultiHour && <div className="flex justify-between"><dt className="text-[#565e74]">Start time</dt><dd className="text-right font-semibold text-[#191c1e]">{startTimeLabel}</dd></div>}
             </dl>
 
-            <div className="mt-3 space-y-1.5 border-t pt-3">
-              <div className="flex justify-between"><dt className="text-muted-foreground">Price</dt><dd>{perUnitAmount !== null ? formatINR(perUnitAmount) : '—'}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{typeof totalAmount === 'number' ? formatINR(totalAmount) : '—'}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Taxes &amp; fees</dt><dd>₹0</dd></div>
+            <div className="mt-4 space-y-2 border-t border-[#f2f4f6] pt-3">
+              <div className="flex justify-between"><dt className="text-[#565e74]">Price</dt><dd className="font-semibold text-[#191c1e]">{perUnitAmount !== null ? formatINR(perUnitAmount) : '—'}</dd></div>
+              <div className="flex justify-between"><dt className="text-[#565e74]">Subtotal</dt><dd className="font-semibold text-[#191c1e]">{typeof totalAmount === 'number' ? formatINR(totalAmount) : '—'}</dd></div>
+              <div className="flex justify-between"><dt className="text-[#565e74]">Taxes &amp; fees</dt><dd className="font-semibold text-[#191c1e]">₹0</dd></div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between rounded-lg bg-accent px-3 py-2">
-              <span className="text-sm font-semibold text-muted-foreground">Total amount</span>
-              <span className="font-display text-lg font-bold">{typeof totalAmount === 'number' ? formatINR(totalAmount) : '—'}</span>
+            <div className="mt-4 flex items-center justify-between rounded-xl bg-[#16a34a]/10 border border-[#16a34a]/20 p-3.5">
+              <span className="text-xs font-bold text-[#16a34a] uppercase tracking-wider">Total Amount</span>
+              <span className="font-['Lexend',sans-serif] text-xl font-bold text-[#16a34a]">{typeof totalAmount === 'number' ? formatINR(totalAmount) : '—'}</span>
             </div>
 
-            <p className="mt-3 text-center text-xs text-muted-foreground">🔒 Secured by Razorpay</p>
+            <p className="mt-3 text-center text-[11px] text-[#565e74] font-medium">🔒 Secured by Razorpay</p>
 
-            <div className="mt-3 space-y-1 rounded-lg bg-secondary/40 p-3 text-xs text-muted-foreground">
-              <p><strong className="text-foreground">Cancellation policy:</strong> Free cancellation up to {cancelCutoffHours} hour{cancelCutoffHours === 1 ? '' : 's'} before your booking&apos;s start time.</p>
-              <p><strong className="text-foreground">Refund policy:</strong> Refunds for eligible cancellations are processed to your original payment method.</p>
-              <p><strong className="text-foreground">Reservation hold:</strong> Your seat is held temporarily once you confirm below — complete payment before the hold expires or it&apos;s released automatically.</p>
+            <div className="mt-4 space-y-1.5 rounded-xl bg-slate-50 border border-slate-200/60 p-3 text-[11px] text-[#565e74]">
+              <p><strong className="text-[#191c1e]">Cancellation policy:</strong> Free cancellation up to {cancelCutoffHours} hour{cancelCutoffHours === 1 ? '' : 's'} before your booking&apos;s start time.</p>
+              <p><strong className="text-[#191c1e]">Refund policy:</strong> Refunds for eligible cancellations are processed to your original payment method.</p>
+              <p><strong className="text-[#191c1e]">Reservation hold:</strong> Your seat is held temporarily once you confirm below — complete payment before the hold expires or it&apos;s released automatically.</p>
             </div>
 
-            <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-input accent-primary" />
-              I agree to the <Link href="/terms" className="underline hover:no-underline">Terms &amp; Conditions</Link> and the cancellation/refund policy above.
+            <label className="mt-4 flex items-start gap-2 text-[11px] text-[#565e74] cursor-pointer">
+              <input type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 accent-[#16a34a]" />
+              I agree to the <Link href="/terms" className="underline font-semibold hover:text-[#191c1e]">Terms &amp; Conditions</Link> and policies above.
             </label>
 
-            <Button onClick={book} disabled={busy || !canBook} className="mt-3 w-full">
-              {busy ? 'Booking…' : 'Confirm booking'}
-            </Button>
+            <button
+              onClick={book}
+              disabled={busy || !canBook}
+              className="mt-4 w-full bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 text-white text-xs font-bold py-3.5 rounded-xl uppercase tracking-widest transition-colors shadow-xs cursor-pointer"
+            >
+              {busy ? 'Booking…' : 'Confirm Booking'}
+            </button>
             <div className="mt-2">
               <SaveButton centreId={centreId} initialSaved={initialSaved} />
             </div>
 
-            <p className="mt-3 rounded-lg bg-secondary/50 p-2.5 text-xs text-muted-foreground">
+            <p className="mt-3 text-center text-[11px] text-[#565e74]">
               Your seat is reserved only after payment confirmation.
             </p>
           </Card>
@@ -362,18 +359,52 @@ export function BookingPanel({
       </div>
 
       {/* Bottom trust footer */}
-      <div className="mt-8 grid gap-4 border-t pt-6 sm:grid-cols-4">
+      <div className="mt-12 grid gap-6 border-t border-[#bdcaba]/30 pt-8 sm:grid-cols-4">
         {[
-          ['✅', 'Instant confirmation', 'Get booking confirmed immediately'],
-          ['🔒', 'Secure payment', '100% safe & secure payments'],
-          ['↩️', 'Easy cancellation', 'Cancel or modify anytime'],
-          ['📡', 'Live availability', 'Real seat counts, always up to date'],
-        ].map(([icon, title, body]) => (
-          <div key={title} className="flex items-start gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-base" aria-hidden>{icon}</span>
+          {
+            title: 'Instant confirmation',
+            body: 'Get booking confirmed immediately',
+            icon: (
+              <svg className="w-4 h-4 text-[#565e74]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ),
+          },
+          {
+            title: 'Secure payment',
+            body: '100% safe & encrypted checkout',
+            icon: (
+              <svg className="w-4 h-4 text-[#565e74]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            ),
+          },
+          {
+            title: 'No hidden charges',
+            body: 'Transparent pricing with zero extra fees',
+            icon: (
+              <svg className="w-4 h-4 text-[#565e74]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H3.75A2.25 2.25 0 001.5 6.75v10.5a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            ),
+          },
+          {
+            title: 'Easy cancellation',
+            body: 'Cancel or modify your plan anytime',
+            icon: (
+              <svg className="w-4 h-4 text-[#565e74]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              </svg>
+            ),
+          },
+        ].map((item) => (
+          <div key={item.title} className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#bdcaba]/20 border border-[#bdcaba]/30">
+              {item.icon}
+            </div>
             <div>
-              <p className="text-sm font-semibold">{title}</p>
-              <p className="text-xs text-muted-foreground">{body}</p>
+              <p className="text-xs font-bold text-[#191c1e] uppercase tracking-wider">{item.title}</p>
+              <p className="text-xs text-[#565e74] mt-0.5 leading-relaxed">{item.body}</p>
             </div>
           </div>
         ))}

@@ -7,6 +7,7 @@ import { noindex } from '@/lib/seo';
 import { Card } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Saved', ...noindex };
+export const dynamic = 'force-dynamic';
 
 export default async function SavedPage() {
   const user = await requireUser();

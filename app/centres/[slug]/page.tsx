@@ -7,23 +7,12 @@ import { BookingSidebar } from '@/features/centres/components/booking-sidebar';
 import { getCentreBySlug, getCentreReviews } from '@/features/centres/services/centres.service';
 import { getSessionUser } from '@/lib/auth/rbac';
 import { centreJsonLd, breadcrumbJsonLd, safeJsonLd } from '@/lib/seo';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { formatINR, cn } from '@/lib/utils';
 import { EnquiryForm } from '@/features/enquiries/components/enquiry-form';
-import { ReviewForm } from '@/features/reviews/components/review-form';
-import { ReportReviewButton } from '@/features/reviews/components/report-review-button';
-import { SaveButton } from '@/features/saved/components/save-button';
-import { ClaimForm } from '@/features/claims/components/claim-form';
-import { ShareButton } from '@/features/centres/components/share-button';
 import { GalleryLightbox } from '@/features/centres/components/gallery-lightbox';
 import { SocialIcon, type SocialPlatform } from '@/features/centres/components/social-icon';
 import { PricingPlans } from '@/features/centres/components/pricing-plans';
-import { CentreCard } from '@/features/centres/components/centre-card';
-import { DetailSectionCard } from '@/features/centres/components/detail-section-card';
+import { ReviewsSection } from '@/features/centres/components/reviews-section';
 import { OpeningHoursCard } from '@/features/centres/components/opening-hours-card';
-import { HeaderLayoutSwitcher } from '@/features/centres/components/header-layout-switcher';
-import { PERIOD_LABEL, priceForPeriod, availablePeriods } from '@/features/bookings/pricing';
 import { isSaved } from '@/features/saved/services/saved.service';
 
 /** Returns either an external image URL or a Supabase Storage URL. */
@@ -73,23 +62,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CentreDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const centre = await loadCentre(slug);
+  const db = await createClient();
+  const centre = await getCentreBySlug(db, slug);
   if (!centre) notFound();
 
-  const db = await createClient();
-  const [reviews, viewer, { data: weeklyHours }] = await Promise.all([
+  const [reviews, viewer, { data: weeklyHours }, { data: ownerProfile }] = await Promise.all([
     getCentreReviews(db, centre.id),
     getSessionUser(),
     db.from('centre_hours').select('day_of_week, is_open, opening_time, closing_time').eq('centre_id', centre.id),
+    centre.owner_id
+      ? admin.from('profiles').select('full_name, avatar_url, bio, phone, public_email').eq('id', centre.owner_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
+
   const studentsCount = 500;
   const saved = viewer ? await isSaved(db, viewer.id, centre.id) : false;
 
   const isPublic = centre.status === 'approved';
   const canPreview = !isPublic && (viewer?.id === centre.owner_id || viewer?.role === 'admin');
-  const { data: ownerProfile } = centre.owner_id
-    ? await admin.from('profiles').select('full_name, avatar_url, bio, phone, public_email').eq('id', centre.owner_id).maybeSingle()
-    : { data: null };
 
   // Weekly opening hours — built from the real per-day schedule the owner
   // set while creating/editing their listing (features/centres/schema.ts's
@@ -243,7 +233,6 @@ export default async function CentreDetailPage({ params }: PageProps) {
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider text-[#565e74]">
             <a className="hover:text-[#16a34a] transition-colors" href="#about">About</a>
-            <a className="hover:text-[#16a34a] transition-colors" href="#spaces">Spaces</a>
             <a className="hover:text-[#16a34a] transition-colors" href="#facilities">Facilities</a>
             <a className="hover:text-[#16a34a] transition-colors" href="#pricing">Pricing</a>
             <a className="hover:text-[#16a34a] transition-colors" href="#gallery">Gallery</a>
@@ -352,24 +341,77 @@ export default async function CentreDetailPage({ params }: PageProps) {
             <section className="pt-12 border-t border-[#bdcaba]/30" id="facilities">
               <h2 className="font-['Lexend',sans-serif] text-xl font-bold mb-8 text-[#191c1e] uppercase tracking-wide">Highlights & Facilities</h2>
               <div className="border-t border-l border-[#bdcaba]/30 bg-white rounded-sm overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-3">
-                  {centre.amenities.map((a) => (
-                    <div key={a.slug} className="flex items-center gap-4 p-6 border-b border-r border-[#bdcaba]/30">
-                      <span className="text-xl text-[#565e74] grayscale opacity-80">{a.icon ?? '✓'}</span>
-                      <span className="text-sm text-[#565e74]">{a.label}</span>
+                {(() => {
+                  const ICON_MAP: Record<string, React.ReactNode> = {
+                    wifi: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>,
+                    ac: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="20" y1="12" x2="4" y2="12"/><line x1="17.65" y1="6.35" x2="6.35" y2="17.65"/><line x1="17.65" y1="17.65" x2="6.35" y2="6.35"/></svg>,
+                    power: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v6"/><path d="M6 8h12v4a6 6 0 0 1-12 0Z"/><path d="M12 18v4"/></svg>,
+                    lockers: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+                    cctv: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="m2 10 8 4 12-6-8-4-12 6z"/><path d="m10 14v7"/><path d="m14 12 7 3.5v4.5"/></svg>,
+                    water: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+                    washrooms: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="3"/><path d="M9 10v11"/><path d="m6 15 3-5 3 5"/><circle cx="17" cy="7" r="3"/><path d="M17 10v11"/><path d="m14 15 3-5 3 5"/></svg>,
+                    parking: <span className="font-bold text-slate-700 text-lg font-mono">P</span>,
+                    reference: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>,
+                    silent: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>,
+                    tea: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>,
+                    access: <svg className="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+                  };
+
+                  const DEFAULT_FACILITIES = [
+                    { slug: 'wifi', label: 'High-speed Wi-Fi', iconKey: 'wifi' },
+                    { slug: 'ac', label: 'AC', iconKey: 'ac' },
+                    { slug: 'power', label: 'Power Backup', iconKey: 'power' },
+                    { slug: 'lockers', label: 'Personal lockers', iconKey: 'lockers' },
+                    { slug: 'cctv', label: 'CCTV Security', iconKey: 'cctv' },
+                    { slug: 'water', label: 'RO water', iconKey: 'water' },
+                    { slug: 'washrooms', label: 'Separate washrooms', iconKey: 'washrooms' },
+                    { slug: 'parking', label: 'Parking', iconKey: 'parking' },
+                    { slug: 'reference', label: 'Reference Books', iconKey: 'reference' },
+                    { slug: 'silent', label: 'Silent zone', iconKey: 'silent' },
+                    { slug: 'tea', label: 'Tea/Coffee', iconKey: 'tea' },
+                    { slug: 'access', label: '24x7 access', iconKey: 'access' },
+                  ];
+
+                  const facilitiesToRender = centre.amenities && centre.amenities.length > 0
+                    ? centre.amenities.map((a) => {
+                        const key = a.slug.toLowerCase();
+                        let matchKey = 'wifi';
+                        if (key.includes('ac')) matchKey = 'ac';
+                        else if (key.includes('wifi') || key.includes('internet')) matchKey = 'wifi';
+                        else if (key.includes('power') || key.includes('plug') || key.includes('backup')) matchKey = 'power';
+                        else if (key.includes('locker')) matchKey = 'lockers';
+                        else if (key.includes('cctv') || key.includes('security')) matchKey = 'cctv';
+                        else if (key.includes('water') || key.includes('ro')) matchKey = 'water';
+                        else if (key.includes('washroom') || key.includes('toilet')) matchKey = 'washrooms';
+                        else if (key.includes('park')) matchKey = 'parking';
+                        else if (key.includes('silent') || key.includes('quiet')) matchKey = 'silent';
+                        else if (key.includes('tea') || key.includes('coffee') || key.includes('pantry')) matchKey = 'tea';
+                        else if (key.includes('24') || key.includes('hour') || key.includes('access')) matchKey = 'access';
+                        else if (key.includes('book') || key.includes('library')) matchKey = 'reference';
+                        return { slug: a.slug, label: a.label, iconNode: ICON_MAP[matchKey] || ICON_MAP.wifi };
+                      })
+                    : DEFAULT_FACILITIES.map((d) => ({ slug: d.slug, label: d.label, iconNode: ICON_MAP[d.iconKey] }));
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-3">
+                      {facilitiesToRender.map((item) => (
+                        <div key={item.slug} className="flex items-center gap-4 p-6 border-b border-r border-[#bdcaba]/30">
+                          <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                            {item.iconNode}
+                          </div>
+                          <span className="text-sm text-[#565e74]">{item.label}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                  {(!centre.amenities || centre.amenities.length === 0) && (
-                    <span className="text-sm text-[#565e74] italic p-6 col-span-1 md:col-span-3 border-b border-r border-[#bdcaba]/30">No amenities listed yet.</span>
-                  )}
-                </div>
+                  );
+                })()}
               </div>
             </section>
 
             {/* Choose Your Plan Section */}
             <section className="pt-10 border-t border-[#e0e3e5] space-y-6" id="pricing">
               <h2 className="font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e] uppercase tracking-wide">Choose Your Plan</h2>
-              <PricingPlans slug={centre.slug} resources={centre.resources as any} />
+              <PricingPlans slug={centre.slug} resources={centre.resources as any} defaultTags={centre.tags || []} />
             </section>
 
             {/* Photo Gallery */}
@@ -387,116 +429,114 @@ export default async function CentreDetailPage({ params }: PageProps) {
             <section className="pt-12 border-t border-[#bdcaba]/30" id="contact">
               <h2 className="font-['Lexend',sans-serif] text-xl font-bold mb-8 text-[#191c1e] uppercase tracking-wide">Location & Contact</h2>
               <div className="max-w-2xl">
-                <div className="space-y-8">
-                  <div className="flex items-start gap-4 pb-6 border-b border-[#bdcaba]/30">
-                    <svg className="mt-1 text-[#565e74]" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <svg className="mt-1 text-[#565e74] shrink-0" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                     <div>
-                      <p className="text-xs font-bold text-[#191c1e] uppercase tracking-widest mb-2">Address</p>
+                      <p className="text-xs font-bold text-[#191c1e] uppercase tracking-widest mb-1">Address</p>
                       <p className="text-sm text-[#565e74] leading-relaxed">{fullAddress || 'Location details available on request.'}</p>
                     </div>
                   </div>
                   {centre.phone && (
-                    <div className="flex items-start gap-4 pb-6 border-b border-[#bdcaba]/30">
-                      <svg className="mt-1 text-[#565e74]" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    <div className="flex items-start gap-4">
+                      <svg className="mt-1 text-[#565e74] shrink-0" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                       <div>
-                        <p className="text-xs font-bold text-[#191c1e] uppercase tracking-widest mb-2">Phone</p>
+                        <p className="text-xs font-bold text-[#191c1e] uppercase tracking-widest mb-1">Phone</p>
                         <a href={`tel:${centre.phone}`} className="text-sm text-[#565e74] hover:text-[#191c1e] transition-colors">{centre.phone}</a>
                       </div>
                     </div>
                   )}
                   {centre.business_email && (
-                    <div className="flex items-start gap-4 pb-6 border-b border-[#bdcaba]/30">
-                      <svg className="mt-1 text-[#565e74]" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                    <div className="flex items-start gap-4">
+                      <svg className="mt-1 text-[#565e74] shrink-0" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
                       <div>
-                        <p className="text-xs font-bold text-[#191c1e] uppercase tracking-widest mb-2">Email</p>
+                        <p className="text-xs font-bold text-[#191c1e] uppercase tracking-widest mb-1">Email</p>
                         <a href={`mailto:${centre.business_email}`} className="text-sm text-[#565e74] hover:text-[#191c1e] transition-colors">{centre.business_email}</a>
                       </div>
                     </div>
                   )}
                   {centre.website && (
                     <div className="flex items-start gap-4">
-                      <svg className="mt-1 text-[#565e74]" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                      <svg className="mt-1 text-[#565e74] shrink-0" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                       <div>
-                        <p className="text-xs font-bold text-[#191c1e] uppercase tracking-widest mb-2">Website</p>
+                        <p className="text-xs font-bold text-[#191c1e] uppercase tracking-widest mb-1">Website</p>
                         <a href={centre.website} target="_blank" rel="noopener noreferrer" className="text-sm text-[#565e74] hover:text-[#191c1e] transition-colors">{centre.website}</a>
                       </div>
                     </div>
                   )}
+
+                  {/* Social Media Links & Icons */}
+                  <div className="pt-4 flex items-center gap-3">
+                    <span className="text-xs font-bold text-[#191c1e] uppercase tracking-wider shrink-0">Connect:</span>
+                    <div className="flex items-center gap-2">
+                      {social.instagram && (
+                        <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="group w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200/80 hover:bg-slate-200/60 transition-all hover:scale-105" title="Instagram">
+                          <SocialIcon platform="instagram" />
+                        </a>
+                      )}
+                      {social.facebook && (
+                        <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="group w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200/80 hover:bg-slate-200/60 transition-all hover:scale-105" title="Facebook">
+                          <SocialIcon platform="facebook" />
+                        </a>
+                      )}
+                      {social.whatsapp && (
+                        <a href={`https://wa.me/91${social.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="group w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-200/80 hover:bg-emerald-100/80 transition-all hover:scale-105" title="WhatsApp">
+                          <SocialIcon platform="whatsapp" />
+                        </a>
+                      )}
+                      {social.youtube && (
+                        <a href={social.youtube} target="_blank" rel="noopener noreferrer" className="group w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200/80 hover:bg-slate-200/60 transition-all hover:scale-105" title="YouTube">
+                          <SocialIcon platform="youtube" />
+                        </a>
+                      )}
+                      {social.twitter && (
+                        <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="group w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200/80 hover:bg-slate-200/60 transition-all hover:scale-105" title="X (Twitter)">
+                          <SocialIcon platform="twitter" />
+                        </a>
+                      )}
+                      {social.googleBusiness && (
+                        <a href={social.googleBusiness} target="_blank" rel="noopener noreferrer" className="group w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200/80 hover:bg-slate-200/60 transition-all hover:scale-105" title="Google Business">
+                          <SocialIcon platform="googleBusiness" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
 
-            {/* Reviews */}
-            {/* Reviews */}
-            {(() => {
-              const dummyReview = {
-                id: 'dummy-1',
-                author: { full_name: 'Admin User' },
-                created_at: '2024-03-01T00:00:00.000Z',
-                rating: 4.0,
-                body: 'Excellent study environment. The ergonomic chairs really help during long study sessions, and the silent zone is strictly maintained. The high-speed Wi-Fi never drops. Highly recommended for UPSC aspirants.'
-              };
-              const displayReviews = reviews.length > 0 ? reviews : [dummyReview];
-              const displayRating = reviews.length > 0 ? centre.rating : 4.0;
-
-              return (
-                <section className="pt-12 border-t border-[#bdcaba]/30" id="reviews">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 pb-6 border-b border-[#bdcaba]/30">
-                    <h2 className="font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e] uppercase tracking-wide">
-                      ★ {displayRating.toFixed(1)} · {displayReviews.length} Review{displayReviews.length !== 1 ? 's' : ''}
-                    </h2>
-                    <button className="border border-[#bdcaba] text-[#191c1e] text-xs font-bold px-6 py-3 rounded-sm hover:border-[#191c1e] transition-colors uppercase tracking-widest self-start md:self-auto">Write a Review</button>
-                  </div>
-                  
-                  {isPublic && viewer && viewer.id !== centre.owner_id && (
-                    <div className="mb-8">
-                      <ReviewForm centreId={centre.id} />
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {displayReviews.map((rv) => {
-                      const authorName = rv.author?.full_name ?? 'Student';
-                      const initial = authorName.charAt(0).toUpperCase();
-                      const dateStr = new Date(rv.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                      
-                      return (
-                        <div key={rv.id} className="border border-[#bdcaba]/50 p-6 rounded-sm bg-white flex flex-col">
-                          <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 bg-[#bdcaba]/30 rounded-sm flex items-center justify-center font-['Lexend',sans-serif] text-xl font-bold text-[#191c1e]">{initial}</div>
-                            <div>
-                              <div className="text-xs font-bold text-[#191c1e] uppercase tracking-widest mb-1">{authorName}</div>
-                              <div className="text-sm text-[#565e74]">{dateStr}</div>
-                            </div>
-                          </div>
-                          <div className="border-t border-[#bdcaba]/30 pt-6 flex-1">
-                            {rv.body ? (
-                              <p className="text-sm text-[#565e74] leading-relaxed">{rv.body}</p>
-                            ) : (
-                              <p className="text-sm text-[#565e74] leading-relaxed italic">No written feedback provided.</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })()}
+            {/* Dynamic Reviews Section */}
+            <ReviewsSection
+              centreId={centre.id}
+              centreSlug={centre.slug}
+              rating={centre.rating}
+              reviewsCount={centre.reviews_count}
+              reviews={reviews}
+              isPublic={isPublic}
+              canReview={!!(isPublic && viewer && viewer.id !== centre.owner_id)}
+              isOwner={viewer?.id === centre.owner_id}
+              isLoggedIn={!!viewer}
+            />
           </div>
 
           {/* Right Column Sticky Booking Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <BookingSidebar
-                slug={centre.slug}
-                isPublic={isPublic}
-                pricing={centre.resources[0] ? ((centre.resources[0].pricing ?? {}) as Record<string, number>) : null}
-                seatsFree={centre.occupancy?.seatsFree ?? null}
-                phone={centre.phone}
-                whatsapp={social.whatsapp || null}
-                studentsCount={studentsCount}
-              />
+              {(() => {
+                const totalCap = centre.capacity || centre.resources.reduce((acc, r) => acc + (r.unit_count || 0), 0) || 60;
+                return (
+                  <BookingSidebar
+                    slug={centre.slug}
+                    isPublic={isPublic}
+                    pricing={centre.resources[0] ? ((centre.resources[0].pricing ?? {}) as Record<string, number>) : null}
+                    seatsFree={centre.occupancy?.seatsFree ?? null}
+                    totalSeats={totalCap}
+                    phone={centre.phone}
+                    whatsapp={social.whatsapp || null}
+                    studentsCount={studentsCount}
+                  />
+                );
+              })()}
 
               <div className="bg-white p-5 rounded-2xl border border-[#e0e3e5] shadow-xs space-y-3" id="hours-heading">
                 <h3 className="font-['Lexend',sans-serif] text-xs font-bold text-[#191c1e] uppercase tracking-wider border-b border-[#f2f4f6] pb-2">

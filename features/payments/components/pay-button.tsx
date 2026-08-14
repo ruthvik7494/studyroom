@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { startPayment, confirmPayment } from '../actions';
+import { confirmDemoPayment } from '../demo-action';
 
 declare global {
   interface Window { Razorpay?: new (options: Record<string, unknown>) => { open: () => void } }
@@ -39,36 +39,15 @@ export function PayButton(props: PayButtonProps) {
   const ref = props.groupId ? { groupId: props.groupId } : { bookingId: props.bookingId };
 
   const pay = async () => {
-    setBusy(true); setError(null);
-    const started = await startPayment(ref);
-    if (!started.ok) { setBusy(false); setError(started.error.message); return; }
-
-    if (!started.data.configured) { setBusy(false); setPayAtCentre(true); return; }
-
-    const ok = await loadCheckout();
-    if (!ok || !window.Razorpay) { setBusy(false); setError('Could not load the payment window.'); return; }
-
-    const rzp = new window.Razorpay({
-      key: started.data.keyId,
-      order_id: started.data.orderId,
-      amount: started.data.amount,
-      currency: 'INR',
-      name: 'StudyNook',
-      description: props.groupId ? 'Study space booking (multiple hours)' : 'Study space booking',
-      handler: async (resp: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
-        const res = await confirmPayment({
-          ...ref,
-          orderId: resp.razorpay_order_id,
-          paymentId: resp.razorpay_payment_id,
-          signature: resp.razorpay_signature,
-        });
-        if (res.ok) router.refresh();
-        else setError(res.error.message);
-      },
-      modal: { ondismiss: () => setBusy(false) },
-    });
-    rzp.open();
+    setBusy(true);
+    setError(null);
+    const res = await confirmDemoPayment(ref);
     setBusy(false);
+    if (res.ok) {
+      router.refresh();
+    } else {
+      setError(res.error.message);
+    }
   };
 
   if (payAtCentre) {

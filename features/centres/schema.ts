@@ -179,11 +179,13 @@ export const centreUpsertSchema = z.object({
   twitter: domainUrl(['twitter.com', 'x.com'], 'X (Twitter)'),
   whatsapp: domainUrl(['wa.me', 'whatsapp.com'], 'WhatsApp'),
   googleBusiness: domainUrl(['g.page', 'goo.gl', 'google.com'], 'Google Business'),
+  popularPeriod: z.string().optional().default('fortnight'),
   extraSpaces: z.array(
     z.object({
       id: z.string(),
       name: z.string().optional(),
       seats: z.string().optional(),
+      popularPeriod: z.string().optional(),
       prices: z.record(z.string(), z.string()).optional(),
       tags: z.array(z.string()).optional(),
     })

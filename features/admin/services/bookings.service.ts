@@ -21,10 +21,11 @@ export async function getBookingMetrics(db: DB): Promise<BookingMetrics> {
   const startWeek = new Date(now.getTime() - 6 * 86_400_000).toISOString();
   const startMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
+  // Only count confirmed/paid bookings towards metrics (filtering out unconfirmed, pending, expired, or cancelled reservations)
   const [today, week, month, noShows, waitlist, paid, refundRows] = await Promise.all([
-    db.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', startToday),
-    db.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', startWeek),
-    db.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', startMonth),
+    db.from('bookings').select('id', { count: 'exact', head: true }).in('status', ['confirmed', 'checked_in', 'completed']).eq('payment', 'paid').gte('created_at', startToday),
+    db.from('bookings').select('id', { count: 'exact', head: true }).in('status', ['confirmed', 'checked_in', 'completed']).eq('payment', 'paid').gte('created_at', startWeek),
+    db.from('bookings').select('id', { count: 'exact', head: true }).in('status', ['confirmed', 'checked_in', 'completed']).eq('payment', 'paid').gte('created_at', startMonth),
     db.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'no_show'),
     db.from('waitlist_entries').select('id', { count: 'exact', head: true }).eq('status', 'waiting'),
     db.from('bookings').select('amount').in('payment', ['paid', 'partially_refunded']).gte('created_at', startMonth),

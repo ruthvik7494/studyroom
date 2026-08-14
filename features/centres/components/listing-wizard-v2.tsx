@@ -96,7 +96,6 @@ const PRICE_FIELDS: { key: keyof CentreUpsert; label: string }[] = [
   { key: 'priceHourly', label: 'Hourly' },
   { key: 'priceDaily', label: 'Daily' },
   { key: 'priceWeekly', label: 'Weekly' },
-  { key: 'priceFortnightly', label: 'Fortnightly' },
   { key: 'priceMonthly', label: 'Monthly' },
   { key: 'priceQuarterly', label: 'Quarterly' },
   { key: 'priceHalfYearly', label: 'Half-yearly' },
@@ -135,7 +134,7 @@ export function ListingWizardV2(props: Props) {
   const [amenityStyle, setAmenityStyle] = useState<'horizontal' | 'chips' | 'pills' | 'cards'>('horizontal');
   const [customTagInput, setCustomTagInput] = useState('');
   const [allCustomTags, setAllCustomTags] = useState<string[]>(props.defaults?.tags || []);
-  const [extraSpaces, setExtraSpaces] = useState<Array<{ id: string; name: string; seats: string; prices: Record<string, string>; tags: string[] }>>((props.defaults?.extraSpaces as any) || []);
+  const [extraSpaces, setExtraSpaces] = useState<Array<{ id: string; name: string; seats: string; popularPeriod?: string; prices: Record<string, string>; tags: string[] }>>((props.defaults?.extraSpaces as any) || []);
   const [copyHoursSourceDay, setCopyHoursSourceDay] = useState<number | null>(null);
   const [copyHoursTargets, setCopyHoursTargets] = useState<number[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -878,8 +877,8 @@ export function ListingWizardV2(props: Props) {
                     <span className="text-xs font-bold text-[#16a34a] uppercase tracking-wider">Primary Space</span>
                   </div>
 
-                  {/* Row 1: Room Name & Seats */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Row 1: Room Name, Seats & Most Popular Plan Flag */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-semibold text-[#565e74] mb-1">Room Name</label>
                       <input
@@ -899,6 +898,22 @@ export function ListingWizardV2(props: Props) {
                         className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#16a34a]"
                         {...register('seats')}
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#16a34a] font-bold mb-1">🌟 Most Popular Plan</label>
+                      <select
+                        className="w-full bg-[#f8faf8] border border-[#16a34a]/40 rounded-xl px-3 py-2 text-xs font-bold text-[#16a34a] focus:outline-none focus:border-[#16a34a]"
+                        {...register('popularPeriod')}
+                      >
+                        <option value="month">Monthly</option>
+                        <option value="hour">Hourly</option>
+                        <option value="day">Daily</option>
+                        <option value="week">Weekly</option>
+                        <option value="quarter">Quarterly</option>
+                        <option value="half_year">Half Yearly</option>
+                        <option value="year">Yearly</option>
+                      </select>
                     </div>
                   </div>
 
@@ -1098,8 +1113,8 @@ export function ListingWizardV2(props: Props) {
                       </button>
                     </div>
 
-                    {/* Row 1: Room Name & Seats */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Row 1: Room Name, Seats & Most Popular Plan Flag */}
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-semibold text-[#565e74] mb-1">Room Name</label>
                         <input
@@ -1127,6 +1142,26 @@ export function ListingWizardV2(props: Props) {
                           placeholder="e.g. 20"
                           className="w-full bg-[#f8faf8] border border-[#bdcaba] rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#16a34a]"
                         />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#16a34a] font-bold mb-1">🌟 Most Popular Plan</label>
+                        <select
+                          value={space.popularPeriod || 'month'}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setExtraSpaces((prev) => prev.map((s) => (s.id === space.id ? { ...s, popularPeriod: val } : s)));
+                          }}
+                          className="w-full bg-[#f8faf8] border border-[#16a34a]/40 rounded-xl px-3 py-2 text-xs font-bold text-[#16a34a] focus:outline-none focus:border-[#16a34a]"
+                        >
+                          <option value="month">Monthly</option>
+                          <option value="hour">Hourly</option>
+                          <option value="day">Daily</option>
+                          <option value="week">Weekly</option>
+                          <option value="quarter">Quarterly</option>
+                          <option value="half_year">Half Yearly</option>
+                          <option value="year">Yearly</option>
+                        </select>
                       </div>
                     </div>
 
