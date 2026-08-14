@@ -15,10 +15,19 @@ export interface BookingCalendarItem {
 
 export function StudentBookingCalendar({ bookings }: { bookings: BookingCalendarItem[] }) {
   const today = new Date();
+
+  // Helper to format local Date into YYYY-MM-DD
+  const formatLocalDate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const todayStr = formatLocalDate(today);
+
   const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [selectedDateStr, setSelectedDateStr] = useState<string>(
-    today.toISOString().slice(0, 10)
-  );
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -30,11 +39,27 @@ export function StudentBookingCalendar({ bookings }: { bookings: BookingCalendar
 
   // Map bookings by date string YYYY-MM-DD
   const bookingMap = new Map<string, BookingCalendarItem[]>();
+
   bookings.forEach((b) => {
-    const dateKey = new Date(b.starts_at).toISOString().slice(0, 10);
-    const list = bookingMap.get(dateKey) ?? [];
-    list.push(b);
-    bookingMap.set(dateKey, list);
+    const startDate = new Date(b.starts_at);
+    const endDate = new Date(b.ends_at);
+
+    // If starts_at and ends_at span across multiple days (e.g. day, week, month passes),
+    // add booking to all covered dates in the range.
+    const curr = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const last = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+    // Loop through date range (inclusive of start date)
+    while (curr <= last) {
+      const dateKey = formatLocalDate(curr);
+      const list = bookingMap.get(dateKey) ?? [];
+      // avoid duplicates for exact same booking ID on same day
+      if (!list.some((item) => item.id === b.id)) {
+        list.push(b);
+        bookingMap.set(dateKey, list);
+      }
+      curr.setDate(curr.getDate() + 1);
+    }
   });
 
   const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
@@ -85,7 +110,7 @@ export function StudentBookingCalendar({ bookings }: { bookings: BookingCalendar
               const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
               const hasBooking = bookingMap.has(dateKey);
               const isSelected = selectedDateStr === dateKey;
-              const isToday = today.toISOString().slice(0, 10) === dateKey;
+              const isToday = todayStr === dateKey;
 
               return (
                 <button
