@@ -37,7 +37,7 @@ export async function signInWithPassword(raw: unknown): Promise<Result<{ ok: tru
     const { error } = await db.auth.signInWithPassword({ email: input.email, password: input.password });
     if (error) {
       await db.rpc('record_login_failure', { p_email: input.email });
-      throw new ActionError('UNAUTHENTICATED', 'Wrong email or password.');
+      throw new ActionError('UNAUTHENTICATED', error.message || 'Wrong email or password.');
     }
 
     // Credentials were correct — but a suspended/deleted account's login
